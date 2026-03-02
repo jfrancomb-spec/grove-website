@@ -75,3 +75,16 @@ form {
 button.button {
   width: 100%;
 }
+.button:hover {
+  background: #25593e;
+  transition: 0.2s ease;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  outline: none;
+  border-color: #2f6f4e;
+  box-shadow: 0 0 0 2px rgba(47,111,78,0.15);
+}
+
