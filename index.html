@@ -75,7 +75,24 @@
     Find caregivers you can feel confident inviting into your home — verified, local, and trusted by your community.
   </div>
 
-  <a class="button" href="#">Find Trusted Care</a>
+  <form id="careForm">
+  <input type="text" id="name" placeholder="Your Name" required><br><br>
+  <input type="email" id="email" placeholder="Email Address" required><br><br>
+
+  <select id="care_type" required>
+    <option value="">Type of Care Needed</option>
+    <option>Childcare</option>
+    <option>Senior Care</option>
+    <option>Pet Care</option>
+    <option>Household Help</option>
+  </select><br><br>
+
+  <input type="text" id="location" placeholder="City or Neighborhood" required><br><br>
+
+  <textarea id="details" placeholder="Tell us about your care needs" required></textarea><br><br>
+
+  <button class="button" type="submit">Request Care</button>
+</form>
   <a class="button" href="#">Become a Caregiver</a>
 </div>
 
