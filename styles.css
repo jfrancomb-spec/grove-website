@@ -10,8 +10,8 @@
 body {
   font-family: system-ui, -apple-system, Arial, sans-serif;
   margin: 0;
-  background: #f6f8f6;
-  color: #1f2a24;
+  background: var(--bg);
+  color: var(--text);
   line-height: 1.6;
 }
 
