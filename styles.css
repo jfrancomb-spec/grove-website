@@ -58,11 +58,17 @@ h1 {
 }
 
 section {
-  max-width: 800px;
-  margin: auto;
-  padding: 40px 20px;
+  max-width: 900px;
+  margin: 60px auto;
+  padding: 0 20px;
+}
+h1, h2 {
+  margin-bottom: 16px;
 }
 
+p {
+  margin-bottom: 16px;
+}
 input, select, textarea {
   width: 100%;
   padding: 12px;
