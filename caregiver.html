@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Grove | Become a Caregiver</title>
- <link rel="stylesheet" href="./styles.css">
+  <link rel="stylesheet" href="./styles.css">
   <link rel="icon" type="image/png" href="./MainIcon.png">
 </head>
 <body>
@@ -14,49 +14,94 @@
     <img src="./LogoName.png" alt="Grove" style="height:48px;">
   </a>
 
-<nav class="nav">
-  <a href="./index.html">Home</a>
-  <a href="./findcare.html">Find Care</a>
-  <a href="./caregiver.html">Become a Caregiver</a>
-</nav>
+  <nav class="nav">
+    <a href="./index.html">Home</a>
+    <a href="./findcare.html">Find Care</a>
+    <a href="./caregiver.html">Become a Caregiver</a>
+  </nav>
 </header>
 
-<section>
+<div class="hero">
   <h1>Become a Trusted Grove Caregiver</h1>
-  <p>
-    Join a growing network of local caregivers who are committed to providing dependable, respectful, and trusted care.
-  </p>
+  <div class="subtitle">
+    Join a growing network of local caregivers who value reliability, respect, and trust.
+  </div>
+  <a class="button" href="#apply">Apply Now</a>
+</div>
 
-  <form id="caregiverForm">
-    <div class="row"><input id="cg_name" type="text" placeholder="Your Name" required></div>
-    <div class="row"><input id="cg_phone" type="text" placeholder="Phone Number" required></div>
-    <div class="row"><input id="cg_email" type="email" placeholder="Best Email Address" required></div>
-    <div class="row"><input id="cg_location" type="text" placeholder="City or Neighborhood" required></div>
+<section>
+  <h2>What You Can Expect</h2>
 
-    <div class="row">
-      <select id="cg_care_type" required>
-        <option value="">Type of Care You Provide</option>
-        <option>Childcare</option>
-        <option>Senior Care</option>
-        <option>Pet Care</option>
-        <option>Household Help</option>
-        <option>Other</option>
-      </select>
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;margin-top:16px;">
+    <div style="background:white;border:1px solid var(--card-border);border-radius:10px;padding:16px;">
+      <h3 style="margin-top:0;">Local Opportunities</h3>
+      <p style="margin-bottom:0;">Connect with families close to home.</p>
     </div>
 
-    <div class="row"><textarea id="cg_experience" placeholder="Tell us about your experience" required></textarea></div>
+    <div style="background:white;border:1px solid var(--card-border);border-radius:10px;padding:16px;">
+      <h3 style="margin-top:0;">Respectful Matches</h3>
+      <p style="margin-bottom:0;">Work with families who value communication and reliability.</p>
+    </div>
 
-    <button class="button" type="submit">Apply Now</button>
-  </form>
-<p id="caregiverSuccess" style="display:none; color:#2f6f4e; font-weight:600; text-align:center;">
-  ✅ Application received! Grove will contact you soon.
-</p>
-
-  <p style="margin-top:16px;"><a href="./index.html">← Back to Home</a></p>
+    <div style="background:white;border:1px solid var(--card-border);border-radius:10px;padding:16px;">
+      <h3 style="margin-top:0;">Trust-First Community</h3>
+      <p style="margin-bottom:0;">A network built on accountability and clear expectations.</p>
+    </div>
+  </div>
 </section>
+
+<section id="apply">
+  <h2>Apply to Become a Caregiver</h2>
+  <p>
+    Tell us a bit about yourself. Grove reviews every application and reaches out with next steps.
+  </p>
+
+  <div style="background:white;border:1px solid var(--card-border);border-radius:12px;padding:18px;">
+    <form id="caregiverForm">
+      <div class="row"><input id="cg_name" type="text" placeholder="Your Name" required></div>
+      <div class="row"><input id="cg_phone" type="text" placeholder="Phone Number" required></div>
+      <div class="row"><input id="cg_email" type="email" placeholder="Best Email Address" required></div>
+      <div class="row"><input id="cg_location" type="text" placeholder="City or Neighborhood" required></div>
+
+      <div class="row">
+        <select id="cg_care_type" required>
+          <option value="">Type of Care You Provide</option>
+          <option>Childcare</option>
+          <option>Senior Care</option>
+          <option>Pet Care</option>
+          <option>Household Help</option>
+          <option>Other</option>
+        </select>
+      </div>
+
+      <div class="row"><textarea id="cg_experience" placeholder="Tell us about your experience" required></textarea></div>
+
+      <button class="button" type="submit">Apply Now</button>
+    </form>
+
+    <p id="caregiverSuccess" style="display:none; color:var(--primary); font-weight:600; text-align:center; margin-top:14px;">
+      ✅ Application received! Grove will contact you soon.
+    </p>
+  </div>
+
+  <div style="margin-top:22px;">
+    <h3 style="margin-bottom:6px;">What Happens Next</h3>
+    <p style="margin-top:0;">
+      After you apply, Grove reviews your information and reaches out to learn more about your availability.
+      Our goal is thoughtful matches with local families who value dependable, trusted care.
+    </p>
+
+    <p style="margin-top:16px;"><a href="./index.html" style="color:var(--link);text-decoration:none;">← Back to Home</a></p>
+  </div>
+</section>
+
+<footer>
+  Grove — Trusted care, locally grown.<br>
+  Serving Belle Plaine & Jordan, Minnesota<br><br>
+  <a href="./privacy.html">Privacy Policy</a>
+</footer>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="./app.js"></script>
 </body>
 </html>
-
