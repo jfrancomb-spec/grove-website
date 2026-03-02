@@ -4,68 +4,92 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Grove | Trusted Care, Locally Grown</title>
- <link rel="stylesheet" href="./styles.css">
-  <link rel="icon" type="image/png" href="./favicon2.png">
+
+  <link rel="stylesheet" href="./styles.css">
+  <link rel="icon" type="image/png" href="./favicon.png">
 </head>
 
 <body>
 
 <header>
   <a href="./index.html" style="text-decoration:none;color:inherit;">Grove</a>
+
+  <span style="float:right;font-weight:normal;font-size:16px;">
+    <a href="./index.html" style="margin-right:14px;color:#2f6f4e;text-decoration:none;">Home</a>
+    <a href="./findcare.html" style="margin-right:14px;color:#2f6f4e;text-decoration:none;">Find Care</a>
+    <a href="./caregiver.html" style="color:#2f6f4e;text-decoration:none;">Become a Caregiver</a>
+  </span>
 </header>
-<span style="float:right;font-weight:normal;font-size:16px;">
-  <a href="./index.html" style="margin-right:14px;color:#2f6f4e;text-decoration:none;">Home</a>
-  <a href="./caregiver.html" style="margin-right:14px;color:#2f6f4e;text-decoration:none;">Become a Caregiver</a>
-</span>
+
+<!-- HERO -->
 <div class="hero">
   <h1>Trusted care, locally grown.</h1>
+
   <div class="subtitle">
-    Find caregivers you can feel confident inviting into your home — verified, local, and trusted by your community.
+    Grove connects families and caregivers through trust, accountability,
+    and real local relationships.
   </div>
-  
-<section>
-  <form id="careForm">
-  <input type="text" id="name" placeholder="Your Name" required><br><br>
-  <input type="email" id="email" placeholder="Email Address" required><br><br>
 
-  <select id="care_type" required>
-    <option value="">Type of Care Needed</option>
-    <option>Childcare</option>
-    <option>Senior Care</option>
-    <option>Pet Care</option>
-    <option>Household Help</option>
-  </select><br><br>
-
-  <input type="text" id="location" placeholder="City or Neighborhood" required><br><br>
-
-  <textarea id="details" placeholder="Tell us about your care needs" required></textarea><br><br>
-
-  <button class="button" type="submit">Request Care</button>
-</form>
-  <p id="careSuccess" style="display:none; color:#2f6f4e; font-weight:600; text-align:center;">
-  ✅ Request received! Grove will contact you soon.
-</p>
-  </section>
+  <a class="button" href="./findcare.html">Find Trusted Care</a>
   <a class="button" href="./caregiver.html">Become a Caregiver</a>
 </div>
 
+<!-- WHY GROVE EXISTS -->
 <section>
   <h2>Why Grove Exists</h2>
+
   <p>
-    Finding care shouldn’t feel risky. Grove connects families with trusted local caregivers through thoughtful verification,
-    clear expectations, and community accountability — so you can focus on what matters most.
+    Finding care should never feel uncertain. Inviting someone into your home —
+    whether for your child, a loved one, or daily help — requires real trust.
+    Grove was created to make that trust possible again.
   </p>
+
+  <p>
+    Traditional care platforms focus on listings and volume. Grove focuses on
+    people, accountability, and thoughtful introductions. Instead of endless
+    profiles, we prioritize meaningful local connections.
+  </p>
+
+  <p>
+    Grove begins locally in Belle Plaine and Jordan, Minnesota, where reputation
+    still matters and neighbors look out for one another. Our goal is simple:
+    help families feel confident about the people they welcome into their homes.
+  </p>
+</section>
+
+<!-- HOW GROVE IS DIFFERENT -->
+<section>
+  <h2>How Grove Is Different</h2>
+
+  <p>
+    Grove is built around trust first — not transactions. Every connection starts
+    with clarity, expectations, and community accountability.
+  </p>
+
+  <ul>
+    <li><strong>Carefully Reviewed Caregivers</strong> — real people, real accountability.</li>
+    <li><strong>Local Community Focus</strong> — trust grows where people know each other.</li>
+    <li><strong>Safety-First Introductions</strong> — thoughtful matches instead of endless searching.</li>
+  </ul>
+</section>
+
+<!-- CALL TO ACTION -->
+<section style="text-align:center;">
+  <h2>Ready to Find Trusted Care?</h2>
+
+  <p>
+    Start your request today and Grove will help guide the next steps.
+  </p>
+
+  <a class="button" href="./findcare.html">Find Trusted Care</a>
 </section>
 
 <footer>
   Grove — Trusted care, locally grown.<br>
-  Serving Belle Plaine & Jordan, Minnesota
-  
+  Serving Belle Plaine & Jordan, Minnesota<br><br>
+
   <a href="./privacy.html">Privacy Policy</a>
 </footer>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-<script src="./app.js"></script>
-  
 </body>
 </html>
