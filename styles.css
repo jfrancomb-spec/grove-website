@@ -59,15 +59,15 @@ h1 {
 
 section {
   max-width: 900px;
-  margin: 60px auto;
+  margin: 40px auto;
   padding: 0 20px;
 }
 h1, h2 {
-  margin-bottom: 16px;
+  margin-bottom: 10px;
 }
 
 p {
-  margin-bottom: 16px;
+  margin-bottom: 10px;
 }
 input, select, textarea {
   width: 100%;
