@@ -57,8 +57,9 @@ careForm.scrollIntoView({ behavior: "smooth" });
         return;
       }
 
-      alert("Application submitted! Grove will contact you soon.");
-      caregiverForm.reset();
+document.getElementById("caregiverSuccess").style.display = "block";
+caregiverForm.reset();
+document.getElementById("caregiverSuccess").scrollIntoView({ behavior: "smooth" });
     });
   }
 });
