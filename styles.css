@@ -133,3 +133,20 @@ header img {
 .nav a:hover {
   text-decoration: underline;
 }
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+  margin: 20px 0;
+}
+
+.card {
+  background: white;
+  border: 1px solid var(--card-border);
+  border-radius: 10px;
+  padding: 16px;
+}
+
+.card h3 {
+  margin-top: 0;
+}
