@@ -16,7 +16,7 @@ window.addEventListener("DOMContentLoaded", () => {
         email: document.getElementById("email").value,
         care_type: document.getElementById("care_type").value,
         location: document.getElementById("location").value,
-        schedule: "Not specified",
+        schedule: document.getElementById("schedule")?.value || "Not specified",
         details: document.getElementById("details").value,
       };
 
