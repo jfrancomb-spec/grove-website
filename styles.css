@@ -1,3 +1,12 @@
+:root{
+  --bg: #F0F8F8;
+  --text: #382050;
+  --primary: #409088;
+  --primary-dark: #306080;
+  --accent: #80C090;
+  --link: #306080;
+  --card-border: #E5E7E6;
+}
 body {
   font-family: system-ui, -apple-system, Arial, sans-serif;
   margin: 0;
