@@ -1,1 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Grove | Become a Caregiver</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 0; background: #f6f8f6; color: #1f2a24; line-height: 1.6; }
+    header { background: white; padding: 16px 24px; border-bottom: 1px solid #e5e7e6; font-weight: bold; font-size: 20px; }
+    section { max-width: 800px; margin: auto; padding: 40px 20px; }
+    .button { background: #2f6f4e; color: white; padding: 14px 22px; text-decoration: none; border-radius: 6px; display: inline-block; border: 0; cursor: pointer; }
+    input, select, textarea { width: 100%; padding: 12px; border-radius: 6px; border: 1px solid #cfd6d2; box-sizing: border-box; }
+    textarea { min-height: 120px; }
+    .row { margin: 12px 0; }
+    a { color: #2f6f4e; }
+  </style>
+</head>
+<body>
 
+<header>
+  <a href="./index.html" style="text-decoration:none;color:inherit;">Grove</a>
+</header>
+
+<section>
+  <h1>Become a Trusted Grove Caregiver</h1>
+  <p>
+    Join a growing network of local caregivers who are committed to providing dependable, respectful, and trusted care.
+  </p>
+
+  <form id="caregiverForm">
+    <div class="row"><input id="cg_name" type="text" placeholder="Your Name" required></div>
+    <div class="row"><input id="cg_phone" type="text" placeholder="Phone Number" required></div>
+    <div class="row"><input id="cg_email" type="email" placeholder="Best Email Address" required></div>
+    <div class="row"><input id="cg_location" type="text" placeholder="City or Neighborhood" required></div>
+
+    <div class="row">
+      <select id="cg_care_type" required>
+        <option value="">Type of Care You Provide</option>
+        <option>Childcare</option>
+        <option>Senior Care</option>
+        <option>Pet Care</option>
+        <option>Household Help</option>
+        <option>Other</option>
+      </select>
+    </div>
+
+    <div class="row"><textarea id="cg_experience" placeholder="Tell us about your experience" required></textarea></div>
+
+    <button class="button" type="submit">Apply Now</button>
+  </form>
+
+  <p style="margin-top:16px;"><a href="./index.html">← Back to Home</a></p>
+</section>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="./app.js"></script>
+</body>
+</html>
