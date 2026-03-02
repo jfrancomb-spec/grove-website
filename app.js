@@ -6,12 +6,6 @@ window.addEventListener("DOMContentLoaded", () => {
   const { createClient } = supabase;
   const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-  const form = document.getElementById("careForm");
-  if (!form) {
-    alert("careForm not found on page.");
-    return;
-  }
-
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
 
