@@ -88,3 +88,12 @@ textarea:focus {
   box-shadow: 0 0 0 2px rgba(47,111,78,0.15);
 }
 
+footer a {
+  color: #2f6f4e;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+footer a:hover {
+  text-decoration: underline;
+}
