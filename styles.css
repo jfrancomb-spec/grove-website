@@ -40,7 +40,7 @@ h1 {
 }
 
 .button {
-  background: #2f6f4e;
+  background: var(--primary);
   color: white;
   padding: 14px 22px;
   margin: 8px;
@@ -49,6 +49,12 @@ h1 {
   display: inline-block;
   border: 0;
   cursor: pointer;
+  font-weight: 600;
+}
+
+.button:hover {
+  background: var(--primary-dark);
+  transition: 0.2s ease;
 }
 
 section {
