@@ -67,3 +67,11 @@ footer {
   padding: 30px;
   font-size: 14px;
 }
+form {
+  max-width: 520px;
+  margin: 0 auto;
+}
+
+button.button {
+  width: 100%;
+}
