@@ -3,60 +3,61 @@ const SUPABASE_ANON_KEY = "sb_publishable_JwsPcXgi_T-NQZo1tGZY_w_kcRc9kWc";
 
 window.addEventListener("DOMContentLoaded", () => {
   // UMD build exposes a global "supabase" object
-  const { createClient } = supabase;
-  const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  const db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-if (form) form.addEventListener("submit", async (e) => {
-    e.preventDefault();
+  // Find Care form (index.html)
+  const careForm = document.getElementById("careForm");
+  if (careForm) {
+    careForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
 
-    const payload = {
-      name: document.getElementById("name").value,
-      email: document.getElementById("email").value,
-      care_type: document.getElementById("care_type").value,
-      location: document.getElementById("location").value,
-      schedule: "Not specified",
-      details: document.getElementById("details").value,
-    };
+      const payload = {
+        name: document.getElementById("name").value,
+        email: document.getElementById("email").value,
+        care_type: document.getElementById("care_type").value,
+        location: document.getElementById("location").value,
+        schedule: "Not specified",
+        details: document.getElementById("details").value,
+      };
 
-    const { error } = await db.from("care_requests").insert([payload]);
+      const { error } = await db.from("care_requests").insert([payload]);
 
-    if (error) {
-      alert("Insert failed (check console).");
-      console.error(error);
-      return;
-    }
+      if (error) {
+        alert("Request failed. Please try again.");
+        console.error(error);
+        return;
+      }
 
-    alert("Request submitted! Grove will contact you soon.");
-    form.reset();
-  });
+      alert("Request submitted! Grove will contact you soon.");
+      careForm.reset();
+    });
+  }
+
+  // Caregiver form (caregiver.html)
+  const caregiverForm = document.getElementById("caregiverForm");
+  if (caregiverForm) {
+    caregiverForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      const payload = {
+        name: document.getElementById("cg_name").value,
+        phone: document.getElementById("cg_phone").value,
+        email: document.getElementById("cg_email").value,
+        location: document.getElementById("cg_location").value,
+        care_type: document.getElementById("cg_care_type").value,
+        experience: document.getElementById("cg_experience").value,
+      };
+
+      const { error } = await db.from("caregiver_applications").insert([payload]);
+
+      if (error) {
+        alert("Application failed. Please try again.");
+        console.error(error);
+        return;
+      }
+
+      alert("Application submitted! Grove will contact you soon.");
+      caregiverForm.reset();
+    });
+  }
 });
-// Caregiver application form
-const caregiverForm = document.getElementById("caregiverForm");
-
-if (caregiverForm) {
-  caregiverForm.addEventListener("submit", async (e) => {
-    e.preventDefault();
-
-    const payload = {
-      name: document.getElementById("cg_name").value,
-      phone: document.getElementById("cg_phone").value,
-      email: document.getElementById("cg_email").value,
-      location: document.getElementById("cg_location").value,
-      care_type: document.getElementById("cg_care_type").value,
-      experience: document.getElementById("cg_experience").value,
-    };
-
-    const { error } = await db
-      .from("caregiver_applications")
-      .insert([payload]);
-
-    if (error) {
-      alert("Application failed. Please try again.");
-      console.error(error);
-      return;
-    }
-
-    alert("Application submitted! Grove will contact you soon.");
-    caregiverForm.reset();
-  });
-}
