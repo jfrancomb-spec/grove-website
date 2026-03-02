@@ -166,3 +166,10 @@ header img {
 .form-card h3 {
   margin-top: 24px;
 }
+.success {
+  display: none;
+  color: var(--primary);
+  font-weight: 700;
+  text-align: center;
+  margin-top: 14px;
+}
