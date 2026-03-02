@@ -56,3 +56,33 @@
 <script src="./app.js"></script>
 </body>
 </html>
+// Caregiver application form
+const caregiverForm = document.getElementById("caregiverForm");
+
+if (caregiverForm) {
+  caregiverForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+
+    const payload = {
+      name: document.getElementById("cg_name").value,
+      phone: document.getElementById("cg_phone").value,
+      email: document.getElementById("cg_email").value,
+      location: document.getElementById("cg_location").value,
+      care_type: document.getElementById("cg_care_type").value,
+      experience: document.getElementById("cg_experience").value,
+    };
+
+    const { error } = await db
+      .from("caregiver_applications")
+      .insert([payload]);
+
+    if (error) {
+      alert("Application failed. Please try again.");
+      console.error(error);
+      return;
+    }
+
+    alert("Application submitted! Grove will contact you soon.");
+    caregiverForm.reset();
+  });
+}
