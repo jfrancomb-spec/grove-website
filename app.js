@@ -29,6 +29,7 @@ window.addEventListener("DOMContentLoaded", () => {
       }
 
      document.getElementById("careSuccess").style.display = "block";
+careForm.style.display = "none";
 careForm.scrollIntoView({ behavior: "smooth" });
       careForm.reset();
     });
@@ -58,6 +59,7 @@ careForm.scrollIntoView({ behavior: "smooth" });
       }
 
 document.getElementById("caregiverSuccess").style.display = "block";
+      caregiverForm.style.display = "none";
 caregiverForm.reset();
 document.getElementById("caregiverSuccess").scrollIntoView({ behavior: "smooth" });
     });
