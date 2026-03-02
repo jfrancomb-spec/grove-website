@@ -156,3 +156,13 @@ header img {
 .card h3 {
   margin-top: 0;
 }
+.form-card {
+  background: white;
+  border: 1px solid var(--card-border);
+  border-radius: 12px;
+  padding: 24px;
+}
+
+.form-card h3 {
+  margin-top: 24px;
+}
