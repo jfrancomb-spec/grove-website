@@ -28,7 +28,8 @@ window.addEventListener("DOMContentLoaded", () => {
         return;
       }
 
-      alert("Request submitted! Grove will contact you soon.");
+     document.getElementById("careSuccess").style.display = "block";
+careForm.scrollIntoView({ behavior: "smooth" });
       careForm.reset();
     });
   }
