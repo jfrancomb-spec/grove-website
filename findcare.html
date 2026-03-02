@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Grove | Find Care</title>
+  <link rel="stylesheet" href="./styles.css">
+  <link rel="icon" type="image/png" href="./favicon.png">
+</head>
+<body>
+
+<header>
+  <a href="./index.html" style="text-decoration:none;color:inherit;">Grove</a>
+  <span style="float:right;font-weight:normal;font-size:16px;">
+    <a href="./index.html" style="margin-right:14px;color:#2f6f4e;text-decoration:none;">Home</a>
+    <a href="./findcare.html" style="margin-right:14px;color:#2f6f4e;text-decoration:none;">Find Care</a>
+    <a href="./caregiver.html" style="color:#2f6f4e;text-decoration:none;">Become a Caregiver</a>
+  </span>
+</header>
+
+<div class="hero">
+  <h1>Find Trusted Care</h1>
+  <div class="subtitle">
+    Tell us what you need and Grove will reach out with next steps.
+  </div>
+</div>
+
+<section>
+  <form id="careForm">
+    <div class="row"><input type="text" id="name" placeholder="Your Name" required></div>
+    <div class="row"><input type="email" id="email" placeholder="Email Address" required></div>
+
+    <div class="row">
+      <select id="care_type" required>
+        <option value="">Type of Care Needed</option>
+        <option>Childcare</option>
+        <option>Senior Care</option>
+        <option>Pet Care</option>
+        <option>Household Help</option>
+        <option>Other</option>
+      </select>
+    </div>
+
+    <div class="row"><input type="text" id="location" placeholder="City or Neighborhood" required></div>
+    <div class="row"><input type="text" id="schedule" placeholder="Schedule Needed (days/times)" required></div>
+    <div class="row"><textarea id="details" placeholder="Tell us about your care needs" required></textarea></div>
+
+    <button class="button" type="submit">Request Care</button>
+  </form>
+
+  <p id="careSuccess" style="display:none; color:#2f6f4e; font-weight:600; text-align:center;">
+    ✅ Request received! Grove will contact you soon.
+  </p>
+</section>
+
+<footer>
+  Grove — Trusted care, locally grown.<br>
+  Serving Belle Plaine & Jordan, Minnesota<br>
+  <a href="./privacy.html">Privacy Policy</a>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="./app.js"></script>
+</body>
+</html>
