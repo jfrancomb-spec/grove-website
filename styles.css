@@ -112,3 +112,24 @@ footer a {
 footer a:hover {
   text-decoration: underline;
 }
+header img {
+  height: 48px;
+  max-width: 240px;
+  object-fit: contain;
+}
+
+.nav {
+  display: flex;
+  gap: 14px;
+  font-weight: 500;
+  font-size: 16px;
+}
+
+.nav a {
+  color: var(--link);
+  text-decoration: none;
+}
+
+.nav a:hover {
+  text-decoration: underline;
+}
