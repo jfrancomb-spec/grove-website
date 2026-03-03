@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+<title>Grove | Request Caregiver</title>
+
+<link rel="stylesheet" href="./styles.css">
+<link rel="icon" type="image/png" href="./MainIcon.png">
+</head>
+
+<body>
+
+<div id="header-placeholder"></div>
+
+<div class="hero">
+<h1>Request This Caregiver</h1>
+<div class="subtitle" id="caregiverSubtitle">Loading caregiver profile...</div>
+</div>
+
+<section>
+
+<div class="form-card">
+
+<h2 style="margin-top:0;">Request Details</h2>
+
+<form id="requestForm">
+
+<div class="row">
+<input id="req_name" type="text" placeholder="Your Name" required>
+</div>
+
+<div class="row">
+<input id="req_email" type="email" placeholder="Email Address" required>
+</div>
+
+<div class="row">
+<input id="req_phone" type="text" placeholder="Phone Number" required>
+</div>
+
+<div class="row">
+<input id="req_location" type="text" placeholder="City or Neighborhood" required>
+</div>
+
+<div class="row">
+<input id="req_schedule" type="text" placeholder="Schedule Needed (days/times)">
+</div>
+
+<div class="row">
+<textarea id="req_message" placeholder="Tell the caregiver about your needs"></textarea>
+</div>
+
+<button class="button" type="submit">Send Request</button>
+
+</form>
+
+<p id="requestSuccess" class="success">
+✅ Request sent! Grove will contact you soon.
+</p>
+
+</div>
+
+</section>
+
+<div id="footer-placeholder"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="./app.js"></script>
+
+<script>
+
+async function loadCaregiverAndWireRequest() {
+
+const params = new URLSearchParams(window.location.search);
+const caregiverId = params.get("caregiver_id");
+
+if (!caregiverId) {
+document.getElementById("caregiverSubtitle").textContent = "Missing caregiver id.";
+return;
+}
+
+const { data: caregiver, error } = await window.db
+.from("caregiver_applications")
+.select("id,name,care_type,location")
+.eq("id", caregiverId)
+.single();
+
+if (error || !caregiver) {
+document.getElementById("caregiverSubtitle").textContent = "Unable to load caregiver.";
+console.error(error);
+return;
+}
+
+document.getElementById("caregiverSubtitle").textContent =
+`${caregiver.name} • ${caregiver.care_type} • ${caregiver.location}`;
+
+const form = document.getElementById("requestForm");
+
+form.addEventListener("submit", async (e) => {
+
+e.preventDefault();
+
+const payload = {
+
+caregiver_id: caregiver.id,
+
+requester_name: document.getElementById("req_name").value,
+requester_email: document.getElementById("req_email").value,
+requester_phone: document.getElementById("req_phone").value,
+requester_location: document.getElementById("req_location").value,
+
+schedule: document.getElementById("req_schedule").value,
+message: document.getElementById("req_message").value
+
+};
+
+const { error } = await window.db
+.from("caregiver_requests")
+.insert([payload]);
+
+if (error) {
+alert("Request failed. Please try again.");
+console.error(error);
+return;
+}
+
+document.getElementById("requestSuccess").style.display = "block";
+form.style.display = "none";
+document.getElementById("requestSuccess").scrollIntoView({behavior:"smooth"});
+
+});
+
+}
+
+loadCaregiverAndWireRequest();
+
+</script>
+
+</body>
+</html>
