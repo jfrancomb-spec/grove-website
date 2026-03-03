@@ -51,50 +51,58 @@ Browse local care opportunities in the Grove network.
 <script src="./app.js"></script>
 
 <script>
+window.addEventListener("DOMContentLoaded", () => {
 
-async function loadJobs() {
-  const typeVal = document.getElementById("jobFilterType")?.value || "";
-  const locVal = (document.getElementById("jobFilterLocation")?.value || "").trim();
+  async function loadJobs() {
+    const typeVal = document.getElementById("jobFilterType")?.value || "";
+    const locVal = (document.getElementById("jobFilterLocation")?.value || "").trim();
 
-  let query = window.db
-    .from("job_posts")
-    .select("*")
-    .order("created_at", { ascending: false });
+    let query = window.db
+      .from("job_posts")
+      .select("*")
+      .order("created_at", { ascending: false });
 
-  if (typeVal) query = query.eq("care_type", typeVal);
-  if (locVal) query = query.ilike("location", `%${locVal}%`);
+    if (typeVal) query = query.eq("care_type", typeVal);
+    if (locVal) query = query.ilike("location", `%${locVal}%`);
 
-  const { data, error } = await query;
+    const { data, error } = await query;
 
-  const container = document.getElementById("jobsContainer");
-  container.innerHTML = "";
+    const container = document.getElementById("jobsContainer");
+    container.innerHTML = "";
 
-  if (error) {
-    container.innerHTML = "<p>Unable to load jobs right now.</p>";
-    console.error(error);
-    return;
+    if (error) {
+      container.innerHTML = "<p>Unable to load jobs right now.</p>";
+      console.error(error);
+      return;
+    }
+
+    if (!data || data.length === 0) {
+      container.innerHTML = "<p>No jobs match those filters yet.</p>";
+      return;
+    }
+
+    data.forEach(job => {
+      const card = document.createElement("div");
+      card.className = "card";
+      card.innerHTML = `
+        <h3>${job.title}</h3>
+        <p><strong>Type:</strong> ${job.care_type}</p>
+        <p><strong>Location:</strong> ${job.location}</p>
+        <p><strong>Schedule:</strong> ${job.schedule}</p>
+        ${job.pay_range ? `<p><strong>Pay:</strong> ${job.pay_range}</p>` : ``}
+        <p>${job.description}</p>
+        <a class="button" href="./apply.html?job_id=${job.id}">Apply for this job</a>
+      `;
+      container.appendChild(card);
+    });
   }
 
-  if (!data || data.length === 0) {
-    container.innerHTML = "<p>No jobs match those filters yet.</p>";
-    return;
-  }
+  // wire button
+  document.getElementById("jobFilterBtn")?.addEventListener("click", loadJobs);
 
-  data.forEach(job => {
-    const card = document.createElement("div");
-    card.className = "card";
-    card.innerHTML = `
-      <h3>${job.title}</h3>
-      <p><strong>Type:</strong> ${job.care_type}</p>
-      <p><strong>Location:</strong> ${job.location}</p>
-      <p><strong>Schedule:</strong> ${job.schedule}</p>
-      ${job.pay_range ? `<p><strong>Pay:</strong> ${job.pay_range}</p>` : ``}
-      <p>${job.description}</p>
-      <a class="button" href="./apply.html?job_id=${job.id}">Apply for this job</a>
-    `;
-    container.appendChild(card);
-  });
-}
+  // initial load
+  loadJobs();
+});
 </script>
 
 </body>
