@@ -53,12 +53,19 @@ async function loadCaregivers() {
   data.forEach(cg => {
     const card = document.createElement("div");
     card.className = "card";
-    card.innerHTML = `
-      <h3>${cg.name_first} — ${cg.care_type}</h3>
-      <p><strong>Location:</strong> ${cg.location}</p>
-      <p><strong>Availability:</strong> ${cg.availability}</p>
-      <p>${cg.bio}</p>
-    `;
+
+  card.innerHTML = `
+  <h3>${cg.name_first} — ${cg.care_type}</h3>
+  <p><strong>Location:</strong> ${cg.location}</p>
+  <p><strong>Availability:</strong> ${cg.availability}</p>
+  <p>${cg.bio}</p>
+
+  <a class="button" href="./request.html?caregiver_id=${cg.id}">
+    Request This Caregiver
+  </a>
+`;  
+
+    
     container.appendChild(card);
   });
 }
