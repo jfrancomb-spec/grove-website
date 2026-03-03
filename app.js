@@ -3,7 +3,7 @@ const SUPABASE_ANON_KEY = "sb_publishable_JwsPcXgi_T-NQZo1tGZY_w_kcRc9kWc";
 
 window.addEventListener("DOMContentLoaded", () => {
   // UMD build exposes a global "supabase" object
-  const db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  window.db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
   // Find Care form (index.html)
   const careForm = document.getElementById("careForm");
@@ -20,7 +20,7 @@ window.addEventListener("DOMContentLoaded", () => {
         details: document.getElementById("details").value,
       };
 
-      const { error } = await db.from("care_requests").insert([payload]);
+      const { error } = await window.db.from("care_requests").insert([payload]);
 
       if (error) {
         alert("Request failed. Please try again.");
@@ -51,7 +51,7 @@ careForm.scrollIntoView({ behavior: "smooth" });
         experience: document.getElementById("cg_experience").value,
       };
 
-      const { error } = await db.from("caregiver_applications").insert([payload]);
+      const { error } = await window.db.from("caregiver_applications").insert([payload]);
 
       if (error) {
         alert("Application failed. Please try again.");
