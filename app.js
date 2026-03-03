@@ -66,6 +66,28 @@ document.getElementById("careForm").style.display = "none";
 careForm.style.display = "none";
 careForm.scrollIntoView({ behavior: "smooth" });
       careForm.reset();
+
+function prefillFromQuery() {
+  const params = new URLSearchParams(window.location.search);
+
+  // Prefill caregiver page from job apply
+  const applyJob = params.get("apply_job");
+  if (applyJob && document.getElementById("cg_experience")) {
+    const careType = params.get("care_type") || "";
+    const location = params.get("location") || "";
+
+    const sel = document.getElementById("cg_care_type");
+    if (sel && careType) sel.value = careType;
+
+    const loc = document.getElementById("cg_location");
+    if (loc && location) loc.value = location;
+
+    const exp = document.getElementById("cg_experience");
+    exp.value = `Applying for job: ${applyJob}\n\n` + (exp.value || "");
+  }
+}
+prefillFromQuery();
+      
     });
   }
 
