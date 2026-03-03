@@ -11,6 +11,18 @@ window.addEventListener("DOMContentLoaded", () => {
   loadPart("footer-placeholder", "./footer.html");
 });
 
+function highlightCurrentNav() {
+  const path = window.location.pathname.split("/").pop() || "index.html";
+  document.querySelectorAll(".nav a").forEach(link => {
+    const href = link.getAttribute("href");
+    if (href === path) {
+      link.classList.add("active");
+    }
+  });
+}
+
+window.addEventListener("DOMContentLoaded", highlightCurrentNav);
+
 const SUPABASE_URL = "https://apjdknqppglnamndwwya.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_JwsPcXgi_T-NQZo1tGZY_w_kcRc9kWc";
 window.db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
