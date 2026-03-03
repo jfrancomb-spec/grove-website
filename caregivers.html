@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Grove | Caregivers</title>
+
+<link rel="stylesheet" href="./styles.css">
+<link rel="icon" type="image/png" href="./MainIcon.png">
+</head>
+
+<body>
+
+<header style="display:flex;align-items:center;justify-content:space-between;">
+  <a href="./index.html">
+    <img src="./LogoName.png" alt="Grove" style="height:48px;">
+  </a>
+
+  <nav class="nav">
+    <a href="./index.html">Home</a>
+    <a href="./findcare.html">Find Care</a>
+    <a href="./jobs.html">Care Jobs</a>
+    <a href="./caregivers.html">Caregivers</a>
+    <a href="./caregiver.html">Become a Caregiver</a>
+  </nav>
+</header>
+
+<div class="hero">
+  <h1>Caregivers</h1>
+  <div class="subtitle">
+    Browse local caregivers in the Grove network.
+  </div>
+</div>
+
+<section>
+  <div id="caregiversContainer" class="cards"></div>
+</section>
+
+<footer>
+  Grove — Trusted care, locally grown.<br>
+  Serving Belle Plaine & Jordan, Minnesota<br>
+  <a href="./privacy.html">Privacy Policy</a>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="./app.js"></script>
+
+<script>
+async function loadCaregivers() {
+  const { data, error } = await window.db
+    .from("caregiver_posts")
+    .select("*")
+    .order("created_at", { ascending: false });
+
+  const container = document.getElementById("caregiversContainer");
+  container.innerHTML = "";
+
+  if (error) {
+    container.innerHTML = "<p>Unable to load caregivers right now.</p>";
+    console.error(error);
+    return;
+  }
+
+  if (!data || data.length === 0) {
+    container.innerHTML = "<p>No caregiver postings yet.</p>";
+    return;
+  }
+
+  data.forEach(cg => {
+    const card = document.createElement("div");
+    card.className = "card";
+    card.innerHTML = `
+      <h3>${cg.name_first} — ${cg.care_type}</h3>
+      <p><strong>Location:</strong> ${cg.location}</p>
+      <p><strong>Availability:</strong> ${cg.availability}</p>
+      <p>${cg.bio}</p>
+    `;
+    container.appendChild(card);
+  });
+}
+
+loadCaregivers();
+</script>
+
+</body>
+</html>
