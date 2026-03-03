@@ -81,8 +81,8 @@ return;
 }
 
 const { data: caregiver, error } = await window.db
-.from("caregiver_applications")
-.select("id,name,care_type,location")
+.from("caregiver_posts")
+.select("id,name_first,care_type,location")
 .eq("id", caregiverId)
 .single();
 
@@ -93,7 +93,7 @@ return;
 }
 
 document.getElementById("caregiverSubtitle").textContent =
-`${caregiver.name} • ${caregiver.care_type} • ${caregiver.location}`;
+`${caregiver.name_first} • ${caregiver.care_type} • ${caregiver.location}`;
 
 const form = document.getElementById("requestForm");
 
