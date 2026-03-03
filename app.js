@@ -4,6 +4,9 @@ async function loadPart(id, file) {
 
   const res = await fetch(file);
   el.innerHTML = await res.text();
+
+  // run highlight after header is injected
+  if (id === "header-placeholder") highlightCurrentNav();
 }
 
 window.addEventListener("DOMContentLoaded", () => {
