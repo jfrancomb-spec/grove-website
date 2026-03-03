@@ -5,40 +5,57 @@ async function loadPart(id, file) {
   const res = await fetch(file);
   el.innerHTML = await res.text();
 
-  // run highlight after header is injected
   if (id === "header-placeholder") highlightCurrentNav();
 }
 
-window.addEventListener("DOMContentLoaded", () => {
-  loadPart("header-placeholder", "./header.html");
-  loadPart("footer-placeholder", "./footer.html");
-});
-
 function highlightCurrentNav() {
-  // current file (handles /grove-website/ and /grove-website/index.html)
   const file = window.location.pathname.split("/").pop() || "index.html";
 
-  document.querySelectorAll(".nav a").forEach(a => {
+  document.querySelectorAll(".nav a").forEach((a) => {
     const hrefRaw = a.getAttribute("href") || "";
-    const href = hrefRaw.replace("./", ""); // normalize "./page.html" -> "page.html"
+    const href = hrefRaw.replace("./", "");
 
     if (href === file) a.classList.add("active");
-
-    // also handle Home when URL ends with "/" (no filename)
-    if ((file === "index.html") && (href === "index.html")) a.classList.add("active");
+    if (file === "index.html" && href === "index.html") a.classList.add("active");
   });
 }
 
-window.addEventListener("DOMContentLoaded", highlightCurrentNav);
-
+// Supabase client (global)
 const SUPABASE_URL = "https://apjdknqppglnamndwwya.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_JwsPcXgi_T-NQZo1tGZY_w_kcRc9kWc";
 window.db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-window.addEventListener("DOMContentLoaded", () => {
-  // UMD build exposes a global "supabase" object
-  
 
-  // Find Care form (index.html)
+function prefillFromQuery() {
+  const params = new URLSearchParams(window.location.search);
+
+  // Prefill caregiver page from job apply
+  const applyJob = params.get("apply_job");
+  if (applyJob && document.getElementById("cg_experience")) {
+    const careType = params.get("care_type") || "";
+    const location = params.get("location") || "";
+
+    const sel = document.getElementById("cg_care_type");
+    if (sel && careType) sel.value = careType;
+
+    const loc = document.getElementById("cg_location");
+    if (loc && location) loc.value = location;
+
+    const exp = document.getElementById("cg_experience");
+    exp.value = `Applying for job: ${applyJob}\nLocation: ${location}\nCare type: ${careType}\n\n` + (exp.value || "");
+  }
+
+  // Optional: Prefill Find Care from caregiver request (we’ll use this later)
+}
+
+window.addEventListener("DOMContentLoaded", () => {
+  // shared header/footer
+  loadPart("header-placeholder", "./header.html");
+  loadPart("footer-placeholder", "./footer.html");
+
+  // highlight + prefill
+  prefillFromQuery();
+
+  // Find Care form
   const careForm = document.getElementById("careForm");
   if (careForm) {
     careForm.addEventListener("submit", async (e) => {
@@ -60,38 +77,16 @@ window.addEventListener("DOMContentLoaded", () => {
         console.error(error);
         return;
       }
-document.getElementById("careSuccess").style.display = "block";
-document.getElementById("careForm").style.display = "none";
-     document.getElementById("careSuccess").style.display = "block";
-careForm.style.display = "none";
-careForm.scrollIntoView({ behavior: "smooth" });
-      careForm.reset();
 
-function prefillFromQuery() {
-  const params = new URLSearchParams(window.location.search);
+      const msg = document.getElementById("careSuccess");
+      if (msg) msg.style.display = "block";
+      careForm.style.display = "none";
 
-  // Prefill caregiver page from job apply
-  const applyJob = params.get("apply_job");
-  if (applyJob && document.getElementById("cg_experience")) {
-    const careType = params.get("care_type") || "";
-    const location = params.get("location") || "";
-
-    const sel = document.getElementById("cg_care_type");
-    if (sel && careType) sel.value = careType;
-
-    const loc = document.getElementById("cg_location");
-    if (loc && location) loc.value = location;
-
-    const exp = document.getElementById("cg_experience");
-    exp.value = `Applying for job: ${applyJob}\n\n` + (exp.value || "");
-  }
-}
-prefillFromQuery();
-      
+      if (msg) msg.scrollIntoView({ behavior: "smooth" });
     });
   }
 
-  // Caregiver form (caregiver.html)
+  // Caregiver form
   const caregiverForm = document.getElementById("caregiverForm");
   if (caregiverForm) {
     caregiverForm.addEventListener("submit", async (e) => {
@@ -113,12 +108,12 @@ prefillFromQuery();
         console.error(error);
         return;
       }
-document.getElementById("caregiverSuccess").style.display = "block";
-document.getElementById("caregiverForm").style.display = "none";
-document.getElementById("caregiverSuccess").style.display = "block";
+
+      const msg = document.getElementById("caregiverSuccess");
+      if (msg) msg.style.display = "block";
       caregiverForm.style.display = "none";
-caregiverForm.reset();
-document.getElementById("caregiverSuccess").scrollIntoView({ behavior: "smooth" });
+
+      if (msg) msg.scrollIntoView({ behavior: "smooth" });
     });
   }
 });
