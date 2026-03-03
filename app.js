@@ -6,10 +6,11 @@ async function loadPart(id, file) {
   el.innerHTML = await res.text();
 }
 
-loadPart("header-placeholder", "header.html");
-loadPart("footer-placeholder", "footer.html");
+window.addEventListener("DOMContentLoaded", () => {
+  loadPart("header-placeholder", "./header.html");
+  loadPart("footer-placeholder", "./footer.html");
+});
 
-loadHeader();
 const SUPABASE_URL = "https://apjdknqppglnamndwwya.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_JwsPcXgi_T-NQZo1tGZY_w_kcRc9kWc";
 window.db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
