@@ -51,37 +51,22 @@ Browse local care opportunities in the Grove network.
 <script src="./app.js"></script>
 
 <script>
-window.addEventListener("DOMContentLoaded", () => {
+(function () {
+  let allJobs = [];
 
-  async function loadJobs() {
-    const typeVal = document.getElementById("jobFilterType")?.value || "";
-    const locVal = (document.getElementById("jobFilterLocation")?.value || "").trim();
-
-    let query = window.db
-      .from("job_posts")
-      .select("*")
-      .order("created_at", { ascending: false });
-
-    if (typeVal) query = query.eq("care_type", typeVal);
-    if (locVal) query = query.ilike("location", `%${locVal}%`);
-
-    const { data, error } = await query;
-
+  function renderJobs(list) {
     const container = document.getElementById("jobsContainer");
+    const countEl = document.getElementById("jobsCount");
+
+    if (countEl) countEl.textContent = `${list.length} job(s) shown`;
+
     container.innerHTML = "";
-
-    if (error) {
-      container.innerHTML = "<p>Unable to load jobs right now.</p>";
-      console.error(error);
-      return;
-    }
-
-    if (!data || data.length === 0) {
+    if (!list.length) {
       container.innerHTML = "<p>No jobs match those filters yet.</p>";
       return;
     }
 
-    data.forEach(job => {
+    list.forEach((job) => {
       const card = document.createElement("div");
       card.className = "card";
       card.innerHTML = `
@@ -97,12 +82,66 @@ window.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // wire button
-  document.getElementById("jobFilterBtn")?.addEventListener("click", loadJobs);
+  function applyFilters() {
+    const typeVal = (document.getElementById("jobFilterType")?.value || "").trim().toLowerCase();
+    const locVal = (document.getElementById("jobFilterLocation")?.value || "").trim().toLowerCase();
 
-  // initial load
-  loadJobs();
-});
+    const filtered = allJobs.filter((job) => {
+      const jobType = (job.care_type || "").trim().toLowerCase();
+      const jobLoc = (job.location || "").trim().toLowerCase();
+
+      const typeOk = !typeVal || jobType === typeVal;
+      const locOk = !locVal || jobLoc.includes(locVal);
+
+      return typeOk && locOk;
+    });
+
+    renderJobs(filtered);
+  }
+
+  async function loadJobsOnce() {
+    // Wait until window.db exists (guards against load order issues)
+    let tries = 0;
+    while (!window.db && tries < 40) {
+      await new Promise((r) => setTimeout(r, 50));
+      tries++;
+    }
+    if (!window.db) {
+      document.getElementById("jobsContainer").innerHTML =
+        "<p>Database connection not ready. Please refresh.</p>";
+      return;
+    }
+
+    const { data, error } = await window.db
+      .from("job_posts")
+      .select("*")
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      document.getElementById("jobsContainer").innerHTML =
+        "<p>Unable to load jobs right now.</p>";
+      console.error(error);
+      return;
+    }
+
+    allJobs = data || [];
+    applyFilters();
+  }
+
+  window.addEventListener("DOMContentLoaded", () => {
+    // Wire filters
+    document.getElementById("jobFilterBtn")?.addEventListener("click", () => {
+      console.log("Apply Filters clicked");
+      applyFilters();
+    });
+
+    // Optional: auto-filter as they type/select
+    document.getElementById("jobFilterType")?.addEventListener("change", applyFilters);
+    document.getElementById("jobFilterLocation")?.addEventListener("input", applyFilters);
+
+    loadJobsOnce();
+  });
+})();
 </script>
 
 </body>
