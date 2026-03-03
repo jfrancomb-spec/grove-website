@@ -40,6 +40,7 @@ Browse local care opportunities in the Grove network.
   </div>
 <p id="jobsCount" style="margin:8px 0 0 0; font-weight:600;"></p>
   <button class="button" type="button" id="jobFilterBtn">Apply Filters</button>
+  <button class="button" type="button" id="clearFilters">Clear Filters</button>
 </div>
 <div id="jobsContainer" class="cards"></div>
 
@@ -72,10 +73,13 @@ Browse local care opportunities in the Grove network.
       card.innerHTML = `
         <h3>${job.title}</h3>
         <p><strong>Type:</strong> ${job.care_type}</p>
-        <p><strong>Location:</strong> ${job.location}</p>
+        <p><strong>Location:</strong> ${job.location} (local)</p>
         <p><strong>Schedule:</strong> ${job.schedule}</p>
         ${job.pay_range ? `<p><strong>Pay:</strong> ${job.pay_range}</p>` : ``}
         <p>${job.description}</p>
+        <p style="font-size:13px;color:#777;">
+Posted ${new Date(job.created_at).toLocaleDateString()}
+</p>
         <a class="button" href="./apply.html?job_id=${job.id}">Apply for this job</a>
       `;
       container.appendChild(card);
@@ -127,7 +131,11 @@ Browse local care opportunities in the Grove network.
     allJobs = data || [];
     applyFilters();
   }
-
+document.getElementById("clearFilters")?.addEventListener("click", () => {
+  document.getElementById("jobFilterType").value = "";
+  document.getElementById("jobFilterLocation").value = "";
+  applyFilters();
+});
   window.addEventListener("DOMContentLoaded", () => {
     // Wire filters
     document.getElementById("jobFilterBtn")?.addEventListener("click", () => {
