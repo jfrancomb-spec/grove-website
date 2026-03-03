@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Grove | Care Jobs</title>
+
+<link rel="stylesheet" href="./styles.css">
+<link rel="icon" type="image/png" href="./MainIcon.png">
+
+</head>
+<body>
+
+<header style="display:flex;align-items:center;justify-content:space-between;">
+<a href="./index.html">
+<img src="./LogoName.png" alt="Grove" style="height:48px;">
+</a>
+
+<nav class="nav">
+<a href="./index.html">Home</a>
+<a href="./findcare.html">Find Care</a>
+<a href="./jobs.html">Care Jobs</a>
+<a href="./caregiver.html">Become a Caregiver</a>
+</nav>
+</header>
+
+<div class="hero">
+<h1>Care Jobs</h1>
+<div class="subtitle">
+Browse local care opportunities in the Grove network.
+</div>
+</div>
+
+<section>
+
+<div id="jobsContainer" class="cards"></div>
+
+</section>
+
+<footer>
+Grove — Trusted care, locally grown.<br>
+Serving Belle Plaine & Jordan, Minnesota<br>
+<a href="./privacy.html">Privacy Policy</a>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="./app.js"></script>
+
+<script>
+
+async function loadJobs() {
+
+const { data, error } = await db
+.from("job_posts")
+.select("*")
+.order("created_at", { ascending:false });
+
+const container = document.getElementById("jobsContainer");
+
+container.innerHTML = "";
+
+data.forEach(job => {
+
+const card = document.createElement("div");
+card.className = "card";
+
+card.innerHTML = `
+<h3>${job.title}</h3>
+<p><strong>Location:</strong> ${job.location}</p>
+<p><strong>Schedule:</strong> ${job.schedule}</p>
+<p>${job.description}</p>
+`;
+
+container.appendChild(card);
+
+});
+
+}
+
+loadJobs();
+
+</script>
+
+</body>
+</html>
