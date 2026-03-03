@@ -1,3 +1,10 @@
+async function loadHeader() {
+  const response = await fetch("header.html");
+  const html = await response.text();
+  document.getElementById("header-placeholder").innerHTML = html;
+}
+
+loadHeader();
 const SUPABASE_URL = "https://apjdknqppglnamndwwya.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_JwsPcXgi_T-NQZo1tGZY_w_kcRc9kWc";
 window.db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
