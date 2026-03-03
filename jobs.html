@@ -130,12 +130,13 @@ Posted ${new Date(job.created_at).toLocaleDateString()}
 
     allJobs = data || [];
     applyFilters();
-  }
-document.getElementById("clearFilters")?.addEventListener("click", () => {
+    document.getElementById("clearFilters")?.addEventListener("click", () => {
   document.getElementById("jobFilterType").value = "";
   document.getElementById("jobFilterLocation").value = "";
   applyFilters();
 });
+  }
+
   window.addEventListener("DOMContentLoaded", () => {
     // Wire filters
     document.getElementById("jobFilterBtn")?.addEventListener("click", () => {
