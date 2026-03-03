@@ -28,23 +28,36 @@ window.db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 function prefillFromQuery() {
   const params = new URLSearchParams(window.location.search);
 
-  // Prefill caregiver page from job apply
   const applyJob = params.get("apply_job");
-  if (applyJob && document.getElementById("cg_experience")) {
-    const careType = params.get("care_type") || "";
-    const location = params.get("location") || "";
+  const careType = (params.get("care_type") || "").trim();
+  const location = (params.get("location") || "").trim();
 
-    const sel = document.getElementById("cg_care_type");
-    if (sel && careType) sel.value = careType;
+  // Only run on caregiver page (needs these elements)
+  const exp = document.getElementById("cg_experience");
+  if (!exp) return;
 
-    const loc = document.getElementById("cg_location");
-    if (loc && location) loc.value = location;
+  // Location
+  const loc = document.getElementById("cg_location");
+  if (loc && location) loc.value = location;
 
-    const exp = document.getElementById("cg_experience");
-    exp.value = `Applying for job: ${applyJob}\nLocation: ${location}\nCare type: ${careType}\n\n` + (exp.value || "");
+  // Care type (case-insensitive match)
+  const sel = document.getElementById("cg_care_type");
+  if (sel && careType) {
+    const match = Array.from(sel.options).find(
+      (o) => (o.value || o.textContent).trim().toLowerCase() === careType.toLowerCase()
+    );
+    if (match) sel.value = match.value || match.textContent;
   }
 
-  // Optional: Prefill Find Care from caregiver request (we’ll use this later)
+  // Experience textarea
+  if (applyJob) {
+    exp.value =
+      `Applying for job: ${applyJob}\n` +
+      (location ? `Location: ${location}\n` : "") +
+      (careType ? `Care type: ${careType}\n` : "") +
+      `\n` +
+      (exp.value || "");
+  }
 }
 
 window.addEventListener("DOMContentLoaded", () => {
