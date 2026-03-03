@@ -57,9 +57,7 @@ card.innerHTML = `
   ${job.pay_range ? `<p><strong>Pay:</strong> ${job.pay_range}</p>` : ``}
   <p>${job.description}</p>
 
-  <a class="button" href="./caregiver.html?apply_job=${encodeURIComponent(job.title)}&care_type=${encodeURIComponent(job.care_type)}&location=${encodeURIComponent(job.location)}">
-    Apply for this job
-  </a>
+<a class="button" href="./apply.html?job_id=${job.id}">Apply for this job</a>
 `;
 
 container.appendChild(card);
