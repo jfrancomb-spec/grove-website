@@ -1,8 +1,13 @@
-async function loadHeader() {
-  const response = await fetch("header.html");
-  const html = await response.text();
-  document.getElementById("header-placeholder").innerHTML = html;
+async function loadPart(id, file) {
+  const el = document.getElementById(id);
+  if (!el) return;
+
+  const res = await fetch(file);
+  el.innerHTML = await res.text();
 }
+
+loadPart("header-placeholder", "header.html");
+loadPart("footer-placeholder", "footer.html");
 
 loadHeader();
 const SUPABASE_URL = "https://apjdknqppglnamndwwya.supabase.co";
