@@ -12,12 +12,17 @@ window.addEventListener("DOMContentLoaded", () => {
 });
 
 function highlightCurrentNav() {
-  const path = window.location.pathname.split("/").pop() || "index.html";
-  document.querySelectorAll(".nav a").forEach(link => {
-    const href = link.getAttribute("href");
-    if (href === path) {
-      link.classList.add("active");
-    }
+  // current file (handles /grove-website/ and /grove-website/index.html)
+  const file = window.location.pathname.split("/").pop() || "index.html";
+
+  document.querySelectorAll(".nav a").forEach(a => {
+    const hrefRaw = a.getAttribute("href") || "";
+    const href = hrefRaw.replace("./", ""); // normalize "./page.html" -> "page.html"
+
+    if (href === file) a.classList.add("active");
+
+    // also handle Home when URL ends with "/" (no filename)
+    if ((file === "index.html") && (href === "index.html")) a.classList.add("active");
   });
 }
 
