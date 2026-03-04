@@ -28,6 +28,16 @@
   </div>
 
   <div id="dashboard" style="display:none;">
+<section>
+  <h2>Job Listings (Review)</h2>
+  <div id="jobPostsAdmin" class="cards"></div>
+</section>
+
+<section>
+  <h2>Caregiver Listings (Review)</h2>
+  <div id="caregiverPostsAdmin" class="cards"></div>
+</section>
+    
     <div class="form-card" style="margin-bottom:16px;">
       <div style="display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap;">
         <h2 style="margin:0;">Overview</h2>
@@ -102,8 +112,112 @@ async function loadAdminData() {
         `${x.details || ""}`
       ]
     )));
+    // JOB POSTS (admin review)
+const { data: jp, error: jpErr } = await window.db
+  .from("job_posts")
+  .select("*")
+  .order("created_at", { ascending: false });
+
+const jpBox = document.getElementById("jobPostsAdmin");
+jpBox.innerHTML = "";
+
+if (jpErr) {
+  jpBox.innerHTML = "<p>Unable to load job posts.</p>";
+  console.error(jpErr);
+} else if (!jp || jp.length === 0) {
+  jpBox.innerHTML = "<p>No job posts yet.</p>";
+} else {
+  jp.forEach((job) => {
+    const card = document.createElement("div");
+    card.className = "card";
+    card.innerHTML = `
+      <h3>${job.title}</h3>
+      <p><strong>Status:</strong> ${job.status || ""}</p>
+      <p><strong>Type:</strong> ${job.care_type}</p>
+      <p><strong>Location:</strong> ${job.location}</p>
+      <p><strong>Schedule:</strong> ${job.schedule}</p>
+      ${job.pay_range ? `<p><strong>Pay:</strong> ${job.pay_range}</p>` : ``}
+      <p>${job.description}</p>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:12px;">
+        <button class="button" type="button" data-approve="1">Approve</button>
+        <button class="button" type="button" data-deny="1">Deny</button>
+      </div>
+    `;
+
+    card.querySelector('[data-approve="1"]').addEventListener("click", () => setJobPostStatus(job.id, true));
+    card.querySelector('[data-deny="1"]').addEventListener("click", () => setJobPostStatus(job.id, false));
+
+    jpBox.appendChild(card);
+  });
+}
+
+// CAREGIVER POSTS (admin review)
+const { data: cp, error: cpErr } = await window.db
+  .from("caregiver_posts")
+  .select("*")
+  .order("created_at", { ascending: false });
+
+const cpBox = document.getElementById("caregiverPostsAdmin");
+cpBox.innerHTML = "";
+
+if (cpErr) {
+  cpBox.innerHTML = "<p>Unable to load caregiver posts.</p>";
+  console.error(cpErr);
+} else if (!cp || cp.length === 0) {
+  cpBox.innerHTML = "<p>No caregiver posts yet.</p>";
+} else {
+  cp.forEach((cg) => {
+    const card = document.createElement("div");
+    card.className = "card";
+    card.innerHTML = `
+      <h3>${cg.name_first} — ${cg.care_type}</h3>
+      <p><strong>Status:</strong> ${cg.status || ""}</p>
+      <p><strong>Location:</strong> ${cg.location}</p>
+      <p><strong>Availability:</strong> ${cg.availability}</p>
+      <p>${cg.bio}</p>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:12px;">
+        <button class="button" type="button" data-approve="1">Approve</button>
+        <button class="button" type="button" data-deny="1">Deny</button>
+      </div>
+    `;
+
+    card.querySelector('[data-approve="1"]').addEventListener("click", () => setCaregiverPostStatus(cg.id, true));
+    card.querySelector('[data-deny="1"]').addEventListener("click", () => setCaregiverPostStatus(cg.id, false));
+
+    cpBox.appendChild(card);
+  });
+}
   }
 
+  async function setJobPostStatus(id, approve) {
+  const patch = approve
+    ? { status: "approved", is_active: true }
+    : { status: "denied", is_active: false };
+
+  const { error } = await window.db.from("job_posts").update(patch).eq("id", id);
+  if (error) {
+    alert("Update failed.");
+    console.error(error);
+    return;
+  }
+  await loadAdminData();
+}
+
+async function setCaregiverPostStatus(id, approve) {
+  const patch = approve
+    ? { status: "approved", is_active: true }
+    : { status: "denied", is_active: false };
+
+  const { error } = await window.db.from("caregiver_posts").update(patch).eq("id", id);
+  if (error) {
+    alert("Update failed.");
+    console.error(error);
+    return;
+  }
+  await loadAdminData();
+}
+
+  
   // CAREGIVER APPLICATIONS
   const { data: ca, error: caErr } = await window.db
     .from("caregiver_applications")
