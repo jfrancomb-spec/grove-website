@@ -117,10 +117,11 @@ Posted ${new Date(job.created_at).toLocaleDateString()}
       return;
     }
 
-    const { data, error } = await window.db
-      .from("job_posts")
-      .select("*")
-      .order("created_at", { ascending: false });
+const { data, error } = await window.db
+  .from("job_posts")
+  .select("*")
+  .eq("is_active", true)
+  .order("created_at", { ascending: false });
 
     if (error) {
       document.getElementById("jobsContainer").innerHTML =
