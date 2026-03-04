@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Grove | Admin</title>
+  <link rel="stylesheet" href="./styles.css">
+  <link rel="icon" type="image/png" href="./MainIcon.png">
+</head>
+<body>
+
+<div id="header-placeholder"></div>
+
+<div class="hero">
+  <h1>Admin Dashboard</h1>
+  <div class="subtitle">View incoming requests and applications.</div>
+</div>
+
+<section>
+  <div class="form-card" id="loginCard">
+    <h2 style="margin-top:0;">Admin Login</h2>
+    <form id="loginForm">
+      <div class="row"><input id="adminEmail" type="email" placeholder="Admin email" required></div>
+      <div class="row"><input id="adminPassword" type="password" placeholder="Password" required></div>
+      <button class="button" type="submit">Sign in</button>
+    </form>
+    <p id="loginMsg" class="success"></p>
+  </div>
+
+  <div id="dashboard" style="display:none;">
+    <div class="form-card" style="margin-bottom:16px;">
+      <div style="display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap;">
+        <h2 style="margin:0;">Overview</h2>
+        <button class="button" id="signOutBtn" type="button">Sign out</button>
+      </div>
+      <p style="margin-top:10px;">
+        Use this page to review submissions. (Only your admin login can view private data.)
+      </p>
+    </div>
+
+    <section>
+      <h2>Care Requests</h2>
+      <div id="careRequests" class="cards"></div>
+    </section>
+
+    <section>
+      <h2>Caregiver Applications</h2>
+      <div id="caregiverApps" class="cards"></div>
+    </section>
+
+    <section>
+      <h2>Job Applications</h2>
+      <div id="jobApps" class="cards"></div>
+    </section>
+
+    <section>
+      <h2>Caregiver Requests</h2>
+      <div id="caregiverReqs" class="cards"></div>
+    </section>
+  </div>
+</section>
+
+<div id="footer-placeholder"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="./app.js"></script>
+
+<script>
+function cardRow(title, lines) {
+  const div = document.createElement("div");
+  div.className = "card";
+  div.innerHTML = `<h3>${title}</h3>` + lines.map(l => `<p>${l}</p>`).join("");
+  return div;
+}
+
+function fmtDate(ts) {
+  try { return new Date(ts).toLocaleString(); } catch { return ts; }
+}
+
+async function loadAdminData() {
+  // CARE REQUESTS
+  const { data: cr, error: crErr } = await window.db
+    .from("care_requests")
+    .select("*")
+    .order("created_at", { ascending:false });
+
+  const crBox = document.getElementById("careRequests");
+  crBox.innerHTML = "";
+  if (crErr) {
+    crBox.innerHTML = "<p>Unable to load care requests.</p>";
+    console.error(crErr);
+  } else if (!cr || cr.length === 0) {
+    crBox.innerHTML = "<p>No care requests yet.</p>";
+  } else {
+    cr.forEach(x => crBox.appendChild(cardRow(
+      `${x.name} (${fmtDate(x.created_at)})`,
+      [
+        `<strong>Email:</strong> ${x.email}`,
+        `<strong>Type:</strong> ${x.care_type}`,
+        `<strong>Location:</strong> ${x.location}`,
+        `<strong>Schedule:</strong> ${x.schedule || ""}`,
+        `${x.details || ""}`
+      ]
+    )));
+  }
+
+  // CAREGIVER APPLICATIONS
+  const { data: ca, error: caErr } = await window.db
+    .from("caregiver_applications")
+    .select("*")
+    .order("created_at", { ascending:false });
+
+  const caBox = document.getElementById("caregiverApps");
+  caBox.innerHTML = "";
+  if (caErr) {
+    caBox.innerHTML = "<p>Unable to load caregiver applications.</p>";
+    console.error(caErr);
+  } else if (!ca || ca.length === 0) {
+    caBox.innerHTML = "<p>No caregiver applications yet.</p>";
+  } else {
+    ca.forEach(x => caBox.appendChild(cardRow(
+      `${x.name} (${fmtDate(x.created_at)})`,
+      [
+        `<strong>Email:</strong> ${x.email}`,
+        `<strong>Phone:</strong> ${x.phone}`,
+        `<strong>Type:</strong> ${x.care_type}`,
+        `<strong>Location:</strong> ${x.location}`,
+        `${(x.experience || "").replace(/\n/g,"<br>")}`
+      ]
+    )));
+  }
+
+  // JOB APPLICATIONS (linked to job_id)
+  const { data: ja, error: jaErr } = await window.db
+    .from("job_applications")
+    .select("*")
+    .order("created_at", { ascending:false });
+
+  const jaBox = document.getElementById("jobApps");
+  jaBox.innerHTML = "";
+  if (jaErr) {
+    jaBox.innerHTML = "<p>Unable to load job applications.</p>";
+    console.error(jaErr);
+  } else if (!ja || ja.length === 0) {
+    jaBox.innerHTML = "<p>No job applications yet.</p>";
+  } else {
+    ja.forEach(x => jaBox.appendChild(cardRow(
+      `${x.applicant_name} (${fmtDate(x.created_at)})`,
+      [
+        `<strong>Email:</strong> ${x.applicant_email}`,
+        `<strong>Phone:</strong> ${x.applicant_phone}`,
+        `<strong>Location:</strong> ${x.applicant_location}`,
+        `<strong>Job ID:</strong> ${x.job_id}`,
+        `${(x.message || "").replace(/\n/g,"<br>")}`
+      ]
+    )));
+  }
+
+  // CAREGIVER REQUESTS (linked to caregiver_id)
+  const { data: rq, error: rqErr } = await window.db
+    .from("caregiver_requests")
+    .select("*")
+    .order("created_at", { ascending:false });
+
+  const rqBox = document.getElementById("caregiverReqs");
+  rqBox.innerHTML = "";
+  if (rqErr) {
+    rqBox.innerHTML = "<p>Unable to load caregiver requests.</p>";
+    console.error(rqErr);
+  } else if (!rq || rq.length === 0) {
+    rqBox.innerHTML = "<p>No caregiver requests yet.</p>";
+  } else {
+    rq.forEach(x => rqBox.appendChild(cardRow(
+      `${x.requester_name} (${fmtDate(x.created_at)})`,
+      [
+        `<strong>Email:</strong> ${x.requester_email}`,
+        `<strong>Phone:</strong> ${x.requester_phone}`,
+        `<strong>Location:</strong> ${x.requester_location}`,
+        `<strong>Schedule:</strong> ${x.schedule || ""}`,
+        `<strong>Caregiver ID:</strong> ${x.caregiver_id}`,
+        `${(x.message || "").replace(/\n/g,"<br>")}`
+      ]
+    )));
+  }
+}
+
+async function showDashboardIfLoggedIn() {
+  const { data } = await window.db.auth.getSession();
+  const session = data?.session;
+
+  if (session) {
+    document.getElementById("loginCard").style.display = "none";
+    document.getElementById("dashboard").style.display = "block";
+    await loadAdminData();
+  }
+}
+
+window.addEventListener("DOMContentLoaded", () => {
+  const loginForm = document.getElementById("loginForm");
+  const loginMsg = document.getElementById("loginMsg");
+
+  loginForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    loginMsg.style.display = "none";
+
+    const email = document.getElementById("adminEmail").value;
+    const password = document.getElementById("adminPassword").value;
+
+    const { error } = await window.db.auth.signInWithPassword({ email, password });
+    if (error) {
+      alert("Login failed. Check your email/password.");
+      console.error(error);
+      return;
+    }
+
+    await showDashboardIfLoggedIn();
+  });
+
+  document.getElementById("signOutBtn")?.addEventListener("click", async () => {
+    await window.db.auth.signOut();
+    location.reload();
+  });
+
+  showDashboardIfLoggedIn();
+});
+</script>
+
+</body>
+</html>
