@@ -14,6 +14,7 @@
 <div id="header-placeholder"></div>
 
 <div class="hero">
+  <a class="button" href="./findcare.html">Post a Job</a>
 <h1>Care Jobs</h1>
 <div class="subtitle">
 Browse local care opportunities in the Grove network.
@@ -70,18 +71,18 @@ Browse local care opportunities in the Grove network.
     list.forEach((job) => {
       const card = document.createElement("div");
       card.className = "card";
-      card.innerHTML = `
-        <h3>${job.title}</h3>
-        <p><strong>Type:</strong> ${job.care_type}</p>
-        <p><strong>Location:</strong> ${job.location} (local)</p>
-        <p><strong>Schedule:</strong> ${job.schedule}</p>
-        ${job.pay_range ? `<p><strong>Pay:</strong> ${job.pay_range}</p>` : ``}
-        <p>${job.description}</p>
-        <p style="font-size:13px;color:#777;">
+card.innerHTML = `
+  <h3>${job.title}</h3>
+  <p><strong>Type:</strong> ${job.care_type}</p>
+  <p><strong>Location:</strong> ${job.location} (local)</p>
+  <p><strong>Schedule:</strong> ${job.schedule}</p>
+  ${job.pay_range ? `<p><strong>Pay:</strong> ${job.pay_range}</p>` : ``}
+  <p>${job.description}</p>
+  <p style="font-size:13px;color:#777;">
 Posted ${new Date(job.created_at).toLocaleDateString()}
 </p>
-        <a class="button" href="./apply.html?job_id=${job.id}">Apply for this job</a>
-      `;
+  <a class="button" href="./apply.html?job_id=${job.id}">Apply for this job</a>
+`;
       container.appendChild(card);
     });
   }
