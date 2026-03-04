@@ -86,7 +86,7 @@ window.addEventListener("DOMContentLoaded", () => {
       const { error } = await window.db.from("care_requests").insert([payload]);
 
       if (error) {
-        alert("Request failed. Please try again.");
+        alert(`Request failed: ${error?.message || "Unknown error"}`);
         console.error(error);
         return;
       }
@@ -117,7 +117,7 @@ window.addEventListener("DOMContentLoaded", () => {
       const { error } = await window.db.from("caregiver_applications").insert([payload]);
 
       if (error) {
-        alert("Application failed. Please try again.");
+        alert(`Request failed: ${error?.message || "Unknown error"}`);
         console.error(error);
         return;
       }
