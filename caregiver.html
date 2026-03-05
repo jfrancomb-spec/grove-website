@@ -20,6 +20,7 @@
       <div class="subtitle">
         Create a caregiver profile and connect with local families who need childcare, senior care, pet care, or household help.
       </div>
+
       <a class="button" href="#apply">Apply Now</a>
       <a class="button" href="./jobs.html">Browse Care Jobs</a>
     </div>
@@ -36,12 +37,12 @@
 
         <div class="card">
           <h3>Clear Expectations</h3>
-          <p>Care requests include details so you can decide if it fits your availability.</p>
+          <p>Care requests include details so you can decide if the opportunity fits your availability.</p>
         </div>
 
         <div class="card">
           <h3>Trust & Accountability</h3>
-          <p>Grove is built for mutual respect — with two-way reviews for families and caregivers.</p>
+          <p>Grove is designed for mutual respect between families and caregivers.</p>
         </div>
       </div>
     </section>
@@ -49,12 +50,14 @@
     <!-- APPLY FORM -->
     <section id="apply">
       <h2>Apply to Become a Caregiver</h2>
+
       <p>
-        Tell us a bit about yourself. Once approved, your profile can be visible in the Grove network.
+        Tell families a bit about yourself. Once approved, your profile can be visible in the Grove network.
       </p>
 
       <div class="form-card">
         <form id="caregiverForm">
+
           <div class="row">
             <input id="cg_name" type="text" placeholder="Your Name" required />
           </div>
@@ -83,29 +86,37 @@
           </div>
 
           <div class="row">
-            <textarea id="cg_experience" placeholder="Tell us about your experience" required></textarea>
+            <textarea id="cg_experience" placeholder="Tell families about your experience" required></textarea>
           </div>
 
           <button class="button" type="submit">Apply Now</button>
+
         </form>
 
         <!-- Shown by app.js after successful submit -->
         <p id="caregiverSuccess" class="success">
-          ✅ Application received! You can browse jobs while you wait.
+          ✅ Application received! You can browse care jobs anytime.
         </p>
 
-        <div style="margin-top: 22px;">
-          <h3 style="margin-bottom: 6px;">What Happens Next</h3>
-          <p style="margin-top: 0;">
-            After you apply, Grove reviews your application for identity and basic fit with the network.
-            If approved, your caregiver profile can be visible to families, and you can browse local care opportunities.
-            You decide which jobs fit your schedule — and families decide which caregivers feel like the right fit.
+        <div style="margin-top:22px;">
+          <h3 style="margin-bottom:6px;">What Happens Next</h3>
+
+          <p style="margin-top:0;">
+            After you apply, Grove reviews your submission for identity and basic network standards.
+            If approved, your caregiver profile can be visible to families browsing the Grove network.
+          </p>
+
+          <p>
+            You can also browse care requests and job opportunities.
+            Caregivers decide which opportunities fit their schedule, and families decide which caregivers
+            they’d like to connect with.
           </p>
         </div>
 
-        <p style="margin-top: 16px;">
+        <p style="margin-top:16px;">
           <a href="./index.html">← Back to Home</a>
         </p>
+
       </div>
     </section>
   </main>
@@ -116,5 +127,6 @@
   <!-- Scripts -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
   <script src="./app.js"></script>
+
 </body>
 </html>
