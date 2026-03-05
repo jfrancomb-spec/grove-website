@@ -141,11 +141,10 @@ function wireFindCareForm() {
 
     const { error } = await window.db.from("care_requests").insert([payload]);
 
-    if (error) {
-      alert(`Request failed: ${error?.message || "Unknown error"}`);
-      console.error(error);
-      return;
-    }
+if (error) {
+  handleError(error, "Application failed");
+  return;
+}
 
     const msg = document.getElementById("careSuccess");
     if (msg) msg.style.display = "block";
@@ -174,8 +173,7 @@ function wireCaregiverForm() {
     const { error } = await window.db.from("caregiver_applications").insert([payload]);
 
 if (error) {
-  alert(`Application failed: ${error?.message || "Unknown error"}`);
-  console.error(error);
+  handleError(error, "Application failed");
   return;
 }
 
