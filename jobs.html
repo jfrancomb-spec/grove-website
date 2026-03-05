@@ -1,160 +1,174 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Grove | Care Jobs</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Grove | Care Jobs</title>
 
-<link rel="stylesheet" href="./styles.css">
-<link rel="icon" type="image/png" href="./MainIcon.png">
-
+  <link rel="stylesheet" href="./styles.css" />
+  <link rel="icon" type="image/png" href="./MainIcon.png" />
 </head>
+
 <body>
+  <!-- Shared header -->
+  <div id="header-placeholder"></div>
 
-<div id="header-placeholder"></div>
+  <main>
+    <!-- HERO -->
+    <div class="hero">
+      <h1>Care Jobs</h1>
+      <div class="subtitle">
+        Browse local care opportunities in the Grove network and apply directly when a job fits your availability.
+      </div>
 
-<div class="hero">
-  <h1>Care Jobs</h1>
-  <div class="subtitle">
-    Browse local care opportunities in the Grove network.
-  </div>
+      <a class="button" href="./findcare.html">Post a Care Request</a>
+      <a class="button" href="./caregivers.html">Browse Caregivers</a>
+    </div>
 
-  <a class="button" href="./findcare.html">Post a Job</a>
-</div>
+    <!-- FILTERS + RESULTS -->
+    <section>
+      <div class="form-card" style="margin-bottom: 16px;">
+        <h2 style="margin-top: 0;">Filter Jobs</h2>
 
-<section>
-<div class="form-card" style="margin-bottom:16px;">
-  <h2 style="margin-top:0;">Filter Jobs</h2>
+        <div class="row">
+          <select id="jobFilterType">
+            <option value="">All care types</option>
+            <option>Childcare</option>
+            <option>Senior Care</option>
+            <option>Pet Care</option>
+            <option>Household Help</option>
+            <option>Other</option>
+          </select>
+        </div>
 
-  <div class="row">
-    <select id="jobFilterType">
-      <option value="">All care types</option>
-      <option>Childcare</option>
-      <option>Senior Care</option>
-      <option>Pet Care</option>
-      <option>Household Help</option>
-      <option>Other</option>
-    </select>
-  </div>
+        <div class="row">
+          <input id="jobFilterLocation" type="text" placeholder="Filter by city/neighborhood (optional)" />
+        </div>
 
-  <div class="row">
-    <input id="jobFilterLocation" type="text" placeholder="Filter by city/neighborhood (optional)">
-  </div>
-<p id="jobsCount" style="margin:8px 0 0 0; font-weight:600;"></p>
-  <button class="button" type="button" id="jobFilterBtn">Apply Filters</button>
-  <button class="button" type="button" id="clearFilters">Clear Filters</button>
-</div>
-<div id="jobsContainer" class="cards"></div>
+        <p id="jobsCount" style="margin: 8px 0 0 0; font-weight: 600;"></p>
 
-</section>
+        <button class="button" type="button" id="jobFilterBtn">Apply Filters</button>
+        <button class="button" type="button" id="clearFilters">Clear Filters</button>
+      </div>
 
-<div id="footer-placeholder"></div>
+      <div id="jobsContainer" class="cards"></div>
+    </section>
+  </main>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-<script src="./app.js"></script>
+  <!-- Shared footer -->
+  <div id="footer-placeholder"></div>
 
-<script>
-(function () {
-  let allJobs = [];
+  <!-- Scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script src="./app.js"></script>
 
-  function renderJobs(list) {
-    const container = document.getElementById("jobsContainer");
-    const countEl = document.getElementById("jobsCount");
+  <!-- Page script -->
+  <script>
+    (function () {
+      let allJobs = [];
 
-    if (countEl) countEl.textContent = `${list.length} job(s) shown`;
+      // Render job cards
+      function renderJobs(list) {
+        const container = document.getElementById("jobsContainer");
+        const countEl = document.getElementById("jobsCount");
 
-    container.innerHTML = "";
-    if (!list.length) {
-      container.innerHTML = "<p>No jobs match those filters yet.</p>";
-      return;
-    }
+        if (countEl) countEl.textContent = `${list.length} job(s) shown`;
 
-    list.forEach((job) => {
-      const card = document.createElement("div");
-      card.className = "card";
-card.innerHTML = `
-  <h3>${job.title}</h3>
-  <p><strong>Type:</strong> ${job.care_type}</p>
-  <p><strong>Location:</strong> ${job.location} (local)</p>
-  <p><strong>Schedule:</strong> ${job.schedule}</p>
-  ${job.pay_range ? `<p><strong>Pay:</strong> ${job.pay_range}</p>` : ``}
-  <p>${job.description}</p>
-  <p style="font-size:13px;color:#777;">
-Posted ${new Date(job.created_at).toLocaleDateString()}
-</p>
-  <a class="button" href="./apply.html?job_id=${job.id}">Apply for this job</a>
-`;
-      container.appendChild(card);
-    });
-  }
+        container.innerHTML = "";
+        if (!list.length) {
+          container.innerHTML = "<p>No jobs match those filters yet.</p>";
+          return;
+        }
 
-  function applyFilters() {
-    const typeVal = (document.getElementById("jobFilterType")?.value || "").trim().toLowerCase();
-    const locVal = (document.getElementById("jobFilterLocation")?.value || "").trim().toLowerCase();
+        list.forEach((job) => {
+          const card = document.createElement("div");
+          card.className = "card";
 
-    const filtered = allJobs.filter((job) => {
-      const jobType = (job.care_type || "").trim().toLowerCase();
-      const jobLoc = (job.location || "").trim().toLowerCase();
+          card.innerHTML = `
+            <h3>${job.title}</h3>
+            <p><strong>Type:</strong> ${job.care_type}</p>
+            <p><strong>Location:</strong> ${job.location} (local)</p>
+            <p><strong>Schedule:</strong> ${job.schedule}</p>
+            ${job.pay_range ? `<p><strong>Pay:</strong> ${job.pay_range}</p>` : ``}
+            <p>${job.description}</p>
+            <p style="font-size: 13px; color: #777;">
+              Posted ${new Date(job.created_at).toLocaleDateString()}
+            </p>
+            <a class="button" href="./apply.html?job_id=${job.id}">Apply for this job</a>
+          `;
 
-      const typeOk = !typeVal || jobType === typeVal;
-      const locOk = !locVal || jobLoc.includes(locVal);
+          container.appendChild(card);
+        });
+      }
 
-      return typeOk && locOk;
-    });
+      // Apply filters to loaded list
+      function applyFilters() {
+        const typeVal = (document.getElementById("jobFilterType")?.value || "").trim().toLowerCase();
+        const locVal = (document.getElementById("jobFilterLocation")?.value || "").trim().toLowerCase();
 
-    renderJobs(filtered);
-  }
+        const filtered = allJobs.filter((job) => {
+          const jobType = (job.care_type || "").trim().toLowerCase();
+          const jobLoc = (job.location || "").trim().toLowerCase();
 
-  async function loadJobsOnce() {
-    // Wait until window.db exists (guards against load order issues)
-    let tries = 0;
-    while (!window.db && tries < 40) {
-      await new Promise((r) => setTimeout(r, 50));
-      tries++;
-    }
-    if (!window.db) {
-      document.getElementById("jobsContainer").innerHTML =
-        "<p>Database connection not ready. Please refresh.</p>";
-      return;
-    }
+          const typeOk = !typeVal || jobType === typeVal;
+          const locOk = !locVal || jobLoc.includes(locVal);
 
-const { data, error } = await window.db
-  .from("job_posts")
-  .select("*")
-  .eq("is_active", true)
-  .order("created_at", { ascending: false });
+          return typeOk && locOk;
+        });
 
-    if (error) {
-      document.getElementById("jobsContainer").innerHTML =
-        "<p>Unable to load jobs right now.</p>";
-      console.error(error);
-      return;
-    }
+        renderJobs(filtered);
+      }
 
-    allJobs = data || [];
-    applyFilters();
-    document.getElementById("clearFilters")?.addEventListener("click", () => {
-  document.getElementById("jobFilterType").value = "";
-  document.getElementById("jobFilterLocation").value = "";
-  applyFilters();
-});
-  }
+      // Load jobs from Supabase (active only)
+      async function loadJobsOnce() {
+        // Wait until window.db exists (guards load order)
+        let tries = 0;
+        while (!window.db && tries < 40) {
+          await new Promise((r) => setTimeout(r, 50));
+          tries++;
+        }
 
-  window.addEventListener("DOMContentLoaded", () => {
-    // Wire filters
-    document.getElementById("jobFilterBtn")?.addEventListener("click", () => {
-      console.log("Apply Filters clicked");
-      applyFilters();
-    });
+        const container = document.getElementById("jobsContainer");
+        if (!window.db) {
+          container.innerHTML = "<p>Database connection not ready. Please refresh.</p>";
+          return;
+        }
 
-    // Optional: auto-filter as they type/select
-    document.getElementById("jobFilterType")?.addEventListener("change", applyFilters);
-    document.getElementById("jobFilterLocation")?.addEventListener("input", applyFilters);
+        const { data, error } = await window.db
+          .from("job_posts")
+          .select("*")
+          .eq("is_active", true)
+          .order("created_at", { ascending: false });
 
-    loadJobsOnce();
-  });
-})();
-</script>
+        if (error) {
+          container.innerHTML = "<p>Unable to load jobs right now.</p>";
+          console.error(error);
+          return;
+        }
 
+        allJobs = data || [];
+        applyFilters();
+      }
+
+      // Wire up filter controls
+      function wireEvents() {
+        document.getElementById("jobFilterBtn")?.addEventListener("click", applyFilters);
+
+        document.getElementById("clearFilters")?.addEventListener("click", () => {
+          document.getElementById("jobFilterType").value = "";
+          document.getElementById("jobFilterLocation").value = "";
+          applyFilters();
+        });
+
+        document.getElementById("jobFilterType")?.addEventListener("change", applyFilters);
+        document.getElementById("jobFilterLocation")?.addEventListener("input", applyFilters);
+      }
+
+      window.addEventListener("DOMContentLoaded", () => {
+        wireEvents();
+        loadJobsOnce();
+      });
+    })();
+  </script>
 </body>
 </html>
