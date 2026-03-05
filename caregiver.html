@@ -4,87 +4,117 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Grove | Become a Caregiver</title>
-  <link rel="stylesheet" href="./styles.css">
-  <link rel="icon" type="image/png" href="./MainIcon.png">
+
+  <link rel="stylesheet" href="./styles.css" />
+  <link rel="icon" type="image/png" href="./MainIcon.png" />
 </head>
+
 <body>
+  <!-- Shared header -->
+  <div id="header-placeholder"></div>
 
-<div id="header-placeholder"></div>
-
-<div class="hero">
-  <h1>Become a Trusted Grove Caregiver</h1>
-  <div class="subtitle">
-    Join a growing network of local caregivers who value reliability, respect, and trust.
-  </div>
-  <a class="button" href="#apply">Apply Now</a>
-</div>
-
-<section>
-  <h2>What You Can Expect</h2>
-
-<div class="cards">
-<div class="card">
-  <h3 style="margin-top:0;">Local Opportunities</h3>
-      <p style="margin-bottom:0;">Connect with families close to home.</p>
-    </div>
-
- <div class="card">
-   <h3 style="margin-top:0;">Respectful Matches</h3>
-      <p style="margin-bottom:0;">Work with families who value communication and reliability.</p>
-    </div>
-
- <div class="card">
-   <h3 style="margin-top:0;">Trust-First Community</h3>
-      <p style="margin-bottom:0;">A network built on accountability and clear expectations.</p>
-    </div>
-  </div>
-</section>
-
-<section id="apply">
-  <h2>Apply to Become a Caregiver</h2>
-  <p>
-    Tell us a bit about yourself. Grove reviews every application and reaches out with next steps.
-  </p>
-
- <div class="form-card">
-   <form id="caregiverForm">
-      <div class="row"><input id="cg_name" type="text" placeholder="Your Name" required></div>
-      <div class="row"><input id="cg_phone" type="text" placeholder="Phone Number" required></div>
-      <div class="row"><input id="cg_email" type="email" placeholder="Best Email Address" required></div>
-      <div class="row"><input id="cg_location" type="text" placeholder="City or Neighborhood" required></div>
-
-      <div class="row">
-        <select id="cg_care_type" required>
-          <option value="">Type of Care You Provide</option>
-          <option>Childcare</option>
-          <option>Senior Care</option>
-          <option>Pet Care</option>
-          <option>Household Help</option>
-          <option>Other</option>
-        </select>
+  <main>
+    <!-- HERO -->
+    <div class="hero">
+      <h1>Join the Grove Caregiver Network</h1>
+      <div class="subtitle">
+        Create a caregiver profile and connect with local families who need childcare, senior care, pet care, or household help.
       </div>
+      <a class="button" href="#apply">Apply Now</a>
+      <a class="button" href="./jobs.html">Browse Care Jobs</a>
+    </div>
 
-      <div class="row"><textarea id="cg_experience" placeholder="Tell us about your experience" required></textarea></div>
+    <!-- WHAT TO EXPECT -->
+    <section>
+      <h2>What You Can Expect</h2>
 
-      <button class="button" type="submit">Apply Now</button>
-    </form>
+      <div class="cards">
+        <div class="card">
+          <h3>Local Opportunities</h3>
+          <p>Connect with families close to home.</p>
+        </div>
 
-<p id="caregiverSuccess" class="success">✅ Application received! Grove will contact you soon.</p>
+        <div class="card">
+          <h3>Clear Expectations</h3>
+          <p>Care requests include details so you can decide if it fits your availability.</p>
+        </div>
 
-  <div style="margin-top:22px;">
-    <h3 style="margin-bottom:6px;">What Happens Next</h3>
-    <p style="margin-top:0;">
-      After you apply, Grove reviews your information and reaches out to learn more about your availability.
-      Our goal is thoughtful matches with local families who value dependable, trusted care.
-    </p>
-  </div>
-    <p style="margin-top:16px;"><a href="./index.html" style="color:var(--link);text-decoration:none;">← Back to Home</a></p>
-  </div>
-</section>
+        <div class="card">
+          <h3>Trust & Accountability</h3>
+          <p>Grove is built for mutual respect — with two-way reviews for families and caregivers.</p>
+        </div>
+      </div>
+    </section>
 
-<div id="footer-placeholder"></div>
+    <!-- APPLY FORM -->
+    <section id="apply">
+      <h2>Apply to Become a Caregiver</h2>
+      <p>
+        Tell us a bit about yourself. Once approved, your profile can be visible in the Grove network.
+      </p>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-<script src="./app.js"></script>
+      <div class="form-card">
+        <form id="caregiverForm">
+          <div class="row">
+            <input id="cg_name" type="text" placeholder="Your Name" required />
+          </div>
+
+          <div class="row">
+            <input id="cg_phone" type="text" placeholder="Phone Number" required />
+          </div>
+
+          <div class="row">
+            <input id="cg_email" type="email" placeholder="Best Email Address" required />
+          </div>
+
+          <div class="row">
+            <input id="cg_location" type="text" placeholder="City or Neighborhood" required />
+          </div>
+
+          <div class="row">
+            <select id="cg_care_type" required>
+              <option value="">Type of Care You Provide</option>
+              <option>Childcare</option>
+              <option>Senior Care</option>
+              <option>Pet Care</option>
+              <option>Household Help</option>
+              <option>Other</option>
+            </select>
+          </div>
+
+          <div class="row">
+            <textarea id="cg_experience" placeholder="Tell us about your experience" required></textarea>
+          </div>
+
+          <button class="button" type="submit">Apply Now</button>
+        </form>
+
+        <!-- Shown by app.js after successful submit -->
+        <p id="caregiverSuccess" class="success">
+          ✅ Application received! You can browse jobs while you wait.
+        </p>
+
+        <div style="margin-top: 22px;">
+          <h3 style="margin-bottom: 6px;">What Happens Next</h3>
+          <p style="margin-top: 0;">
+            After you apply, Grove reviews your application for identity and basic fit with the network.
+            If approved, your caregiver profile can be visible to families, and you can browse local care opportunities.
+            You decide which jobs fit your schedule — and families decide which caregivers feel like the right fit.
+          </p>
+        </div>
+
+        <p style="margin-top: 16px;">
+          <a href="./index.html">← Back to Home</a>
+        </p>
+      </div>
+    </section>
+  </main>
+
+  <!-- Shared footer -->
+  <div id="footer-placeholder"></div>
+
+  <!-- Scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script src="./app.js"></script>
 </body>
 </html>
