@@ -4,95 +4,147 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Grove | Apply</title>
-  <link rel="stylesheet" href="./styles.css">
-  <link rel="icon" type="image/png" href="./MainIcon.png">
+
+  <link rel="stylesheet" href="./styles.css" />
+  <link rel="icon" type="image/png" href="./MainIcon.png" />
 </head>
+
 <body>
+  <!-- Shared header -->
+  <div id="header-placeholder"></div>
 
-<div id="header-placeholder"></div>
+  <main>
+    <!-- HERO -->
+    <div class="hero">
+      <h1>Apply for This Job</h1>
+      <div class="subtitle" id="jobSubtitle">Loading job details...</div>
+    </div>
 
-<div class="hero">
-  <h1>Apply for this Job</h1>
-  <div class="subtitle" id="jobSubtitle">Loading job details...</div>
-</div>
+    <!-- APPLY FORM -->
+    <section>
+      <div class="form-card">
+        <h2 style="margin-top: 0;">Your Info</h2>
 
-<section>
-  <div class="form-card">
-    <h2 style="margin-top:0;">Your Info</h2>
+        <p style="margin-top: 0;">
+          Send a quick message to the family. They’ll review applications and respond if they’d like to connect.
+        </p>
 
-    <form id="applyForm">
-      <div class="row"><input id="app_name" type="text" placeholder="Your Name" required></div>
-      <div class="row"><input id="app_email" type="email" placeholder="Email Address" required></div>
-      <div class="row"><input id="app_phone" type="text" placeholder="Phone Number" required></div>
-      <div class="row"><input id="app_location" type="text" placeholder="City or Neighborhood" required></div>
-      <div class="row"><textarea id="app_message" placeholder="Message to the family (experience, availability, questions)" required></textarea></div>
+        <form id="applyForm">
+          <div class="row">
+            <input id="app_name" type="text" placeholder="Your Name" required />
+          </div>
 
-      <button class="button" type="submit">Submit Application</button>
-    </form>
+          <div class="row">
+            <input id="app_email" type="email" placeholder="Email Address" required />
+          </div>
 
-    <p id="applySuccess" class="success">✅ Application sent! Grove will contact you soon.</p>
-  </div>
-</section>
+          <div class="row">
+            <input id="app_phone" type="text" placeholder="Phone Number" required />
+          </div>
 
-<div id="footer-placeholder"></div>
+          <div class="row">
+            <input id="app_location" type="text" placeholder="City or Neighborhood" required />
+          </div>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-<script src="./app.js"></script>
+          <div class="row">
+            <textarea
+              id="app_message"
+              placeholder="Message to the family (experience, availability, questions)"
+              required
+            ></textarea>
+          </div>
 
-<script>
-async function loadJobAndWireApply() {
-  const params = new URLSearchParams(window.location.search);
-  const jobId = params.get("job_id");
-  if (!jobId) {
-    document.getElementById("jobSubtitle").textContent = "Missing job id.";
-    return;
-  }
+          <button class="button" type="submit">Submit Application</button>
+        </form>
 
-  // Load job details for display
-  const { data: job, error } = await window.db
-    .from("job_posts")
-    .select("id,title,care_type,location,schedule")
-    .eq("id", jobId)
-    .single();
+        <!-- Shown after successful submit -->
+        <p id="applySuccess" class="success">
+          ✅ Application sent! If the family is interested, they can reach out.
+        </p>
 
-  if (error || !job) {
-    document.getElementById("jobSubtitle").textContent = "Unable to load job details.";
-    console.error(error);
-    return;
-  }
+        <p style="margin-top: 16px;">
+          <a href="./jobs.html">← Back to Jobs</a>
+        </p>
+      </div>
+    </section>
+  </main>
 
-  document.getElementById("jobSubtitle").textContent =
-    `${job.title} • ${job.care_type} • ${job.location} • ${job.schedule}`;
+  <!-- Shared footer -->
+  <div id="footer-placeholder"></div>
 
-  const form = document.getElementById("applyForm");
-  form.addEventListener("submit", async (e) => {
-    e.preventDefault();
+  <!-- Scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script src="./app.js"></script>
 
-    const payload = {
-      job_id: job.id,
-      applicant_name: document.getElementById("app_name").value,
-      applicant_email: document.getElementById("app_email").value,
-      applicant_phone: document.getElementById("app_phone").value,
-      applicant_location: document.getElementById("app_location").value,
-      message: document.getElementById("app_message").value,
-    };
+  <!-- Page script -->
+  <script>
+    async function loadJobAndWireApply() {
+      const subtitle = document.getElementById("jobSubtitle");
+      const form = document.getElementById("applyForm");
 
-    const { error: insErr } = await window.db.from("job_applications").insert([payload]);
+      const params = new URLSearchParams(window.location.search);
+      const jobId = params.get("job_id");
 
-    if (insErr) {
-      alert("Application failed. Please try again.");
-      console.error(insErr);
-      return;
+      if (!jobId) {
+        subtitle.textContent = "Missing job id.";
+        return;
+      }
+
+      // Wait until window.db exists (guards load order)
+      let tries = 0;
+      while (!window.db && tries < 40) {
+        await new Promise((r) => setTimeout(r, 50));
+        tries++;
+      }
+      if (!window.db) {
+        subtitle.textContent = "Database connection not ready. Please refresh.";
+        return;
+      }
+
+      // Load job details for display
+      const { data: job, error } = await window.db
+        .from("job_posts")
+        .select("id,title,care_type,location,schedule")
+        .eq("id", jobId)
+        .single();
+
+      if (error || !job) {
+        subtitle.textContent = "Unable to load job details.";
+        console.error(error);
+        return;
+      }
+
+      subtitle.textContent = `${job.title} • ${job.care_type} • ${job.location} • ${job.schedule}`;
+
+      // Submit application
+      form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+
+        const payload = {
+          job_id: job.id,
+          applicant_name: document.getElementById("app_name")?.value || "",
+          applicant_email: document.getElementById("app_email")?.value || "",
+          applicant_phone: document.getElementById("app_phone")?.value || "",
+          applicant_location: document.getElementById("app_location")?.value || "",
+          message: document.getElementById("app_message")?.value || ""
+        };
+
+        const { error: insErr } = await window.db
+          .from("job_applications")
+          .insert([payload]);
+
+        if (insErr) {
+          // handleError is defined in app.js
+          handleError(insErr, "Application failed");
+          return;
+        }
+
+        // showSuccess is defined in app.js
+        showSuccess("applySuccess", form);
+      });
     }
 
-    document.getElementById("applySuccess").style.display = "block";
-    form.style.display = "none";
-    document.getElementById("applySuccess").scrollIntoView({ behavior: "smooth" });
-  });
-}
-
-loadJobAndWireApply();
-</script>
-
+    loadJobAndWireApply();
+  </script>
 </body>
 </html>
