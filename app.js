@@ -164,11 +164,11 @@ function wireCaregiverForm() {
 
     const { error } = await window.db.from("caregiver_applications").insert([payload]);
 
-    if (error) {
-      alert(`Application failed: ${error?.message || "Unknown error"`);
-      console.error(error);
-      return;
-    }
+if (error) {
+  alert(`Application failed: ${error?.message || "Unknown error"}`);
+  console.error(error);
+  return;
+}
 
     const msg = document.getElementById("caregiverSuccess");
     if (msg) msg.style.display = "block";
