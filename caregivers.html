@@ -1,157 +1,177 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Grove | Caregivers</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Grove | Caregivers</title>
 
-<link rel="stylesheet" href="./styles.css">
-<link rel="icon" type="image/png" href="./MainIcon.png">
+  <link rel="stylesheet" href="./styles.css" />
+  <link rel="icon" type="image/png" href="./MainIcon.png" />
 </head>
 
 <body>
+  <!-- Shared header -->
+  <div id="header-placeholder"></div>
 
-<div id="header-placeholder"></div>
+  <main>
+    <!-- HERO -->
+    <div class="hero">
+      <h1>Caregivers</h1>
+      <div class="subtitle">
+        Browse local caregivers in the Grove network and reach out when someone feels like a good fit.
+      </div>
+      <a class="button" href="./findcare.html">Post a Care Request</a>
+    </div>
 
-<div class="hero">
-  <h1>Caregivers</h1>
-  <div class="subtitle">
-    Browse local caregivers in the Grove network.
-  </div>
-</div>
+    <!-- FILTERS + RESULTS -->
+    <section>
+      <div class="form-card" style="margin-bottom: 16px;">
+        <h2 style="margin-top: 0;">Filter Caregivers</h2>
 
-<section>
-  <div class="form-card" style="margin-bottom:16px;">
-  <h2 style="margin-top:0;">Filter Caregivers</h2>
+        <div class="row">
+          <select id="cgFilterType">
+            <option value="">All care types</option>
+            <option>Childcare</option>
+            <option>Senior Care</option>
+            <option>Pet Care</option>
+            <option>Household Help</option>
+            <option>Other</option>
+          </select>
+        </div>
 
-  <div class="row">
-    <select id="cgFilterType">
-      <option value="">All care types</option>
-      <option>Childcare</option>
-      <option>Senior Care</option>
-      <option>Pet Care</option>
-      <option>Household Help</option>
-      <option>Other</option>
-    </select>
-  </div>
+        <div class="row">
+          <input id="cgFilterLocation" type="text" placeholder="Filter by city/neighborhood (optional)" />
+        </div>
 
-  <div class="row">
-    <input id="cgFilterLocation" type="text" placeholder="Filter by city/neighborhood (optional)">
-  </div>
+        <div class="row">
+          <input id="cgFilterKeyword" type="text" placeholder="Keyword (availability, bio, etc.)" />
+        </div>
 
-  <div class="row">
-    <input id="cgFilterKeyword" type="text" placeholder="Keyword (availability, bio, etc.)">
-  </div>
+        <p id="cgCount" style="margin: 8px 0 0 0; font-weight: 600;"></p>
 
-  <p id="cgCount" style="margin:8px 0 0 0; font-weight:600;"></p>
+        <button class="button" type="button" id="cgApplyBtn">Apply Filters</button>
+        <button class="button" type="button" id="cgClearBtn">Clear Filters</button>
+      </div>
 
-  <button class="button" type="button" id="cgApplyBtn">Apply Filters</button>
-  <button class="button" type="button" id="cgClearBtn">Clear Filters</button>
-</div>
-  <div id="caregiversContainer" class="cards"></div>
-</section>
+      <div id="caregiversContainer" class="cards"></div>
+    </section>
+  </main>
 
-<div id="footer-placeholder"></div>
+  <!-- Shared footer -->
+  <div id="footer-placeholder"></div>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-<script src="./app.js"></script>
+  <!-- Scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script src="./app.js"></script>
 
-<script>
-(function () {
-  let allCaregivers = [];
+  <!-- Page script -->
+  <script>
+    (function () {
+      let allCaregivers = [];
 
-  function render(list) {
-    const container = document.getElementById("caregiversContainer");
-    const countEl = document.getElementById("cgCount");
-    if (countEl) countEl.textContent = `${list.length} caregiver(s) shown`;
+      // Render caregiver cards
+      function render(list) {
+        const container = document.getElementById("caregiversContainer");
+        const countEl = document.getElementById("cgCount");
 
-    container.innerHTML = "";
-    if (!list.length) {
-      container.innerHTML = "<p>No caregivers match those filters yet.</p>";
-      return;
-    }
+        if (countEl) countEl.textContent = `${list.length} caregiver(s) shown`;
 
-    list.forEach((cg) => {
-      const card = document.createElement("div");
-      card.className = "card";
-      card.innerHTML = `
-        <h3>${cg.name_first} — ${cg.care_type}</h3>
-        <p><strong>Location:</strong> ${cg.location} (local)</p>
-        <p><strong>Availability:</strong> ${cg.availability}</p>
-        <p>${cg.bio}</p>
-        <a class="button" href="./request.html?caregiver_id=${cg.id}">Request This Caregiver</a>
-      `;
-      container.appendChild(card);
-    });
-  }
+        container.innerHTML = "";
+        if (!list.length) {
+          container.innerHTML = "<p>No caregivers match those filters yet.</p>";
+          return;
+        }
 
-  function applyFilters() {
-    const typeVal = (document.getElementById("cgFilterType")?.value || "").trim().toLowerCase();
-    const locVal = (document.getElementById("cgFilterLocation")?.value || "").trim().toLowerCase();
-    const keyVal = (document.getElementById("cgFilterKeyword")?.value || "").trim().toLowerCase();
+        list.forEach((cg) => {
+          const card = document.createElement("div");
+          card.className = "card";
 
-    const filtered = allCaregivers.filter((cg) => {
-      const cgType = (cg.care_type || "").trim().toLowerCase();
-      const cgLoc = (cg.location || "").trim().toLowerCase();
-      const cgAvail = (cg.availability || "").trim().toLowerCase();
-      const cgBio = (cg.bio || "").trim().toLowerCase();
+          card.innerHTML = `
+            <h3>${cg.name_first} — ${cg.care_type}</h3>
+            <p><strong>Location:</strong> ${cg.location} (local)</p>
+            <p><strong>Availability:</strong> ${cg.availability}</p>
+            <p>${cg.bio}</p>
+            <a class="button" href="./request.html?caregiver_id=${cg.id}">Request This Caregiver</a>
+          `;
 
-      const typeOk = !typeVal || cgType === typeVal;
-      const locOk = !locVal || cgLoc.includes(locVal);
-      const keyOk = !keyVal || cgAvail.includes(keyVal) || cgBio.includes(keyVal);
+          container.appendChild(card);
+        });
+      }
 
-      return typeOk && locOk && keyOk;
-    });
+      // Apply filters to the loaded list
+      function applyFilters() {
+        const typeVal = (document.getElementById("cgFilterType")?.value || "").trim().toLowerCase();
+        const locVal = (document.getElementById("cgFilterLocation")?.value || "").trim().toLowerCase();
+        const keyVal = (document.getElementById("cgFilterKeyword")?.value || "").trim().toLowerCase();
 
-    render(filtered);
-  }
+        const filtered = allCaregivers.filter((cg) => {
+          const cgType = (cg.care_type || "").trim().toLowerCase();
+          const cgLoc = (cg.location || "").trim().toLowerCase();
+          const cgAvail = (cg.availability || "").trim().toLowerCase();
+          const cgBio = (cg.bio || "").trim().toLowerCase();
 
-  async function loadOnce() {
-    let tries = 0;
-    while (!window.db && tries < 40) {
-      await new Promise((r) => setTimeout(r, 50));
-      tries++;
-    }
-    if (!window.db) {
-      document.getElementById("caregiversContainer").innerHTML =
-        "<p>Database connection not ready. Please refresh.</p>";
-      return;
-    }
+          const typeOk = !typeVal || cgType === typeVal;
+          const locOk = !locVal || cgLoc.includes(locVal);
+          const keyOk = !keyVal || cgAvail.includes(keyVal) || cgBio.includes(keyVal);
 
-const { data, error } = await window.db
-  .from("caregiver_posts")
-  .select("*")
-  .eq("is_active", true)
-  .order("created_at", { ascending: false });
+          return typeOk && locOk && keyOk;
+        });
 
-    if (error) {
-      document.getElementById("caregiversContainer").innerHTML =
-        "<p>Unable to load caregivers right now.</p>";
-      console.error(error);
-      return;
-    }
+        render(filtered);
+      }
 
-    allCaregivers = data || [];
-    applyFilters();
-  }
+      // Load caregivers from Supabase (active only)
+      async function loadOnce() {
+        // Wait until window.db exists (guards load order)
+        let tries = 0;
+        while (!window.db && tries < 40) {
+          await new Promise((r) => setTimeout(r, 50));
+          tries++;
+        }
 
-  window.addEventListener("DOMContentLoaded", () => {
-    document.getElementById("cgApplyBtn")?.addEventListener("click", applyFilters);
-    document.getElementById("cgClearBtn")?.addEventListener("click", () => {
-      document.getElementById("cgFilterType").value = "";
-      document.getElementById("cgFilterLocation").value = "";
-      document.getElementById("cgFilterKeyword").value = "";
-      applyFilters();
-    });
+        const container = document.getElementById("caregiversContainer");
+        if (!window.db) {
+          container.innerHTML = "<p>Database connection not ready. Please refresh.</p>";
+          return;
+        }
 
-    document.getElementById("cgFilterType")?.addEventListener("change", applyFilters);
-    document.getElementById("cgFilterLocation")?.addEventListener("input", applyFilters);
-    document.getElementById("cgFilterKeyword")?.addEventListener("input", applyFilters);
+        const { data, error } = await window.db
+          .from("caregiver_posts")
+          .select("*")
+          .eq("is_active", true)
+          .order("created_at", { ascending: false });
 
-    loadOnce();
-  });
-})();
-</script>
+        if (error) {
+          container.innerHTML = "<p>Unable to load caregivers right now.</p>";
+          console.error(error);
+          return;
+        }
 
+        allCaregivers = data || [];
+        applyFilters();
+      }
+
+      // Wire up filter controls
+      function wireEvents() {
+        document.getElementById("cgApplyBtn")?.addEventListener("click", applyFilters);
+
+        document.getElementById("cgClearBtn")?.addEventListener("click", () => {
+          document.getElementById("cgFilterType").value = "";
+          document.getElementById("cgFilterLocation").value = "";
+          document.getElementById("cgFilterKeyword").value = "";
+          applyFilters();
+        });
+
+        document.getElementById("cgFilterType")?.addEventListener("change", applyFilters);
+        document.getElementById("cgFilterLocation")?.addEventListener("input", applyFilters);
+        document.getElementById("cgFilterKeyword")?.addEventListener("input", applyFilters);
+      }
+
+      window.addEventListener("DOMContentLoaded", () => {
+        wireEvents();
+        loadOnce();
+      });
+    })();
+  </script>
 </body>
 </html>
