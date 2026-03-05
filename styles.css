@@ -208,3 +208,40 @@ header img {
   }
 
 }
+/* Header layout */
+
+.site-header{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:20px;
+}
+
+.menu-toggle{
+  display:none;
+  font-size:24px;
+  background:none;
+  border:none;
+  cursor:pointer;
+}
+
+/* Mobile */
+
+@media (max-width:700px){
+
+  .menu-toggle{
+    display:block;
+  }
+
+  .nav{
+    display:none;
+    flex-direction:column;
+    gap:10px;
+    width:100%;
+  }
+
+  .nav.open{
+    display:flex;
+  }
+
+}
