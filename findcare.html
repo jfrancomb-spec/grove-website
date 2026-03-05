@@ -4,87 +4,115 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Grove | Find Care</title>
-  <link rel="stylesheet" href="./styles.css">
-  <link rel="icon" type="image/png" href="./MainIcon.png">
+
+  <link rel="stylesheet" href="./styles.css" />
+  <link rel="icon" type="image/png" href="./MainIcon.png" />
 </head>
+
 <body>
+  <!-- Shared header -->
+  <div id="header-placeholder"></div>
 
-<div id="header-placeholder"></div>
-
-<div class="hero">
-  <h1>Find Trusted Care</h1>
-  <div class="subtitle">
-    Tell us what you need and Grove will reach out with next steps.
-  </div>
-    <a class="button" href="#FindCare">Find Care</a>
-</div>
- 
-<section>
-  <h2>Why Families Choose Grove</h2>
-
-  <div class="cards">
-    <div class="card">
-      <h3>Verified Identity</h3>
-      <p>Caregivers confirm who they are before joining Grove.</p>
+  <main>
+    <!-- HERO -->
+    <div class="hero">
+      <h1>Find Trusted Care</h1>
+      <div class="subtitle">
+        Tell us what you need and Grove will reach out with next steps.
+      </div>
+      <a class="button" href="#FindCare">Find Care</a>
     </div>
 
-    <div class="card">
-      <h3>Local Accountability</h3>
-      <p>Connections rooted in real community reputation.</p>
-    </div>
+    <!-- WHY FAMILIES CHOOSE GROVE -->
+    <section>
+      <h2>Why Families Choose Grove</h2>
 
-    <div class="card">
-      <h3>Thoughtful Matching</h3>
-      <p>Introductions designed for confidence, not chaos.</p>
-    </div>
-  </div>
-</section>
+      <div class="cards">
+        <div class="card">
+          <h3>Verified Identity</h3>
+          <p>Caregivers confirm who they are before joining Grove.</p>
+        </div>
 
-<section id="FindCare">
-  <h2>Find Care</h2>
-  <p>
-    Tell us what you are looking for. The more information you provide, the better we can match you with trusted caregivers.
-  </p>
+        <div class="card">
+          <h3>Local Accountability</h3>
+          <p>Connections rooted in real community reputation.</p>
+        </div>
 
- <div class="form-card">
-   <form id="careForm">
-    <div class="row"><input type="text" id="name" placeholder="Your Name" required></div>
-    <div class="row"><input type="email" id="email" placeholder="Email Address" required></div>
+        <div class="card">
+          <h3>Thoughtful Matching</h3>
+          <p>Introductions designed for confidence, not chaos.</p>
+        </div>
+      </div>
+    </section>
 
-    <div class="row">
-      <select id="care_type" required>
-        <option value="">Type of Care Needed</option>
-        <option>Childcare</option>
-        <option>Senior Care</option>
-        <option>Pet Care</option>
-        <option>Household Help</option>
-        <option>Other</option>
-      </select>
-    </div>
+    <!-- FIND CARE FORM -->
+    <section id="FindCare">
+      <h2>Find Care</h2>
+      <p>
+        Tell us what you are looking for. The more information you provide, the better we can match you with trusted caregivers.
+      </p>
 
-    <div class="row"><input type="text" id="location" placeholder="City or Neighborhood" required></div>
-    <div class="row"><input type="text" id="schedule" placeholder="Schedule Needed (days/times)" required></div>
-    <div class="row"><textarea id="details" placeholder="Tell us about your care needs" required></textarea></div>
+      <div class="form-card">
+        <form id="careForm">
+          <div class="row">
+            <input type="text" id="name" placeholder="Your Name" required />
+          </div>
 
-    <button class="button" type="submit">Request Care</button>
-  </form>
+          <div class="row">
+            <input type="email" id="email" placeholder="Email Address" required />
+          </div>
 
-<p id="careSuccess" class="success">✅ Request received! Grove will contact you soon.</p>
+          <div class="row">
+            <select id="care_type" required>
+              <option value="">Type of Care Needed</option>
+              <option>Childcare</option>
+              <option>Senior Care</option>
+              <option>Pet Care</option>
+              <option>Household Help</option>
+              <option>Other</option>
+            </select>
+          </div>
 
-  <div style="margin-top:22px;">
-  <h3 style="margin-bottom:6px;">What Happens Next</h3>
-  <p style="margin-top:0;">
-    After you submit your request, Grove reviews your details and reaches out to learn more about your needs.
-    We focus on thoughtful introductions with caregivers who match your schedule and expectations.
-  </p>
-    </div>
-    <p style="margin-top:16px;"><a href="./index.html" style="color:var(--link);text-decoration:none;">← Back to Home</a></p>
-    </div>
-</section>
+          <div class="row">
+            <input type="text" id="location" placeholder="City or Neighborhood" required />
+          </div>
 
-<div id="footer-placeholder"></div>
+          <div class="row">
+            <input type="text" id="schedule" placeholder="Schedule Needed (days/times)" required />
+          </div>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-<script src="./app.js"></script>
+          <div class="row">
+            <textarea id="details" placeholder="Tell us about your care needs" required></textarea>
+          </div>
+
+          <button class="button" type="submit">Request Care</button>
+        </form>
+
+        <!-- This is shown by app.js after a successful submit -->
+        <p id="careSuccess" class="success">
+          ✅ Request received! Grove will contact you soon.
+        </p>
+
+        <div style="margin-top: 22px;">
+          <h3 style="margin-bottom: 6px;">What Happens Next</h3>
+          <p style="margin-top: 0;">
+            After you submit your request, Grove reviews your details and reaches out to learn more about your needs.
+            We focus on thoughtful introductions with caregivers who match your schedule and expectations.
+          </p>
+        </div>
+
+        <p style="margin-top: 16px;">
+          <a href="./index.html">← Back to Home</a>
+        </p>
+      </div>
+    </section>
+  </main>
+
+  <!-- Shared footer -->
+  <div id="footer-placeholder"></div>
+
+  <!-- Scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script src="./app.js"></script>
 </body>
 </html>
