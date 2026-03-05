@@ -1,11 +1,20 @@
-async function loadPart(id, file) {
-  const el = document.getElementById(id);
-  if (!el) return;
+function wireMobileMenu() {
+  const toggle = document.getElementById("menuToggle");
+  const nav = document.getElementById("mainNav");
+  if (!toggle || !nav) return;
 
-  const res = await fetch(file);
-  el.innerHTML = await res.text();
+  // prevent double-wiring if header reloads
+  if (toggle.dataset.wired === "1") return;
+  toggle.dataset.wired = "1";
 
-  if (id === "header-placeholder") highlightCurrentNav();
+  toggle.addEventListener("click", () => {
+    nav.classList.toggle("open");
+  });
+
+  // nice mobile UX: close menu after tapping a link
+  nav.querySelectorAll("a").forEach((a) => {
+    a.addEventListener("click", () => nav.classList.remove("open"));
+  });
 }
 
 function highlightCurrentNav() {
@@ -18,6 +27,19 @@ function highlightCurrentNav() {
     if (href === file) a.classList.add("active");
     if (file === "index.html" && href === "index.html") a.classList.add("active");
   });
+}
+
+async function loadPart(id, file) {
+  const el = document.getElementById(id);
+  if (!el) return;
+
+  const res = await fetch(file);
+  el.innerHTML = await res.text();
+
+  if (id === "header-placeholder") {
+    highlightCurrentNav();
+    wireMobileMenu(); // ✅ header is injected now, so wire hamburger now
+  }
 }
 
 // Supabase client (global)
@@ -65,7 +87,7 @@ window.addEventListener("DOMContentLoaded", () => {
   loadPart("header-placeholder", "./header.html");
   loadPart("footer-placeholder", "./footer.html");
 
-  // highlight + prefill
+  // prefill (caregiver page)
   prefillFromQuery();
 
   // Find Care form
@@ -117,7 +139,7 @@ window.addEventListener("DOMContentLoaded", () => {
       const { error } = await window.db.from("caregiver_applications").insert([payload]);
 
       if (error) {
-        alert(`Request failed: ${error?.message || "Unknown error"}`);
+        alert(`Application failed: ${error?.message || "Unknown error"}`);
         console.error(error);
         return;
       }
@@ -129,16 +151,4 @@ window.addEventListener("DOMContentLoaded", () => {
       if (msg) msg.scrollIntoView({ behavior: "smooth" });
     });
   }
-});
-window.addEventListener("DOMContentLoaded", () => {
-
-  const toggle = document.getElementById("menuToggle");
-  const nav = document.getElementById("mainNav");
-
-  if(toggle && nav){
-    toggle.addEventListener("click", () => {
-      nav.classList.toggle("open");
-    });
-  }
-
 });
