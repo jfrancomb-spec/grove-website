@@ -6,6 +6,15 @@ const SUPABASE_ANON_KEY = "sb_publishable_JwsPcXgi_T-NQZo1tGZY_w_kcRc9kWc";
 window.db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // -----------------------------
+// Error handler
+// -----------------------------
+function handleError(error, message = "Something went wrong") {
+  const text = `${message}: ${error?.message || "Unknown error"}`;
+  alert(text);
+  console.error(text, error);
+}
+
+// -----------------------------
 // Header / Footer injection
 // -----------------------------
 async function loadPart(id, file) {
