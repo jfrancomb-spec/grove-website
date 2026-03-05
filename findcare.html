@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Grove | Find Care</title>
+  <title>Grove | Post a Care Request</title>
 
   <link rel="stylesheet" href="./styles.css" />
   <link rel="icon" type="image/png" href="./MainIcon.png" />
@@ -16,14 +16,15 @@
   <main>
     <!-- HERO -->
     <div class="hero">
-      <h1>Find Trusted Care</h1>
+      <h1>Post a Care Request</h1>
       <div class="subtitle">
-        Tell us what you need and Grove will reach out with next steps.
+        Share what you need. Your request can be viewed by caregivers in the Grove network.
       </div>
-      <a class="button" href="#FindCare">Find Care</a>
+      <a class="button" href="#FindCare">Post Request</a>
+      <a class="button" href="./caregivers.html">Browse Caregivers</a>
     </div>
 
-    <!-- WHY FAMILIES CHOOSE GROVE -->
+    <!-- WHY -->
     <section>
       <h2>Why Families Choose Grove</h2>
 
@@ -39,17 +40,17 @@
         </div>
 
         <div class="card">
-          <h3>Thoughtful Matching</h3>
-          <p>Introductions designed for confidence, not chaos.</p>
+          <h3>Two-Way Reviews</h3>
+          <p>Families review caregivers — and caregivers can review families too.</p>
         </div>
       </div>
     </section>
 
-    <!-- FIND CARE FORM -->
+    <!-- FORM -->
     <section id="FindCare">
-      <h2>Find Care</h2>
+      <h2>Care Request</h2>
       <p>
-        Tell us what you are looking for. The more information you provide, the better we can match you with trusted caregivers.
+        The more detail you provide, the easier it is for caregivers to decide if the opportunity fits their availability.
       </p>
 
       <div class="form-card">
@@ -85,19 +86,20 @@
             <textarea id="details" placeholder="Tell us about your care needs" required></textarea>
           </div>
 
-          <button class="button" type="submit">Request Care</button>
+          <button class="button" type="submit">Submit Request</button>
         </form>
 
-        <!-- This is shown by app.js after a successful submit -->
+        <!-- Shown by app.js after successful submit -->
         <p id="careSuccess" class="success">
-          ✅ Request received! Grove will contact you soon.
+          ✅ Request received! You can also browse caregivers while you wait.
         </p>
 
         <div style="margin-top: 22px;">
           <h3 style="margin-bottom: 6px;">What Happens Next</h3>
           <p style="margin-top: 0;">
-            After you submit your request, Grove reviews your details and reaches out to learn more about your needs.
-            We focus on thoughtful introductions with caregivers who match your schedule and expectations.
+            After you submit your request, it will be visible to caregivers in the Grove network.
+            If someone is interested and available, they can reach out. You can also browse caregivers and contact
+            people you’d like to connect with.
           </p>
         </div>
 
