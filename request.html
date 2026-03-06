@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Grove | Request Caregiver</title>
+  <title>Grove | Contact Caregiver</title>
 
   <link rel="stylesheet" href="./styles.css" />
   <link rel="icon" type="image/png" href="./MainIcon.png" />
@@ -62,6 +62,14 @@
           ✅ Request sent! If the caregiver is available and interested, they can reach out.
         </p>
 
+        <div style="margin-top: 22px;">
+          <h3 style="margin-bottom: 6px;">What Happens Next</h3>
+          <p style="margin-top: 0;">
+            After you send your request, the caregiver can review your details and decide whether the opportunity fits.
+            If they’re interested, they can reach out directly.
+          </p>
+        </div>
+
         <p style="margin-top: 16px;">
           <a href="./caregivers.html">← Back to Caregivers</a>
         </p>
@@ -96,6 +104,7 @@
         await new Promise((r) => setTimeout(r, 50));
         tries++;
       }
+
       if (!window.db) {
         subtitle.textContent = "Database connection not ready. Please refresh.";
         return;
@@ -104,7 +113,7 @@
       // Load caregiver basics
       const { data: caregiver, error } = await window.db
         .from("caregiver_posts")
-        .select("id,name_first,care_type,location")
+        .select("id, name_first, care_type, location")
         .eq("id", caregiverId)
         .single();
 
@@ -135,12 +144,10 @@
           .insert([payload]);
 
         if (insertError) {
-          // handleError is defined in app.js
           handleError(insertError, "Request failed");
           return;
         }
 
-        // showSuccess is defined in app.js
         showSuccess("requestSuccess", form);
       });
     }
