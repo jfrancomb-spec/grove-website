@@ -160,7 +160,17 @@ header {
 button.button {
   width: 100%;
 }
-
+.two-paths .button{
+  width:240px;
+  text-align:center;
+  display:block;
+  margin:10px auto;
+}
+.two-paths .card{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+}
 /* =====================================================
    Forms
 ===================================================== */
