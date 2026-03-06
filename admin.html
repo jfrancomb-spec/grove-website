@@ -18,7 +18,7 @@
     <div class="hero">
       <h1>Admin Dashboard</h1>
       <div class="subtitle">
-        Review submissions and control what’s visible in the Grove network.
+        Review submissions and manage what’s visible in the Grove network.
       </div>
     </div>
 
@@ -31,9 +31,11 @@
           <div class="row">
             <input id="adminEmail" type="email" placeholder="Admin email" required />
           </div>
+
           <div class="row">
             <input id="adminPassword" type="password" placeholder="Password" required />
           </div>
+
           <button class="button" type="submit">Sign in</button>
         </form>
 
@@ -42,7 +44,7 @@
 
       <!-- DASHBOARD -->
       <div id="dashboard" style="display: none;">
-        <!-- OVERVIEW / ACTIONS -->
+        <!-- OVERVIEW -->
         <div class="form-card" style="margin-bottom: 16px;">
           <div style="display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap;">
             <h2 style="margin: 0;">Overview</h2>
@@ -50,22 +52,22 @@
           </div>
 
           <p style="margin-top: 10px;">
-            Approving a listing makes it visible on the public pages. Denying removes it from public view.
+            Approving a listing makes it visible on the public site. Denying a listing removes it from public view.
           </p>
         </div>
 
         <!-- LISTINGS REVIEW -->
         <section>
-          <h2>Job Listings (Review)</h2>
+          <h2>Job Listings</h2>
           <div id="jobPostsAdmin" class="cards"></div>
         </section>
 
         <section>
-          <h2>Caregiver Listings (Review)</h2>
+          <h2>Caregiver Listings</h2>
           <div id="caregiverPostsAdmin" class="cards"></div>
         </section>
 
-        <!-- INBOX / REQUESTS -->
+        <!-- REQUESTS / APPLICATIONS -->
         <section>
           <h2>Care Requests</h2>
           <div id="careRequests" class="cards"></div>
@@ -98,44 +100,58 @@
 
   <!-- Page script -->
   <script>
-    // -----------------------------
-    // Utilities
-    // -----------------------------
+    // =====================================================
+    // Utility helpers
+    // =====================================================
     function fmtDate(ts) {
-      try { return new Date(ts).toLocaleString(); } catch { return ts; }
+      try {
+        return new Date(ts).toLocaleString();
+      } catch {
+        return ts;
+      }
     }
 
     function cardRow(title, lines) {
       const div = document.createElement("div");
       div.className = "card";
-      div.innerHTML = `<h3>${title}</h3>` + lines.map(l => `<p>${l}</p>`).join("");
+      div.innerHTML = `<h3>${title}</h3>` + lines.map(line => `<p>${line}</p>`).join("");
       return div;
     }
 
-    function setBoxState(box, { error, emptyText }) {
+    function renderEmptyOrError(box, error, emptyText, items) {
       box.innerHTML = "";
+
       if (error) {
         box.innerHTML = "<p>Unable to load right now.</p>";
         console.error(error);
         return true;
       }
-      if (!box.dataset.hasItems || box.dataset.hasItems === "0") {
+
+      if (!items || items.length === 0) {
         box.innerHTML = `<p>${emptyText}</p>`;
         return true;
       }
+
       return false;
     }
 
-    // -----------------------------
-    // Approve / Deny actions
-    // -----------------------------
+    // =====================================================
+    // Approve / Deny listing actions
+    // =====================================================
     async function setJobPostStatus(id, approve) {
       const patch = approve
         ? { status: "approved", is_active: true }
         : { status: "denied", is_active: false };
 
-      const { error } = await window.db.from("job_posts").update(patch).eq("id", id);
-      if (error) return handleError(error, "Update failed");
+      const { error } = await window.db
+        .from("job_posts")
+        .update(patch)
+        .eq("id", id);
+
+      if (error) {
+        handleError(error, "Update failed");
+        return;
+      }
 
       await loadAdminData();
     }
@@ -145,53 +161,56 @@
         ? { status: "approved", is_active: true }
         : { status: "denied", is_active: false };
 
-      const { error } = await window.db.from("caregiver_posts").update(patch).eq("id", id);
-      if (error) return handleError(error, "Update failed");
+      const { error } = await window.db
+        .from("caregiver_posts")
+        .update(patch)
+        .eq("id", id);
+
+      if (error) {
+        handleError(error, "Update failed");
+        return;
+      }
 
       await loadAdminData();
     }
 
-    // -----------------------------
-    // Load admin data
-    // -----------------------------
+    // =====================================================
+    // Load all admin data
+    // =====================================================
     async function loadAdminData() {
-      // CARE REQUESTS
+      // ---------------------------------
+      // Care Requests
+      // ---------------------------------
       const crBox = document.getElementById("careRequests");
       const { data: cr, error: crErr } = await window.db
         .from("care_requests")
         .select("*")
         .order("created_at", { ascending: false });
 
-      crBox.dataset.hasItems = cr && cr.length ? "1" : "0";
-      if (setBoxState(crBox, { error: crErr, emptyText: "No care requests yet." })) {
-        // continue loading other sections regardless
-      } else {
-        cr.forEach(x => crBox.appendChild(cardRow(
-          `${x.name} (${fmtDate(x.created_at)})`,
-          [
-            `<strong>Email:</strong> ${x.email}`,
-            `<strong>Type:</strong> ${x.care_type}`,
-            `<strong>Location:</strong> ${x.location}`,
-            `<strong>Schedule:</strong> ${x.schedule || ""}`,
-            `${x.details || ""}`
-          ]
-        )));
+      if (!renderEmptyOrError(crBox, crErr, "No care requests yet.", cr)) {
+        cr.forEach((x) => {
+          crBox.appendChild(
+            cardRow(`${x.name} (${fmtDate(x.created_at)})`, [
+              `<strong>Email:</strong> ${x.email}`,
+              `<strong>Type:</strong> ${x.care_type}`,
+              `<strong>Location:</strong> ${x.location}`,
+              `<strong>Schedule:</strong> ${x.schedule || ""}`,
+              `${x.details || ""}`
+            ])
+          );
+        });
       }
 
-      // JOB POSTS (review)
+      // ---------------------------------
+      // Job Listings
+      // ---------------------------------
       const jpBox = document.getElementById("jobPostsAdmin");
       const { data: jp, error: jpErr } = await window.db
         .from("job_posts")
         .select("*")
         .order("created_at", { ascending: false });
 
-      jpBox.innerHTML = "";
-      if (jpErr) {
-        jpBox.innerHTML = "<p>Unable to load job posts.</p>";
-        console.error(jpErr);
-      } else if (!jp || jp.length === 0) {
-        jpBox.innerHTML = "<p>No job posts yet.</p>";
-      } else {
+      if (!renderEmptyOrError(jpBox, jpErr, "No job posts yet.", jp)) {
         jp.forEach((job) => {
           const card = document.createElement("div");
           card.className = "card";
@@ -212,27 +231,28 @@
             </div>
           `;
 
-          card.querySelector('[data-approve="1"]').addEventListener("click", () => setJobPostStatus(job.id, true));
-          card.querySelector('[data-deny="1"]').addEventListener("click", () => setJobPostStatus(job.id, false));
+          card.querySelector('[data-approve="1"]').addEventListener("click", () => {
+            setJobPostStatus(job.id, true);
+          });
+
+          card.querySelector('[data-deny="1"]').addEventListener("click", () => {
+            setJobPostStatus(job.id, false);
+          });
 
           jpBox.appendChild(card);
         });
       }
 
-      // CAREGIVER POSTS (review)
+      // ---------------------------------
+      // Caregiver Listings
+      // ---------------------------------
       const cpBox = document.getElementById("caregiverPostsAdmin");
       const { data: cp, error: cpErr } = await window.db
         .from("caregiver_posts")
         .select("*")
         .order("created_at", { ascending: false });
 
-      cpBox.innerHTML = "";
-      if (cpErr) {
-        cpBox.innerHTML = "<p>Unable to load caregiver posts.</p>";
-        console.error(cpErr);
-      } else if (!cp || cp.length === 0) {
-        cpBox.innerHTML = "<p>No caregiver posts yet.</p>";
-      } else {
+      if (!renderEmptyOrError(cpBox, cpErr, "No caregiver posts yet.", cp)) {
         cp.forEach((cg) => {
           const card = document.createElement("div");
           card.className = "card";
@@ -251,96 +271,92 @@
             </div>
           `;
 
-          card.querySelector('[data-approve="1"]').addEventListener("click", () => setCaregiverPostStatus(cg.id, true));
-          card.querySelector('[data-deny="1"]').addEventListener("click", () => setCaregiverPostStatus(cg.id, false));
+          card.querySelector('[data-approve="1"]').addEventListener("click", () => {
+            setCaregiverPostStatus(cg.id, true);
+          });
+
+          card.querySelector('[data-deny="1"]').addEventListener("click", () => {
+            setCaregiverPostStatus(cg.id, false);
+          });
 
           cpBox.appendChild(card);
         });
       }
 
-      // CAREGIVER APPLICATIONS
+      // ---------------------------------
+      // Caregiver Applications
+      // ---------------------------------
       const caBox = document.getElementById("caregiverApps");
       const { data: ca, error: caErr } = await window.db
         .from("caregiver_applications")
         .select("*")
         .order("created_at", { ascending: false });
 
-      caBox.innerHTML = "";
-      if (caErr) {
-        caBox.innerHTML = "<p>Unable to load caregiver applications.</p>";
-        console.error(caErr);
-      } else if (!ca || ca.length === 0) {
-        caBox.innerHTML = "<p>No caregiver applications yet.</p>";
-      } else {
-        ca.forEach(x => caBox.appendChild(cardRow(
-          `${x.name} (${fmtDate(x.created_at)})`,
-          [
-            `<strong>Email:</strong> ${x.email}`,
-            `<strong>Phone:</strong> ${x.phone}`,
-            `<strong>Type:</strong> ${x.care_type}`,
-            `<strong>Location:</strong> ${x.location}`,
-            `${(x.experience || "").replace(/\n/g, "<br>")}`
-          ]
-        )));
+      if (!renderEmptyOrError(caBox, caErr, "No caregiver applications yet.", ca)) {
+        ca.forEach((x) => {
+          caBox.appendChild(
+            cardRow(`${x.name} (${fmtDate(x.created_at)})`, [
+              `<strong>Email:</strong> ${x.email}`,
+              `<strong>Phone:</strong> ${x.phone}`,
+              `<strong>Type:</strong> ${x.care_type}`,
+              `<strong>Location:</strong> ${x.location}`,
+              `${(x.experience || "").replace(/\n/g, "<br>")}`
+            ])
+          );
+        });
       }
 
-      // JOB APPLICATIONS
+      // ---------------------------------
+      // Job Applications
+      // ---------------------------------
       const jaBox = document.getElementById("jobApps");
       const { data: ja, error: jaErr } = await window.db
         .from("job_applications")
         .select("*")
         .order("created_at", { ascending: false });
 
-      jaBox.innerHTML = "";
-      if (jaErr) {
-        jaBox.innerHTML = "<p>Unable to load job applications.</p>";
-        console.error(jaErr);
-      } else if (!ja || ja.length === 0) {
-        jaBox.innerHTML = "<p>No job applications yet.</p>";
-      } else {
-        ja.forEach(x => jaBox.appendChild(cardRow(
-          `${x.applicant_name} (${fmtDate(x.created_at)})`,
-          [
-            `<strong>Email:</strong> ${x.applicant_email}`,
-            `<strong>Phone:</strong> ${x.applicant_phone}`,
-            `<strong>Location:</strong> ${x.applicant_location}`,
-            `<strong>Job ID:</strong> ${x.job_id}`,
-            `${(x.message || "").replace(/\n/g, "<br>")}`
-          ]
-        )));
+      if (!renderEmptyOrError(jaBox, jaErr, "No job applications yet.", ja)) {
+        ja.forEach((x) => {
+          jaBox.appendChild(
+            cardRow(`${x.applicant_name} (${fmtDate(x.created_at)})`, [
+              `<strong>Email:</strong> ${x.applicant_email}`,
+              `<strong>Phone:</strong> ${x.applicant_phone}`,
+              `<strong>Location:</strong> ${x.applicant_location}`,
+              `<strong>Job ID:</strong> ${x.job_id}`,
+              `${(x.message || "").replace(/\n/g, "<br>")}`
+            ])
+          );
+        });
       }
 
-      // CAREGIVER REQUESTS
+      // ---------------------------------
+      // Caregiver Requests
+      // ---------------------------------
       const rqBox = document.getElementById("caregiverReqs");
       const { data: rq, error: rqErr } = await window.db
         .from("caregiver_requests")
         .select("*")
         .order("created_at", { ascending: false });
 
-      rqBox.innerHTML = "";
-      if (rqErr) {
-        rqBox.innerHTML = "<p>Unable to load caregiver requests.</p>";
-        console.error(rqErr);
-      } else if (!rq || rq.length === 0) {
-        rqBox.innerHTML = "<p>No caregiver requests yet.</p>";
-      } else {
-        rq.forEach(x => rqBox.appendChild(cardRow(
-          `${x.requester_name} (${fmtDate(x.created_at)})`,
-          [
-            `<strong>Email:</strong> ${x.requester_email}`,
-            `<strong>Phone:</strong> ${x.requester_phone}`,
-            `<strong>Location:</strong> ${x.requester_location}`,
-            `<strong>Schedule:</strong> ${x.schedule || ""}`,
-            `<strong>Caregiver ID:</strong> ${x.caregiver_id}`,
-            `${(x.message || "").replace(/\n/g, "<br>")}`
-          ]
-        )));
+      if (!renderEmptyOrError(rqBox, rqErr, "No caregiver requests yet.", rq)) {
+        rq.forEach((x) => {
+          rqBox.appendChild(
+            cardRow(`${x.requester_name} (${fmtDate(x.created_at)})`, [
+              `<strong>Email:</strong> ${x.requester_email}`,
+              `<strong>Phone:</strong> ${x.requester_phone}`,
+              `<strong>Location:</strong> ${x.requester_location}`,
+              `<strong>Schedule:</strong> ${x.schedule || ""}`,
+              `<strong>Caregiver ID:</strong> ${x.caregiver_id}`,
+              `${(x.message || "").replace(/\n/g, "<br>")}`
+            ])
+          );
+        });
       }
     }
 
-    // -----------------------------
+    // =====================================================
     // Auth / Init
-    // -----------------------------
+    // =====================================================
     async function showDashboardIfLoggedIn() {
       const { data } = await window.db.auth.getSession();
       const session = data?.session;
@@ -364,14 +380,21 @@
         const password = document.getElementById("adminPassword").value;
 
         const { error } = await window.db.auth.signInWithPassword({ email, password });
-        if (error) return handleError(error, "Login failed");
+        if (error) {
+          handleError(error, "Login failed");
+          return;
+        }
 
         await showDashboardIfLoggedIn();
       });
 
       document.getElementById("signOutBtn")?.addEventListener("click", async () => {
         const { error } = await window.db.auth.signOut();
-        if (error) return handleError(error, "Sign out failed");
+        if (error) {
+          handleError(error, "Sign out failed");
+          return;
+        }
+
         location.reload();
       });
 
