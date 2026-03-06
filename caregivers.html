@@ -18,9 +18,11 @@
     <div class="hero">
       <h1>Caregivers</h1>
       <div class="subtitle">
-        Browse local caregivers in the Grove network and reach out when someone feels like a good fit.
+        Browse local caregivers in the Grove network and reach out directly when someone feels like a good fit.
       </div>
+
       <a class="button" href="./findcare.html">Post a Care Request</a>
+      <a class="button" href="./jobs.html">Browse Care Jobs</a>
     </div>
 
     <!-- FILTERS + RESULTS -->
@@ -40,11 +42,19 @@
         </div>
 
         <div class="row">
-          <input id="cgFilterLocation" type="text" placeholder="Filter by city/neighborhood (optional)" />
+          <input
+            id="cgFilterLocation"
+            type="text"
+            placeholder="Filter by city/neighborhood (optional)"
+          />
         </div>
 
         <div class="row">
-          <input id="cgFilterKeyword" type="text" placeholder="Keyword (availability, bio, etc.)" />
+          <input
+            id="cgFilterKeyword"
+            type="text"
+            placeholder="Keyword (availability, bio, etc.)"
+          />
         </div>
 
         <p id="cgCount" style="margin: 8px 0 0 0; font-weight: 600;"></p>
@@ -52,6 +62,11 @@
         <button class="button" type="button" id="cgApplyBtn">Apply Filters</button>
         <button class="button" type="button" id="cgClearBtn">Clear Filters</button>
       </div>
+
+      <p style="margin-bottom: 16px;">
+        Caregiver listings are submitted by community members and approved before becoming visible.
+        Families and caregivers communicate directly and should use their own judgment when arranging care.
+      </p>
 
       <div id="caregiversContainer" class="cards"></div>
     </section>
@@ -70,13 +85,14 @@
       let allCaregivers = [];
 
       // Render caregiver cards
-      function render(list) {
+      function renderCaregivers(list) {
         const container = document.getElementById("caregiversContainer");
         const countEl = document.getElementById("cgCount");
 
         if (countEl) countEl.textContent = `${list.length} caregiver(s) shown`;
 
         container.innerHTML = "";
+
         if (!list.length) {
           container.innerHTML = "<p>No caregivers match those filters yet.</p>";
           return;
@@ -91,14 +107,14 @@
             <p><strong>Location:</strong> ${cg.location} (local)</p>
             <p><strong>Availability:</strong> ${cg.availability}</p>
             <p>${cg.bio}</p>
-            <a class="button" href="./request.html?caregiver_id=${cg.id}">Request This Caregiver</a>
+            <a class="button" href="./request.html?caregiver_id=${cg.id}">Contact This Caregiver</a>
           `;
 
           container.appendChild(card);
         });
       }
 
-      // Apply filters to the loaded list
+      // Apply filters to loaded caregivers
       function applyFilters() {
         const typeVal = (document.getElementById("cgFilterType")?.value || "").trim().toLowerCase();
         const locVal = (document.getElementById("cgFilterLocation")?.value || "").trim().toLowerCase();
@@ -117,12 +133,11 @@
           return typeOk && locOk && keyOk;
         });
 
-        render(filtered);
+        renderCaregivers(filtered);
       }
 
-      // Load caregivers from Supabase (active only)
-      async function loadOnce() {
-        // Wait until window.db exists (guards load order)
+      // Load caregiver listings from Supabase
+      async function loadCaregiversOnce() {
         let tries = 0;
         while (!window.db && tries < 40) {
           await new Promise((r) => setTimeout(r, 50));
@@ -130,6 +145,7 @@
         }
 
         const container = document.getElementById("caregiversContainer");
+
         if (!window.db) {
           container.innerHTML = "<p>Database connection not ready. Please refresh.</p>";
           return;
@@ -169,7 +185,7 @@
 
       window.addEventListener("DOMContentLoaded", () => {
         wireEvents();
-        loadOnce();
+        loadCaregiversOnce();
       });
     })();
   </script>
