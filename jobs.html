@@ -42,7 +42,11 @@
         </div>
 
         <div class="row">
-          <input id="jobFilterLocation" type="text" placeholder="Filter by city/neighborhood (optional)" />
+          <input
+            id="jobFilterLocation"
+            type="text"
+            placeholder="Filter by city/neighborhood (optional)"
+          />
         </div>
 
         <p id="jobsCount" style="margin: 8px 0 0 0; font-weight: 600;"></p>
@@ -50,6 +54,11 @@
         <button class="button" type="button" id="jobFilterBtn">Apply Filters</button>
         <button class="button" type="button" id="clearFilters">Clear Filters</button>
       </div>
+
+      <p style="margin-bottom: 16px;">
+        Care requests are submitted by community members and approved before becoming visible.
+        Families and caregivers communicate directly and should use their own judgment when arranging care.
+      </p>
 
       <div id="jobsContainer" class="cards"></div>
     </section>
@@ -75,6 +84,7 @@
         if (countEl) countEl.textContent = `${list.length} job(s) shown`;
 
         container.innerHTML = "";
+
         if (!list.length) {
           container.innerHTML = "<p>No jobs match those filters yet.</p>";
           return;
@@ -101,7 +111,7 @@
         });
       }
 
-      // Apply filters to loaded list
+      // Apply filters to the loaded list
       function applyFilters() {
         const typeVal = (document.getElementById("jobFilterType")?.value || "").trim().toLowerCase();
         const locVal = (document.getElementById("jobFilterLocation")?.value || "").trim().toLowerCase();
@@ -119,9 +129,8 @@
         renderJobs(filtered);
       }
 
-      // Load jobs from Supabase (active only)
+      // Load jobs from Supabase (approved/active only)
       async function loadJobsOnce() {
-        // Wait until window.db exists (guards load order)
         let tries = 0;
         while (!window.db && tries < 40) {
           await new Promise((r) => setTimeout(r, 50));
@@ -129,6 +138,7 @@
         }
 
         const container = document.getElementById("jobsContainer");
+
         if (!window.db) {
           container.innerHTML = "<p>Database connection not ready. Please refresh.</p>";
           return;
