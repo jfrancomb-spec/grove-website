@@ -10,7 +10,6 @@
 </head>
 
 <body>
-  <!-- Shared header -->
   <div id="header-placeholder"></div>
 
   <main>
@@ -22,24 +21,31 @@
         Grove helps families and caregivers connect through trusted local networks —
         so it’s easier to find reliable help close to home.
       </div>
-      <section class="two-paths">
-  <div class="cards">
-
-    <div class="card">
-      <h2>Families</h2>
-      <a class="button" href="./findcare.html">Post a Care Request</a>
-      <a class="button" href="./caregivers.html">Browse Caregivers</a>
     </div>
 
-    <div class="card">
-      <h2>Caregivers</h2>
-      <a class="button" href="./jobs.html">Browse Opportunities</a>
-      <a class="button" href="./caregiver.html">Become a Caregiver</a>
-    </div>
+    <!-- TWO PATHS -->
+    <section class="two-paths text-center">
+      <h2 class="mt-0">How would you like to get started?</h2>
+      <p>
+        Choose the path that fits you best.
+      </p>
 
-  </div>
-</section>
-    </div>
+      <div class="cards">
+        <div class="card">
+          <h3>For Families</h3>
+          <p>Post your care needs or explore local caregivers.</p>
+          <a class="button" href="./findcare.html">Post a Care Request</a>
+          <a class="button" href="./caregivers.html">Browse Caregivers</a>
+        </div>
+
+        <div class="card">
+          <h3>For Caregivers</h3>
+          <p>Explore local opportunities or join the Grove network.</p>
+          <a class="button" href="./jobs.html">Browse Opportunities</a>
+          <a class="button" href="./caregiver.html">Become a Caregiver</a>
+        </div>
+      </div>
+    </section>
 
     <!-- WHY GROVE EXISTS -->
     <section>
@@ -106,7 +112,7 @@
     </section>
 
     <!-- CALL TO ACTION -->
-    <section style="text-align:center;">
+    <section class="text-center">
       <h2>Ready to Get Started?</h2>
 
       <p>
@@ -118,10 +124,8 @@
     </section>
   </main>
 
-  <!-- Shared footer -->
   <div id="footer-placeholder"></div>
 
-  <!-- Scripts -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
   <script src="./app.js"></script>
 </body>
