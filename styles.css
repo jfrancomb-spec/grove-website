@@ -6,10 +6,15 @@
   --accent: #80C090;
   --link: #306080;
   --card-border: #E5E7E6;
+  --muted: #777;
 }
 
-/* Base */
-* { box-sizing: border-box; }
+/* =====================================================
+   Base
+===================================================== */
+* {
+  box-sizing: border-box;
+}
 
 body {
   font-family: system-ui, -apple-system, Arial, sans-serif;
@@ -19,27 +24,51 @@ body {
   line-height: 1.6;
 }
 
-h1, h2 { margin-bottom: 10px; }
-
-h1 {
-  font-size: 42px;
+h1,
+h2 {
   margin-bottom: 10px;
 }
 
-p { margin-bottom: 10px; }
+h1 {
+  font-size: 42px;
+}
 
-/* Layout */
+h3 {
+  margin-top: 0;
+}
+
+p {
+  margin-bottom: 10px;
+}
+
+a {
+  color: var(--link);
+}
+
+/* =====================================================
+   Layout
+===================================================== */
+main {
+  min-height: 60vh;
+}
+
 section {
   max-width: 900px;
   margin: 40px auto;
   padding: 0 20px;
 }
 
-/* Header / Nav */
-header {
+/* =====================================================
+   Shared header / nav
+===================================================== */
+header,
+.site-header {
   background: white;
-  padding: 16px 24px;
   border-bottom: 1px solid var(--card-border);
+}
+
+header {
+  padding: 16px 24px;
   font-size: 20px;
   font-weight: 600;
 }
@@ -51,7 +80,10 @@ header {
   gap: 20px;
 }
 
-.brand { display: inline-flex; }
+.brand {
+  display: inline-flex;
+  align-items: center;
+}
 
 .brand-logo {
   height: 48px;
@@ -71,7 +103,9 @@ header {
   text-decoration: none;
 }
 
-.nav a:hover { text-decoration: underline; }
+.nav a:hover {
+  text-decoration: underline;
+}
 
 .nav a.active {
   font-weight: 700;
@@ -80,14 +114,17 @@ header {
 }
 
 .menu-toggle {
-  display: none; /* shown on mobile */
+  display: none;
   font-size: 26px;
   background: none;
   border: none;
   cursor: pointer;
+  color: var(--text);
 }
 
-/* Hero */
+/* =====================================================
+   Hero
+===================================================== */
 .hero {
   text-align: center;
   padding: 80px 20px;
@@ -99,7 +136,9 @@ header {
   margin-bottom: 30px;
 }
 
-/* Buttons */
+/* =====================================================
+   Buttons
+===================================================== */
 .button {
   background: var(--primary);
   color: white;
@@ -122,10 +161,16 @@ button.button {
   width: 100%;
 }
 
-/* Forms */
+/* =====================================================
+   Forms
+===================================================== */
 form {
   max-width: 520px;
   margin: 0 auto;
+}
+
+.row {
+  margin-bottom: 12px;
 }
 
 input,
@@ -135,9 +180,13 @@ textarea {
   padding: 12px;
   border-radius: 6px;
   border: 1px solid #cfd6d2;
+  font: inherit;
 }
 
-textarea { min-height: 120px; }
+textarea {
+  min-height: 120px;
+  resize: vertical;
+}
 
 input:focus,
 select:focus,
@@ -147,7 +196,9 @@ textarea:focus {
   box-shadow: 0 0 0 2px rgba(64, 144, 136, 0.18);
 }
 
-/* Cards */
+/* =====================================================
+   Cards
+===================================================== */
 .cards {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
@@ -162,8 +213,6 @@ textarea:focus {
   padding: 16px;
 }
 
-.card h3 { margin-top: 0; }
-
 .form-card {
   background: white;
   border: 1px solid var(--card-border);
@@ -171,8 +220,13 @@ textarea:focus {
   padding: 24px;
 }
 
-.form-card h3 { margin-top: 24px; }
+.form-card h3 {
+  margin-top: 24px;
+}
 
+/* =====================================================
+   Messages
+===================================================== */
 .success {
   display: none;
   color: var(--primary);
@@ -181,23 +235,9 @@ textarea:focus {
   margin-top: 14px;
 }
 
-/* Footer */
-footer {
-  background: white;
-  border-top: 1px solid var(--card-border);
-  text-align: center;
-  padding: 30px;
-  font-size: 14px;
-}
-
-footer a {
-  color: var(--primary);
-  text-decoration: none;
-  font-weight: 500;
-}
-
-footer a:hover { text-decoration: underline; }
-
+/* =====================================================
+   Footer
+===================================================== */
 .site-footer {
   background: white;
   border-top: 1px solid var(--card-border);
@@ -206,13 +246,79 @@ footer a:hover { text-decoration: underline; }
   font-size: 14px;
 }
 
+.site-footer a {
+  color: var(--primary);
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.site-footer a:hover {
+  text-decoration: underline;
+}
+
 .footer-links {
   margin-top: 10px;
 }
 
-/* Mobile */
+/* =====================================================
+   Utility classes
+   These help remove inline styles from pages
+===================================================== */
+.mt-0 {
+  margin-top: 0;
+}
+
+.mt-10 {
+  margin-top: 10px;
+}
+
+.mt-16 {
+  margin-top: 16px;
+}
+
+.mt-22 {
+  margin-top: 22px;
+}
+
+.mb-0 {
+  margin-bottom: 0;
+}
+
+.mb-6 {
+  margin-bottom: 6px;
+}
+
+.mb-16 {
+  margin-bottom: 16px;
+}
+
+.text-center {
+  text-align: center;
+}
+
+.text-muted {
+  color: var(--muted);
+}
+
+.text-small {
+  font-size: 13px;
+}
+
+.flex-between {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+/* =====================================================
+   Mobile
+===================================================== */
 @media (max-width: 700px) {
-  .menu-toggle { display: block; }
+  .menu-toggle {
+    display: block;
+  }
 
   .nav {
     display: none;
@@ -222,5 +328,19 @@ footer a:hover { text-decoration: underline; }
     margin-top: 10px;
   }
 
-  .nav.open { display: flex; }
+  .nav.open {
+    display: flex;
+  }
+
+  .hero {
+    padding: 56px 20px;
+  }
+
+  h1 {
+    font-size: 34px;
+  }
+
+  .subtitle {
+    font-size: 18px;
+  }
 }
