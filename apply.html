@@ -62,6 +62,14 @@
           ✅ Application sent! If the family is interested, they can reach out.
         </p>
 
+        <div style="margin-top: 22px;">
+          <h3 style="margin-bottom: 6px;">What Happens Next</h3>
+          <p style="margin-top: 0;">
+            After you submit your application, the family can review your information and decide whether they’d like to connect.
+            If they’re interested, they can reach out directly.
+          </p>
+        </div>
+
         <p style="margin-top: 16px;">
           <a href="./jobs.html">← Back to Jobs</a>
         </p>
@@ -96,6 +104,7 @@
         await new Promise((r) => setTimeout(r, 50));
         tries++;
       }
+
       if (!window.db) {
         subtitle.textContent = "Database connection not ready. Please refresh.";
         return;
@@ -104,7 +113,7 @@
       // Load job details for display
       const { data: job, error } = await window.db
         .from("job_posts")
-        .select("id,title,care_type,location,schedule")
+        .select("id, title, care_type, location, schedule")
         .eq("id", jobId)
         .single();
 
@@ -134,12 +143,10 @@
           .insert([payload]);
 
         if (insErr) {
-          // handleError is defined in app.js
           handleError(insErr, "Application failed");
           return;
         }
 
-        // showSuccess is defined in app.js
         showSuccess("applySuccess", form);
       });
     }
