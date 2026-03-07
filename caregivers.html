@@ -102,13 +102,15 @@
           const card = document.createElement("div");
           card.className = "card";
 
-          card.innerHTML = `
-            <h3>${cg.name_first} — ${cg.care_type}</h3>
-            <p><strong>Location:</strong> ${cg.location} (local)</p>
-            <p><strong>Availability:</strong> ${cg.availability}</p>
-            <p>${cg.bio}</p>
-            <a class="button" href="./request.html?caregiver_id=${cg.id}">Contact This Caregiver</a>
-          `;
+card.innerHTML = `
+  <h3>${cg.name_display} — ${cg.care_type}</h3>
+  <p><strong>Location:</strong> ${cg.location}</p>
+  ${cg.availability ? `<p><strong>Availability:</strong> ${cg.availability}</p>` : ``}
+  <p>${cg.bio || ""}</p>
+  <a class="button" href="./request.html?caregiver_id=${cg.id}">
+    Contact This Caregiver
+  </a>
+`;
 
           container.appendChild(card);
         });
@@ -151,11 +153,11 @@
           return;
         }
 
-        const { data, error } = await window.db
-          .from("caregiver_posts")
-          .select("*")
-          .eq("is_active", true)
-          .order("created_at", { ascending: false });
+const { data, error } = await window.db
+  .from("caregiver_profiles")
+  .select("*")
+  .eq("is_active", true)
+  .order("created_at", { ascending: false });
 
         if (error) {
           container.innerHTML = "<p>Unable to load caregivers right now.</p>";
