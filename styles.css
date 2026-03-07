@@ -425,3 +425,11 @@ textarea:focus {
   margin-bottom:10px;
   display:block;
 }
+.profile-photo{
+  width:180px;
+  height:180px;
+  object-fit:cover;
+  border-radius:50%;
+  display:block;
+  margin:0 auto 12px auto;
+}
