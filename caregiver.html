@@ -83,7 +83,10 @@
           <div class="row">
             <input id="cg_availability" type="text" placeholder="Availability (days/times)" />
           </div>
-
+<div class="row">
+  <label for="cg_photo">Profile Photo</label>
+  <input id="cg_photo" type="file" accept="image/*" />
+</div>
           <div class="row">
             <textarea id="cg_bio" placeholder="Tell families about your experience" required></textarea>
           </div>
@@ -116,71 +119,100 @@
   <script src="./app.js"></script>
 
   <script>
-    function wireCaregiverProfileForm() {
-      const form = document.getElementById("caregiverProfileForm");
-      if (!form) return;
+  function wireCaregiverProfileForm() {
+    const form = document.getElementById("caregiverProfileForm");
+    if (!form) return;
 
-      form.addEventListener("submit", async (e) => {
-        e.preventDefault();
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
 
-        const payload = {
-          name_display: document.getElementById("cg_name")?.value || "",
-          email: document.getElementById("cg_email")?.value || "",
-          phone: document.getElementById("cg_phone")?.value || "",
-          location: document.getElementById("cg_location")?.value || "",
-          care_type: document.getElementById("cg_care_type")?.value || "",
-          availability: document.getElementById("cg_availability")?.value || "",
-          bio: document.getElementById("cg_bio")?.value || ""
-        };
+      let photoUrl = null;
 
-        const { error } = await window.db
-          .from("caregiver_profiles")
-          .insert([payload]);
+      const photoInput = document.getElementById("cg_photo");
+      const file = photoInput?.files?.[0];
 
-        if (error) {
-          handleError(error, "Caregiver profile failed");
+      if (file) {
+        const safeName = file.name.replace(/\s+/g, "_");
+        const filePath = `caregivers/${Date.now()}_${safeName}`;
+
+        const { error: uploadError } = await window.db
+          .storage
+          .from("profile-photos")
+          .upload(filePath, file);
+
+        if (uploadError) {
+          handleError(uploadError, "Photo upload failed");
           return;
         }
 
-        showSuccess("caregiverProfileSuccess", form);
-      });
-    }
+        const { data: publicData } = window.db
+          .storage
+          .from("profile-photos")
+          .getPublicUrl(filePath);
 
-    function prefillCaregiverProfileFromQuery() {
-      const params = new URLSearchParams(window.location.search);
-      const applyJob = params.get("apply_job");
-      const careType = (params.get("care_type") || "").trim();
-      const location = (params.get("location") || "").trim();
-
-      const bio = document.getElementById("cg_bio");
-      if (!bio) return;
-
-      const loc = document.getElementById("cg_location");
-      if (loc && location) loc.value = location;
-
-      const sel = document.getElementById("cg_care_type");
-      if (sel && careType) {
-        const match = Array.from(sel.options).find((o) => {
-          const val = (o.value || o.textContent || "").trim().toLowerCase();
-          return val === careType.toLowerCase();
-        });
-        if (match) sel.value = match.value || match.textContent;
+        photoUrl = publicData?.publicUrl || null;
       }
 
-      if (applyJob) {
-        bio.value =
-          `Interested in opportunity: ${applyJob}\n` +
-          (location ? `Location: ${location}\n` : "") +
-          (careType ? `Care type: ${careType}\n` : "") +
-          `\n` +
-          (bio.value || "");
-      }
-    }
+      const payload = {
+        name_display: document.getElementById("cg_name")?.value || "",
+        email: document.getElementById("cg_email")?.value || "",
+        phone: document.getElementById("cg_phone")?.value || "",
+        location: document.getElementById("cg_location")?.value || "",
+        care_type: document.getElementById("cg_care_type")?.value || "",
+        availability: document.getElementById("cg_availability")?.value || "",
+        bio: document.getElementById("cg_bio")?.value || "",
+        photo_url: photoUrl
+      };
 
-    window.addEventListener("DOMContentLoaded", () => {
-      prefillCaregiverProfileFromQuery();
-      wireCaregiverProfileForm();
+      const { error } = await window.db
+        .from("caregiver_profiles")
+        .insert([payload]);
+
+      if (error) {
+        handleError(error, "Caregiver profile failed");
+        return;
+      }
+
+      showSuccess("caregiverProfileSuccess", form);
     });
-  </script>
+  }
+
+  function prefillCaregiverProfileFromQuery() {
+    const params = new URLSearchParams(window.location.search);
+    const applyJob = params.get("apply_job");
+    const careType = (params.get("care_type") || "").trim();
+    const location = (params.get("location") || "").trim();
+
+    const bio = document.getElementById("cg_bio");
+    if (!bio) return;
+
+    const loc = document.getElementById("cg_location");
+    if (loc && location) loc.value = location;
+
+    const sel = document.getElementById("cg_care_type");
+    if (sel && careType) {
+      const match = Array.from(sel.options).find((o) => {
+        const val = (o.value || o.textContent || "").trim().toLowerCase();
+        return val === careType.toLowerCase();
+      });
+      if (match) sel.value = match.value || match.textContent;
+    }
+
+    if (applyJob) {
+      bio.value =
+        `Interested in opportunity: ${applyJob}\n` +
+        (location ? `Location: ${location}\n` : "") +
+        (careType ? `Care type: ${careType}\n` : "") +
+        `\n` +
+        (bio.value || "");
+    }
+  }
+
+  window.addEventListener("DOMContentLoaded", () => {
+    prefillCaregiverProfileFromQuery();
+    wireCaregiverProfileForm();
+  });
+</script>
+
 </body>
 </html>
