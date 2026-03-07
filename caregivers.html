@@ -10,11 +10,9 @@
 </head>
 
 <body>
-  <!-- Shared header -->
   <div id="header-placeholder"></div>
 
   <main>
-    <!-- HERO -->
     <div class="hero">
       <h1>Caregivers</h1>
       <div class="subtitle">
@@ -22,13 +20,12 @@
       </div>
 
       <a class="button" href="./findcare.html">Post a Care Request</a>
-      <a class="button" href="./jobs.html">Browse Care Jobs</a>
+      <a class="button" href="./jobs.html">Browse Care Opportunities</a>
     </div>
 
-    <!-- FILTERS + RESULTS -->
     <section>
-      <div class="form-card" style="margin-bottom: 16px;">
-        <h2 style="margin-top: 0;">Filter Caregivers</h2>
+      <div class="form-card mb-16">
+        <h2 class="mt-0">Filter Caregivers</h2>
 
         <div class="row">
           <select id="cgFilterType">
@@ -53,18 +50,18 @@
           <input
             id="cgFilterKeyword"
             type="text"
-            placeholder="Keyword (availability, bio, etc.)"
+            placeholder="Keyword (bio, availability, experience, etc.)"
           />
         </div>
 
-        <p id="cgCount" style="margin: 8px 0 0 0; font-weight: 600;"></p>
+        <p id="cgCount" class="mt-10"><strong></strong></p>
 
         <button class="button" type="button" id="cgApplyBtn">Apply Filters</button>
         <button class="button" type="button" id="cgClearBtn">Clear Filters</button>
       </div>
 
-      <p style="margin-bottom: 16px;">
-        Caregiver listings are submitted by community members and approved before becoming visible.
+      <p class="mb-16">
+        Caregiver profiles are submitted by community members and approved before becoming visible.
         Families and caregivers communicate directly and should use their own judgment when arranging care.
       </p>
 
@@ -72,24 +69,51 @@
     </section>
   </main>
 
-  <!-- Shared footer -->
   <div id="footer-placeholder"></div>
 
-  <!-- Scripts -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
   <script src="./app.js"></script>
 
-  <!-- Page script -->
   <script>
     (function () {
       let allCaregivers = [];
 
-      // Render caregiver cards
+      function formatDisplayName(cg) {
+        const first = cg.first_name || "";
+        const lastInitial = cg.last_name ? `${cg.last_name.charAt(0)}.` : "";
+        return `${first} ${lastInitial}`.trim();
+      }
+
+      function careTypesText(cg) {
+        if (Array.isArray(cg.care_types) && cg.care_types.length) {
+          return cg.care_types.join(", ");
+        }
+        return cg.care_type || "";
+      }
+
+      function buildBadges(cg) {
+        const badges = [];
+
+        if (cg.has_drivers_license) badges.push("Driver’s License");
+        if (cg.cpr_certified) badges.push("CPR Certified");
+        if (cg.non_smoker) badges.push("Non-Smoker");
+        if (cg.non_vaper) badges.push("Non-Vaper");
+        if (cg.comfortable_with_cats) badges.push("Comfortable with Cats");
+        if (cg.comfortable_with_dogs) badges.push("Comfortable with Dogs");
+
+        if (!badges.length) return "";
+        return `
+          <div class="profile-badges">
+            ${badges.map(badge => `<span class="profile-badge">${badge}</span>`).join("")}
+          </div>
+        `;
+      }
+
       function renderCaregivers(list) {
         const container = document.getElementById("caregiversContainer");
         const countEl = document.getElementById("cgCount");
 
-        if (countEl) countEl.textContent = `${list.length} caregiver(s) shown`;
+        if (countEl) countEl.innerHTML = `<strong>${list.length} caregiver(s) shown</strong>`;
 
         container.innerHTML = "";
 
@@ -100,38 +124,73 @@
 
         list.forEach((cg) => {
           const card = document.createElement("div");
-          card.className = "card";
-const displayName = `${cg.first_name} ${cg.last_name ? cg.last_name.charAt(0) + "." : ""}`;          
-card.innerHTML = `
-  ${cg.photo_url ? `<img class="profile-photo" src="${cg.photo_url}" alt="${cg.name_display}">` : ``}
-  <h3>${cg.name_display} — ${cg.care_type}</h3>
-  <p><strong>Location:</strong> ${cg.location}</p>
-  ${cg.availability ? `<p><strong>Availability:</strong> ${cg.availability}</p>` : ``}
-  <p>${cg.bio || ""}</p>
-  <a class="button" href="./request.html?caregiver_id=${cg.id}">
-    Contact This Caregiver
-  </a>
-`;
+          card.className = "card caregiver-card";
+
+          const displayName = formatDisplayName(cg);
+          const careTypes = careTypesText(cg);
+
+          const responseTime =
+            cg.average_response_minutes != null
+              ? `${cg.average_response_minutes} min average response`
+              : "";
+
+          const encounters =
+            cg.confirmed_encounters != null
+              ? `${cg.confirmed_encounters} confirmed encounter${cg.confirmed_encounters === 1 ? "" : "s"}`
+              : "";
+
+          card.innerHTML = `
+            ${cg.photo_url ? `<img class="profile-photo" src="${cg.photo_url}" alt="${displayName}">` : ``}
+            <h3>${displayName}${careTypes ? ` — ${careTypes}` : ""}</h3>
+            <p><strong>Location:</strong> ${cg.location || ""}</p>
+            ${cg.years_experience ? `<p><strong>Experience:</strong> ${cg.years_experience}</p>` : ``}
+            ${cg.availability ? `<p><strong>Availability:</strong> ${cg.availability}</p>` : ``}
+            ${responseTime ? `<p><strong>Response Time:</strong> ${responseTime}</p>` : ``}
+            ${encounters ? `<p><strong>Confirmed Encounters:</strong> ${encounters}</p>` : ``}
+            ${buildBadges(cg)}
+            <p>${cg.bio || ""}</p>
+            <a class="button" href="./request.html?caregiver_id=${cg.id}">
+              Contact This Caregiver
+            </a>
+          `;
 
           container.appendChild(card);
         });
       }
 
-      // Apply filters to loaded caregivers
       function applyFilters() {
         const typeVal = (document.getElementById("cgFilterType")?.value || "").trim().toLowerCase();
         const locVal = (document.getElementById("cgFilterLocation")?.value || "").trim().toLowerCase();
         const keyVal = (document.getElementById("cgFilterKeyword")?.value || "").trim().toLowerCase();
 
         const filtered = allCaregivers.filter((cg) => {
-          const cgType = (cg.care_type || "").trim().toLowerCase();
+          const careTypes = Array.isArray(cg.care_types)
+            ? cg.care_types.join(" ").toLowerCase()
+            : ((cg.care_type || "").trim().toLowerCase());
+
           const cgLoc = (cg.location || "").trim().toLowerCase();
           const cgAvail = (cg.availability || "").trim().toLowerCase();
           const cgBio = (cg.bio || "").trim().toLowerCase();
+          const cgExp = (cg.years_experience || "").trim().toLowerCase();
 
-          const typeOk = !typeVal || cgType === typeVal;
+          const badgeText = [
+            cg.has_drivers_license ? "driver's license" : "",
+            cg.cpr_certified ? "cpr certified" : "",
+            cg.non_smoker ? "non-smoker" : "",
+            cg.non_vaper ? "non-vaper" : "",
+            cg.comfortable_with_cats ? "comfortable with cats" : "",
+            cg.comfortable_with_dogs ? "comfortable with dogs" : ""
+          ].join(" ").toLowerCase();
+
+          const typeOk = !typeVal || careTypes.includes(typeVal);
           const locOk = !locVal || cgLoc.includes(locVal);
-          const keyOk = !keyVal || cgAvail.includes(keyVal) || cgBio.includes(keyVal);
+          const keyOk =
+            !keyVal ||
+            cgAvail.includes(keyVal) ||
+            cgBio.includes(keyVal) ||
+            cgExp.includes(keyVal) ||
+            badgeText.includes(keyVal) ||
+            careTypes.includes(keyVal);
 
           return typeOk && locOk && keyOk;
         });
@@ -139,7 +198,6 @@ card.innerHTML = `
         renderCaregivers(filtered);
       }
 
-      // Load caregiver listings from Supabase
       async function loadCaregiversOnce() {
         let tries = 0;
         while (!window.db && tries < 40) {
@@ -154,11 +212,11 @@ card.innerHTML = `
           return;
         }
 
-const { data, error } = await window.db
-  .from("caregiver_profiles")
-  .select("*")
-  .eq("is_active", true)
-  .order("created_at", { ascending: false });
+        const { data, error } = await window.db
+          .from("caregiver_profiles")
+          .select("*")
+          .eq("is_active", true)
+          .order("created_at", { ascending: false });
 
         if (error) {
           container.innerHTML = "<p>Unable to load caregivers right now.</p>";
@@ -170,7 +228,6 @@ const { data, error } = await window.db
         applyFilters();
       }
 
-      // Wire up filter controls
       function wireEvents() {
         document.getElementById("cgApplyBtn")?.addEventListener("click", applyFilters);
 
