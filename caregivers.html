@@ -101,8 +101,7 @@
         list.forEach((cg) => {
           const card = document.createElement("div");
           card.className = "card";
-const displayName = `${cg.first_name} ${cg.last_name ? cg.last_name.charAt(0) + "." : ""}`;
-          
+const displayName = `${cg.first_name} ${cg.last_name ? cg.last_name.charAt(0) + "." : ""}`;          
 card.innerHTML = `
   ${cg.photo_url ? `<img class="profile-photo" src="${cg.photo_url}" alt="${cg.name_display}">` : ``}
   <h3>${cg.name_display} — ${cg.care_type}</h3>
