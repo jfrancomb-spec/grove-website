@@ -417,3 +417,12 @@ textarea:focus {
 .nav-cta:hover{
   background:var(--primary-dark);
 }
+.admin-photo{
+  width:100%;
+  max-width:180px;
+  height:180px;
+  object-fit:cover;
+  border-radius:8px;
+  margin-bottom:10px;
+  display:block;
+}
