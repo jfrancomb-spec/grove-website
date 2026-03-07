@@ -10,22 +10,19 @@
 </head>
 
 <body>
-  <!-- Shared header -->
   <div id="header-placeholder"></div>
 
   <main>
-    <!-- HERO -->
     <div class="hero">
-      <h1>Join the Grove Caregiver Network</h1>
+      <h1>Create Your Caregiver Profile</h1>
       <div class="subtitle">
-        Create a caregiver profile and connect with local families who need childcare, senior care, pet care, or household help.
+        Join the Grove network and create a profile families can browse once approved.
       </div>
 
-      <a class="button" href="#apply">Apply Now</a>
-      <a class="button" href="./jobs.html">Browse Care Jobs</a>
+      <a class="button" href="#apply">Create Profile</a>
+      <a class="button" href="./jobs.html">Browse Care Opportunities</a>
     </div>
 
-    <!-- WHAT TO EXPECT -->
     <section>
       <h2>What You Can Expect</h2>
 
@@ -37,7 +34,7 @@
 
         <div class="card">
           <h3>Clear Expectations</h3>
-          <p>Care requests include details so you can decide if the opportunity fits your availability.</p>
+          <p>Care requests include details so you can decide if an opportunity fits your availability.</p>
         </div>
 
         <div class="card">
@@ -47,27 +44,25 @@
       </div>
     </section>
 
-    <!-- APPLY FORM -->
     <section id="apply">
-      <h2>Apply to Become a Caregiver</h2>
+      <h2>Create Caregiver Profile</h2>
 
       <p>
-        Tell families a bit about yourself. Once approved, your profile can be visible in the Grove network.
+        Tell families about your experience, location, and availability. Once approved, your profile can be visible in the Grove network.
       </p>
 
       <div class="form-card">
-        <form id="caregiverForm">
-
+        <form id="caregiverProfileForm">
           <div class="row">
             <input id="cg_name" type="text" placeholder="Your Name" required />
           </div>
 
           <div class="row">
-            <input id="cg_phone" type="text" placeholder="Phone Number" required />
+            <input id="cg_email" type="email" placeholder="Best Email Address" required />
           </div>
 
           <div class="row">
-            <input id="cg_email" type="email" placeholder="Best Email Address" required />
+            <input id="cg_phone" type="text" placeholder="Phone Number" />
           </div>
 
           <div class="row">
@@ -86,47 +81,106 @@
           </div>
 
           <div class="row">
-            <textarea id="cg_experience" placeholder="Tell families about your experience" required></textarea>
+            <input id="cg_availability" type="text" placeholder="Availability (days/times)" />
           </div>
 
-          <button class="button" type="submit">Apply Now</button>
+          <div class="row">
+            <textarea id="cg_bio" placeholder="Tell families about your experience" required></textarea>
+          </div>
 
+          <button class="button" type="submit">Create Profile</button>
         </form>
 
-        <!-- Shown by app.js after successful submit -->
-        <p id="caregiverSuccess" class="success">
-          ✅ Application received! You can browse care jobs anytime.
+        <p id="caregiverProfileSuccess" class="success">
+          ✅ Profile submitted! Once approved, it can be visible in the Grove network.
         </p>
 
-        <div style="margin-top:22px;">
-          <h3 style="margin-bottom:6px;">What Happens Next</h3>
-
-          <p style="margin-top:0;">
-            After you apply, Grove reviews your submission for identity and basic network standards.
-            If approved, your caregiver profile can be visible to families browsing the Grove network.
-          </p>
-
-          <p>
-            You can also browse care requests and job opportunities.
-            Caregivers decide which opportunities fit their schedule, and families decide which caregivers
-            they’d like to connect with.
+        <div class="mt-22">
+          <h3 class="mb-6">What Happens Next</h3>
+          <p class="mt-0">
+            After you submit your profile, Grove reviews it for identity and basic network standards.
+            If approved, families can browse your profile and reach out directly when they’re interested.
           </p>
         </div>
 
-        <p style="margin-top:16px;">
+        <p class="mt-16">
           <a href="./index.html">← Back to Home</a>
         </p>
-
       </div>
     </section>
   </main>
 
-  <!-- Shared footer -->
   <div id="footer-placeholder"></div>
 
-  <!-- Scripts -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
   <script src="./app.js"></script>
 
+  <script>
+    function wireCaregiverProfileForm() {
+      const form = document.getElementById("caregiverProfileForm");
+      if (!form) return;
+
+      form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+
+        const payload = {
+          name_display: document.getElementById("cg_name")?.value || "",
+          email: document.getElementById("cg_email")?.value || "",
+          phone: document.getElementById("cg_phone")?.value || "",
+          location: document.getElementById("cg_location")?.value || "",
+          care_type: document.getElementById("cg_care_type")?.value || "",
+          availability: document.getElementById("cg_availability")?.value || "",
+          bio: document.getElementById("cg_bio")?.value || ""
+        };
+
+        const { error } = await window.db
+          .from("caregiver_profiles")
+          .insert([payload]);
+
+        if (error) {
+          handleError(error, "Caregiver profile failed");
+          return;
+        }
+
+        showSuccess("caregiverProfileSuccess", form);
+      });
+    }
+
+    function prefillCaregiverProfileFromQuery() {
+      const params = new URLSearchParams(window.location.search);
+      const applyJob = params.get("apply_job");
+      const careType = (params.get("care_type") || "").trim();
+      const location = (params.get("location") || "").trim();
+
+      const bio = document.getElementById("cg_bio");
+      if (!bio) return;
+
+      const loc = document.getElementById("cg_location");
+      if (loc && location) loc.value = location;
+
+      const sel = document.getElementById("cg_care_type");
+      if (sel && careType) {
+        const match = Array.from(sel.options).find((o) => {
+          const val = (o.value || o.textContent || "").trim().toLowerCase();
+          return val === careType.toLowerCase();
+        });
+        if (match) sel.value = match.value || match.textContent;
+      }
+
+      if (applyJob) {
+        bio.value =
+          `Interested in opportunity: ${applyJob}\n` +
+          (location ? `Location: ${location}\n` : "") +
+          (careType ? `Care type: ${careType}\n` : "") +
+          `\n` +
+          (bio.value || "");
+      }
+    }
+
+    window.addEventListener("DOMContentLoaded", () => {
+      prefillCaregiverProfileFromQuery();
+      wireCaregiverProfileForm();
+    });
+  </script>
 </body>
 </html>
