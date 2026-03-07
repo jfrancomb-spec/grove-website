@@ -103,6 +103,7 @@
           card.className = "card";
 
 card.innerHTML = `
+  ${cg.photo_url ? `<img class="profile-photo" src="${cg.photo_url}" alt="${cg.name_display}">` : ``}
   <h3>${cg.name_display} — ${cg.care_type}</h3>
   <p><strong>Location:</strong> ${cg.location}</p>
   ${cg.availability ? `<p><strong>Availability:</strong> ${cg.availability}</p>` : ``}
