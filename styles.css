@@ -403,3 +403,14 @@ textarea:focus {
   font-size:38px;
   margin-bottom:10px;
 }
+.nav-cta{
+  background:var(--primary);
+  color:white !important;
+  padding:8px 14px;
+  border-radius:6px;
+  text-decoration:none;
+}
+
+.nav-cta:hover{
+  background:var(--primary-dark);
+}
