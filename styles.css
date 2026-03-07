@@ -399,3 +399,7 @@ textarea:focus {
   display:block;
   margin:10px auto;
 }
+.path-icon{
+  font-size:38px;
+  margin-bottom:10px;
+}
