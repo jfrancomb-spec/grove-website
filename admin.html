@@ -156,15 +156,15 @@
       await loadAdminData();
     }
 
-    async function setCaregiverPostStatus(id, approve) {
-      const patch = approve
-        ? { status: "approved", is_active: true }
-        : { status: "denied", is_active: false };
+async function setCaregiverPostStatus(id, approve) {
+  const patch = approve
+    ? { status: "approved", is_active: true }
+    : { status: "denied", is_active: false };
 
-      const { error } = await window.db
-        .from("caregiver_posts")
-        .update(patch)
-        .eq("id", id);
+  const { error } = await window.db
+    .from("caregiver_profiles")
+    .update(patch)
+    .eq("id", id);
 
       if (error) {
         handleError(error, "Update failed");
@@ -246,11 +246,11 @@
       // ---------------------------------
       // Caregiver Listings
       // ---------------------------------
-      const cpBox = document.getElementById("caregiverPostsAdmin");
-      const { data: cp, error: cpErr } = await window.db
-        .from("caregiver_posts")
-        .select("*")
-        .order("created_at", { ascending: false });
+const cpBox = document.getElementById("caregiverPostsAdmin");
+const { data: cp, error: cpErr } = await window.db
+  .from("caregiver_profiles")
+  .select("*")
+  .order("created_at", { ascending: false });
 
       if (!renderEmptyOrError(cpBox, cpErr, "No caregiver posts yet.", cp)) {
         cp.forEach((cg) => {
@@ -258,11 +258,12 @@
           card.className = "card";
 
           card.innerHTML = `
-            <h3>${cg.name_first} — ${cg.care_type}</h3>
-            <p><strong>Status:</strong> ${cg.status || "(none)"}</p>
-            <p><strong>Location:</strong> ${cg.location}</p>
-            <p><strong>Availability:</strong> ${cg.availability}</p>
-            <p>${cg.bio || ""}</p>
+${cg.photo_url ? `<img class="profile-photo" src="${cg.photo_url}" alt="${cg.name_display}">` : ``}
+<h3>${cg.name_display} — ${cg.care_type}</h3>
+<p><strong>Status:</strong> ${cg.status || "(none)"}</p>
+<p><strong>Location:</strong> ${cg.location}</p>
+${cg.availability ? `<p><strong>Availability:</strong> ${cg.availability}</p>` : ``}
+<p>${cg.bio || ""}</p>
             <p style="font-size:13px;color:#777;">Posted ${fmtDate(cg.created_at)}</p>
 
             <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:12px;">
