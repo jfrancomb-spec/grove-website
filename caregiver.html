@@ -18,14 +18,12 @@
       <div class="subtitle">
         Join the Grove network and create a profile families can browse once approved.
       </div>
-
       <a class="button" href="#apply">Create Profile</a>
       <a class="button" href="./jobs.html">Browse Care Opportunities</a>
     </div>
 
     <section>
       <h2>What You Can Expect</h2>
-
       <div class="cards">
         <div class="card">
           <h3>Local Opportunities</h3>
@@ -43,10 +41,17 @@
         </div>
       </div>
     </section>
-
+    
+//-------------------------------------
+//Section for Creating Caregiver Profile    
+//-------------------------------------
     <section id="apply">
       <h2>Create Caregiver Profile</h2>
 
+<button class="button" type="button" onclick="sendMagicLink()">
+  Send Sign-In Link
+</button>
+      
       <p>
         Tell families about your experience, location, qualifications, and availability. Once approved, your profile can be visible in the Grove network.
       </p>
@@ -144,10 +149,35 @@
 
   <div id="footer-placeholder"></div>
 
+  //--------------------------
+  //SCRIPT and FUNCTION AREA//
+  //--------------------------
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
   <script src="./app.js"></script>
 
   <script>
+async function sendMagicLink() {
+  const email = document.getElementById("cg_email").value.trim();
+
+  if (!email) {
+    alert("Please enter your email first.");
+    return;
+  }
+
+  const { error } = await window.db.auth.signInWithOtp({
+    email,
+    options: {
+      emailRedirectTo: window.location.origin + "/caregiver.html"
+    }
+  });
+
+  if (error) {
+    handleError(error, "Sign-in link failed");
+    return;
+  }
+
+  alert("Check your email for a sign-in link.");
+}
     function formatPhoneNumber(value) {
       const digits = value.replace(/\D/g, "").slice(0, 10);
       if (digits.length === 0) return "";
@@ -155,12 +185,10 @@
       if (digits.length < 7) return `(${digits.slice(0, 3)}) ${digits.slice(3)}`;
       return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
     }
-
     function getSelectedCareTypes() {
       return Array.from(document.querySelectorAll('input[name="cg_care_types"]:checked'))
         .map((cb) => cb.value);
     }
-
     async function uploadCaregiverPhotos() {
       const photoInput = document.getElementById("cg_photos");
       const files = Array.from(photoInput?.files || []).slice(0, 5);
@@ -189,10 +217,8 @@
           photoUrls.push(publicData.publicUrl);
         }
       }
-
       return photoUrls;
     }
-
     function wireCaregiverProfileForm() {
       const form = document.getElementById("caregiverProfileForm");
       if (!form) return;
@@ -251,7 +277,14 @@
         showSuccess("caregiverProfileSuccess", form);
       });
     }
+async function checkSession() {
+  const { data } = await window.db.auth.getSession();
+  const user = data?.session?.user;
 
+  if (user) {
+    console.log("Logged in as", user.email);
+  }
+}
     function prefillCaregiverProfileFromQuery() {
       const params = new URLSearchParams(window.location.search);
       const applyJob = params.get("apply_job");
@@ -280,10 +313,11 @@
       }
     }
 
-    window.addEventListener("DOMContentLoaded", () => {
-      prefillCaregiverProfileFromQuery();
-      wireCaregiverProfileForm();
-    });
+window.addEventListener("DOMContentLoaded", () => {
+  checkSession();
+  prefillCaregiverProfileFromQuery();
+  wireCaregiverProfileForm();
+});
   </script>
 </body>
 </html>
