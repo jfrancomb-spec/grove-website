@@ -372,3 +372,30 @@ textarea:focus {
     font-size: 18px;
   }
 }
+.two-paths{
+  background:#f6faf9;
+  padding:50px 20px;
+  margin-top:20px;
+}
+
+.two-paths-inner{
+  max-width:900px;
+  margin:auto;
+}
+
+.path-card{
+  text-align:center;
+  padding:28px;
+  transition:transform .15s ease, box-shadow .15s ease;
+}
+
+.path-card:hover{
+  transform:translateY(-4px);
+  box-shadow:0 6px 18px rgba(0,0,0,0.08);
+}
+
+.two-paths .button{
+  width:240px;
+  display:block;
+  margin:10px auto;
+}
