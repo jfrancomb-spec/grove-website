@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Grove | Create Family Profile</title>
+  <link rel="stylesheet" href="./styles.css" />
+  <link rel="icon" type="image/png" href="./MainIcon.png" />
+</head>
+<body>
+  <div id="header-placeholder"></div>
+
+  <main>
+    <div class="hero">
+      <h1>Create Your Family Profile</h1>
+      <div class="subtitle">
+        Build a family profile so caregivers can get to know you and your household.
+      </div>
+    </div>
+
+    <section>
+      <div class="form-card">
+        <h2 class="mt-0">Family Profile</h2>
+        <p class="mt-0">
+          This profile helps caregivers understand who you are, where you’re located, and what kind of care you may need.
+        </p>
+
+        <form id="familyForm">
+          <div class="row">
+            <input id="fam_name" type="text" placeholder="Your Name / Household Name" required />
+          </div>
+
+          <div class="row">
+            <input id="fam_email" type="email" placeholder="Email Address" required />
+          </div>
+
+          <div class="row">
+            <input id="fam_phone" type="text" placeholder="Phone Number" />
+          </div>
+
+          <div class="row">
+            <input id="fam_location" type="text" placeholder="City or Neighborhood" required />
+          </div>
+
+          <div class="row">
+            <textarea id="fam_bio" placeholder="Tell caregivers a little about your household"></textarea>
+          </div>
+
+          <button class="button" type="submit">Create Family Profile</button>
+        </form>
+
+        <p id="familySuccess" class="success">
+          ✅ Profile submitted! Once approved, it can be visible in the Grove network.
+        </p>
+      </div>
+    </section>
+  </main>
+
+  <div id="footer-placeholder"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script src="./app.js"></script>
+
+  <script>
+    function wireFamilyForm() {
+      const familyForm = document.getElementById("familyForm");
+      if (!familyForm) return;
+
+      familyForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+
+        const payload = {
+          name_display: document.getElementById("fam_name")?.value || "",
+          email: document.getElementById("fam_email")?.value || "",
+          phone: document.getElementById("fam_phone")?.value || "",
+          location: document.getElementById("fam_location")?.value || "",
+          bio: document.getElementById("fam_bio")?.value || ""
+        };
+
+        const { error } = await window.db
+          .from("family_profiles")
+          .insert([payload]);
+
+        if (error) {
+          handleError(error, "Family profile failed");
+          return;
+        }
+
+        showSuccess("familySuccess", familyForm);
+      });
+    }
+
+    window.addEventListener("DOMContentLoaded", wireFamilyForm);
+  </script>
+</body>
+</html>
