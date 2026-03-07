@@ -258,7 +258,7 @@ const { data: cp, error: cpErr } = await window.db
           card.className = "card";
 
           card.innerHTML = `
-${cg.photo_url ? `<img class="profile-photo" src="${cg.photo_url}" alt="${cg.name_display}">` : ``}
+${cg.photo_url ? `<img class="admin-photo" src="${cg.photo_url}" alt="${cg.name_display}">` : ``}
 <h3>${cg.name_display} — ${cg.care_type}</h3>
 <p><strong>Status:</strong> ${cg.status || "(none)"}</p>
 <p><strong>Location:</strong> ${cg.location}</p>
