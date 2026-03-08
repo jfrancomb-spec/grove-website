@@ -233,6 +233,9 @@
 <a class="button" href="./caregiver-profile.html?id=${cg.id}">
   View Profile
 </a>
+<a class="button" href="./messages.html?user=${cg.user_id}">
+  Contact This Caregiver
+</a>
           `;
 
           container.appendChild(card);
@@ -326,7 +329,7 @@
 
         const { data, error } = await window.db
           .from("caregiver_profiles")
-          .select("*")
+          .select("*, user_id")
           .eq("is_active", true)
           .order("created_at", { ascending: false });
 
