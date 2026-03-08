@@ -12,6 +12,7 @@
   <div id="header-placeholder"></div>
 
   <main>
+    <!-- Hero -->
     <div class="hero">
       <h1>Family Profile</h1>
       <div class="subtitle">
@@ -42,6 +43,7 @@
 
         <p class="mt-10" id="signedInText"></p>
 
+        <!-- Dashboard stats -->
         <div class="dashboard-stats">
           <div class="dashboard-stat">
             <div class="dashboard-label">Profile Status</div>
@@ -67,6 +69,7 @@
         <h3 class="mt-22">Your Profile</h3>
 
         <form id="familyProfileForm">
+          <!-- Basic identity -->
           <div class="row">
             <input id="fam_first_name" type="text" placeholder="First Name" required />
           </div>
@@ -87,6 +90,30 @@
             <input id="fam_location" type="text" placeholder="City or Neighborhood" required />
           </div>
 
+          <!-- Care types needed -->
+          <div class="row">
+            <label class="mb-6"><strong>Types of Care Needed</strong></label>
+            <div class="checkbox-group">
+              <label><input type="checkbox" name="fam_care_types_needed" value="Childcare" /> Childcare</label>
+              <label><input type="checkbox" name="fam_care_types_needed" value="Senior Care" /> Senior Care</label>
+              <label><input type="checkbox" name="fam_care_types_needed" value="Pet Care" /> Pet Care</label>
+              <label><input type="checkbox" name="fam_care_types_needed" value="Household Help" /> Household Help</label>
+              <label><input type="checkbox" name="fam_care_types_needed" value="Other" /> Other</label>
+            </div>
+          </div>
+
+          <!-- Household details -->
+          <div class="row">
+            <label class="mb-6"><strong>Home Details</strong></label>
+            <div class="checkbox-group">
+              <label><input id="fam_has_cats" type="checkbox" /> Cats in Home</label>
+              <label><input id="fam_has_dogs" type="checkbox" /> Dogs in Home</label>
+              <label><input id="fam_smoking_in_home" type="checkbox" /> Smoking in Home</label>
+              <label><input id="fam_driving_needed" type="checkbox" /> Driving Needed</label>
+            </div>
+          </div>
+
+          <!-- Descriptions -->
           <div class="row">
             <label for="fam_household_description"><strong>Household Description</strong></label>
             <textarea id="fam_household_description" placeholder="Tell caregivers a little about your household"></textarea>
@@ -102,6 +129,7 @@
             <textarea id="fam_pets_description" placeholder="Tell caregivers about any pets in the home"></textarea>
           </div>
 
+          <!-- Photos -->
           <div class="row">
             <label for="fam_photos"><strong>Profile Photos (up to 5)</strong></label>
             <input id="fam_photos" type="file" accept="image/*" multiple />
@@ -134,7 +162,7 @@
     let existingProfile = null;
 
     // -----------------------------------
-    // Helpers
+    // Formatting helpers
     // -----------------------------------
     function formatPhoneNumber(value) {
       const digits = value.replace(/\D/g, "").slice(0, 10);
@@ -142,6 +170,18 @@
       if (digits.length < 4) return digits;
       if (digits.length < 7) return `(${digits.slice(0, 3)}) ${digits.slice(3)}`;
       return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
+    }
+
+    function getSelectedCareTypesNeeded() {
+      return Array.from(document.querySelectorAll('input[name="fam_care_types_needed"]:checked'))
+        .map(cb => cb.value);
+    }
+
+    function setSelectedCareTypesNeeded(values) {
+      const selected = Array.isArray(values) ? values : [];
+      document.querySelectorAll('input[name="fam_care_types_needed"]').forEach(cb => {
+        cb.checked = selected.includes(cb.value);
+      });
     }
 
     function renderPhotoPreview(urls) {
@@ -225,6 +265,9 @@
       return data || null;
     }
 
+    // -----------------------------------
+    // Fill form from saved profile
+    // -----------------------------------
     function fillProfileForm(profile) {
       existingProfile = profile;
 
@@ -237,38 +280,50 @@
       document.getElementById("fam_children_description").value = profile?.children_description || "";
       document.getElementById("fam_pets_description").value = profile?.pets_description || "";
 
-const status = profile?.status || "pending";
-const statusEl = document.getElementById("dashProfileStatus");
+      document.getElementById("fam_has_cats").checked = !!profile?.has_cats;
+      document.getElementById("fam_has_dogs").checked = !!profile?.has_dogs;
+      document.getElementById("fam_smoking_in_home").checked = !!profile?.smoking_in_home;
+      document.getElementById("fam_driving_needed").checked = !!profile?.driving_needed;
 
-let label = "Pending Review";
-let badgeClass = "badge-pending";
+      setSelectedCareTypesNeeded(profile?.care_types_needed || []);
 
-if (status === "approved") {
-  label = "Approved";
-  badgeClass = "badge-approved";
-}
+      const status = profile?.status || "pending";
+      const statusEl = document.getElementById("dashProfileStatus");
 
-if (status === "denied") {
-  label = "Needs Update";
-  badgeClass = "badge-denied";
-}
+      let label = "Pending Review";
+      let badgeClass = "badge-pending";
 
-if (status === "pending") {
-  label = "Pending Review";
-  badgeClass = "badge-pending";
-}
+      if (status === "approved") {
+        label = "Approved";
+        badgeClass = "badge-approved";
+      }
 
-statusEl.innerHTML = `<span class="badge ${badgeClass}">${label}</span>`;
-      
+      if (status === "denied") {
+        label = "Needs Update";
+        badgeClass = "badge-denied";
+      }
+
+      if (status === "pending") {
+        label = "Pending Review";
+        badgeClass = "badge-pending";
+      }
+
+      statusEl.innerHTML = `<span class="badge ${badgeClass}">${label}</span>`;
+
       document.getElementById("dashConfirmedEncounters").textContent =
         profile?.confirmed_encounters != null ? profile.confirmed_encounters : 0;
+
       document.getElementById("dashResponseTime").textContent =
         profile?.average_response_minutes != null ? `${profile.average_response_minutes} min` : "—";
+
       document.getElementById("dashMessages").textContent = "0";
 
       renderPhotoPreview(profile?.photo_urls || (profile?.photo_url ? [profile.photo_url] : []));
     }
 
+    // -----------------------------------
+    // Photo upload
+    // -----------------------------------
     async function uploadFamilyPhotos(userId) {
       const photoInput = document.getElementById("fam_photos");
       const files = Array.from(photoInput?.files || []).slice(0, 5);
@@ -331,6 +386,11 @@ statusEl.innerHTML = `<span class="badge ${badgeClass}">${label}</span>`;
         email: currentUser.email || "",
         phone: document.getElementById("fam_phone").value.trim(),
         location: document.getElementById("fam_location").value.trim(),
+        care_types_needed: getSelectedCareTypesNeeded(),
+        has_cats: document.getElementById("fam_has_cats").checked,
+        has_dogs: document.getElementById("fam_has_dogs").checked,
+        smoking_in_home: document.getElementById("fam_smoking_in_home").checked,
+        driving_needed: document.getElementById("fam_driving_needed").checked,
         household_description: document.getElementById("fam_household_description").value.trim(),
         children_description: document.getElementById("fam_children_description").value.trim(),
         pets_description: document.getElementById("fam_pets_description").value.trim(),
