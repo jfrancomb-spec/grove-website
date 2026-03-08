@@ -595,3 +595,32 @@ textarea:focus {
   display: block;
   margin: 0 auto 10px auto;
 }
+.profile-detail-main-photo {
+  width: 220px;
+  height: 220px;
+  object-fit: cover;
+  border-radius: 12px;
+  display: block;
+  margin: 0 auto 12px auto;
+}
+
+.active-thumb {
+  outline: 2px solid var(--primary);
+}
+
+.review-list {
+  display: grid;
+  gap: 12px;
+}
+
+.review-card {
+  background: #f6faf9;
+  border: 1px solid var(--card-border);
+  border-radius: 10px;
+  padding: 14px;
+}
+
+.profile-detail {
+  max-width: 700px;
+  margin: 0 auto;
+}
