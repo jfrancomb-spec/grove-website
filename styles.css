@@ -491,3 +491,15 @@ textarea:focus {
   font-size: 13px;
   font-weight: 600;
 }
+.photo-preview-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.preview-photo {
+  width: 90px;
+  height: 90px;
+  object-fit: cover;
+  border-radius: 8px;
+}
