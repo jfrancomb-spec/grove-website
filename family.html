@@ -3,39 +3,84 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Grove | Create Family Profile</title>
+  <title>Grove | Family Profile</title>
   <link rel="stylesheet" href="./styles.css" />
   <link rel="icon" type="image/png" href="./MainIcon.png" />
 </head>
+
 <body>
   <div id="header-placeholder"></div>
 
   <main>
     <div class="hero">
-      <h1>Create Your Family Profile</h1>
+      <h1>Family Profile</h1>
       <div class="subtitle">
-        Build a family profile so caregivers can get to know you and your household.
+        Sign in to create, review, and update your family profile.
       </div>
     </div>
 
     <section>
-      <div class="form-card">
-        <h2 class="mt-0">Family Profile</h2>
-        <p class="mt-0">
-          This profile helps caregivers understand who you are, where you’re located, and what kind of care you may need.
-        </p>
+      <!-- Sign-in card -->
+      <div class="form-card" id="authCard">
+        <h2 class="mt-0">Sign In</h2>
+        <p class="mt-0">Enter your email and we’ll send you a secure sign-in link.</p>
 
-        <form id="familyForm">
+        <div class="row">
+          <input id="fam_auth_email" type="email" placeholder="Email Address" />
+        </div>
+
+        <button class="button" type="button" id="sendLinkBtn">Send Sign-In Link</button>
+        <p id="authMessage" class="success"></p>
+      </div>
+
+      <!-- Profile card -->
+      <div class="form-card" id="profileCard" style="display:none;">
+        <div class="flex-between">
+          <h2 class="mb-0">Your Family Dashboard</h2>
+          <button class="button" type="button" id="signOutBtn">Sign Out</button>
+        </div>
+
+        <p class="mt-10" id="signedInText"></p>
+
+        <div class="dashboard-stats">
+          <div class="dashboard-stat">
+            <div class="dashboard-label">Profile Status</div>
+            <div class="dashboard-value" id="dashProfileStatus">—</div>
+          </div>
+
+          <div class="dashboard-stat">
+            <div class="dashboard-label">Confirmed Encounters</div>
+            <div class="dashboard-value" id="dashConfirmedEncounters">0</div>
+          </div>
+
+          <div class="dashboard-stat">
+            <div class="dashboard-label">Average Response Time</div>
+            <div class="dashboard-value" id="dashResponseTime">—</div>
+          </div>
+
+          <div class="dashboard-stat">
+            <div class="dashboard-label">Messages</div>
+            <div class="dashboard-value" id="dashMessages">0</div>
+          </div>
+        </div>
+
+        <h3 class="mt-22">Your Profile</h3>
+
+        <form id="familyProfileForm">
           <div class="row">
-            <input id="fam_name" type="text" placeholder="Your Name / Household Name" required />
+            <input id="fam_first_name" type="text" placeholder="First Name" required />
           </div>
 
           <div class="row">
-            <input id="fam_email" type="email" placeholder="Email Address" required />
+            <input id="fam_last_name" type="text" placeholder="Last Name" required />
           </div>
 
           <div class="row">
-            <input id="fam_phone" type="text" placeholder="Phone Number" />
+            <input id="fam_email" type="email" placeholder="Email Address" required disabled />
+          </div>
+
+          <div class="row">
+            <input id="fam_phone" type="text" placeholder="Phone Number" inputmode="numeric" />
           </div>
 
           <div class="row">
@@ -43,14 +88,34 @@
           </div>
 
           <div class="row">
-            <textarea id="fam_bio" placeholder="Tell caregivers a little about your household"></textarea>
+            <label for="fam_household_description"><strong>Household Description</strong></label>
+            <textarea id="fam_household_description" placeholder="Tell caregivers a little about your household"></textarea>
           </div>
 
-          <button class="button" type="submit">Create Family Profile</button>
+          <div class="row">
+            <label for="fam_children_description"><strong>Children</strong></label>
+            <textarea id="fam_children_description" placeholder="Ages, routines, interests, anything helpful"></textarea>
+          </div>
+
+          <div class="row">
+            <label for="fam_pets_description"><strong>Pets</strong></label>
+            <textarea id="fam_pets_description" placeholder="Tell caregivers about any pets in the home"></textarea>
+          </div>
+
+          <div class="row">
+            <label for="fam_photos"><strong>Profile Photos (up to 5)</strong></label>
+            <input id="fam_photos" type="file" accept="image/*" multiple />
+          </div>
+
+          <div class="row" id="photoPreviewWrap" style="display:none;">
+            <div id="photoPreviewList" class="photo-preview-list"></div>
+          </div>
+
+          <button class="button" type="submit">Save Profile</button>
         </form>
 
-        <p id="familySuccess" class="success">
-          ✅ Profile submitted! Once approved, it can be visible in the Grove network.
+        <p id="familyProfileSuccess" class="success">
+          ✅ Profile saved successfully.
         </p>
       </div>
     </section>
@@ -62,35 +127,251 @@
   <script src="./app.js"></script>
 
   <script>
-    function wireFamilyForm() {
-      const familyForm = document.getElementById("familyForm");
-      if (!familyForm) return;
+    // -----------------------------------
+    // Page state
+    // -----------------------------------
+    let currentUser = null;
+    let existingProfile = null;
 
-      familyForm.addEventListener("submit", async (e) => {
-        e.preventDefault();
-
-        const payload = {
-          name_display: document.getElementById("fam_name")?.value || "",
-          email: document.getElementById("fam_email")?.value || "",
-          phone: document.getElementById("fam_phone")?.value || "",
-          location: document.getElementById("fam_location")?.value || "",
-          bio: document.getElementById("fam_bio")?.value || ""
-        };
-
-        const { error } = await window.db
-          .from("family_profiles")
-          .insert([payload]);
-
-        if (error) {
-          handleError(error, "Family profile failed");
-          return;
-        }
-
-        showSuccess("familySuccess", familyForm);
-      });
+    // -----------------------------------
+    // Helpers
+    // -----------------------------------
+    function formatPhoneNumber(value) {
+      const digits = value.replace(/\D/g, "").slice(0, 10);
+      if (digits.length === 0) return "";
+      if (digits.length < 4) return digits;
+      if (digits.length < 7) return `(${digits.slice(0, 3)}) ${digits.slice(3)}`;
+      return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
     }
 
-    window.addEventListener("DOMContentLoaded", wireFamilyForm);
+    function renderPhotoPreview(urls) {
+      const wrap = document.getElementById("photoPreviewWrap");
+      const list = document.getElementById("photoPreviewList");
+      if (!wrap || !list) return;
+
+      list.innerHTML = "";
+      if (!Array.isArray(urls) || !urls.length) {
+        wrap.style.display = "none";
+        return;
+      }
+
+      urls.forEach((url) => {
+        const img = document.createElement("img");
+        img.src = url;
+        img.alt = "Family photo";
+        img.className = "preview-photo";
+        list.appendChild(img);
+      });
+
+      wrap.style.display = "block";
+    }
+
+    // -----------------------------------
+    // Auth
+    // -----------------------------------
+    async function sendMagicLink() {
+      const email = document.getElementById("fam_auth_email").value.trim();
+      const msg = document.getElementById("authMessage");
+
+      if (!email) {
+        alert("Please enter your email first.");
+        return;
+      }
+
+      const { error } = await window.db.auth.signInWithOtp({
+        email,
+        options: {
+          emailRedirectTo: "https://jfrancomb-spec.github.io/grove-website/family.html"
+        }
+      });
+
+      if (error) {
+        handleError(error, "Sign-in link failed");
+        return;
+      }
+
+      if (msg) {
+        msg.textContent = "Check your email for a sign-in link.";
+        msg.style.display = "block";
+      }
+    }
+
+    async function signOut() {
+      const { error } = await window.db.auth.signOut();
+      if (error) {
+        handleError(error, "Sign out failed");
+        return;
+      }
+      window.location.href = "./family.html";
+    }
+
+    // -----------------------------------
+    // Data loading
+    // -----------------------------------
+    async function loadOwnProfile() {
+      if (!currentUser) return null;
+
+      const { data, error } = await window.db
+        .from("family_profiles")
+        .select("*")
+        .eq("user_id", currentUser.id)
+        .maybeSingle();
+
+      if (error) {
+        handleError(error, "Profile load failed");
+        return null;
+      }
+
+      return data || null;
+    }
+
+    function fillProfileForm(profile) {
+      existingProfile = profile;
+
+      document.getElementById("fam_first_name").value = profile?.first_name || "";
+      document.getElementById("fam_last_name").value = profile?.last_name || "";
+      document.getElementById("fam_email").value = currentUser?.email || profile?.email || "";
+      document.getElementById("fam_phone").value = profile?.phone || "";
+      document.getElementById("fam_location").value = profile?.location || "";
+      document.getElementById("fam_household_description").value = profile?.household_description || "";
+      document.getElementById("fam_children_description").value = profile?.children_description || "";
+      document.getElementById("fam_pets_description").value = profile?.pets_description || "";
+
+      document.getElementById("dashProfileStatus").textContent =
+        profile?.status ? profile.status : "Active";
+      document.getElementById("dashConfirmedEncounters").textContent =
+        profile?.confirmed_encounters != null ? profile.confirmed_encounters : 0;
+      document.getElementById("dashResponseTime").textContent =
+        profile?.average_response_minutes != null ? `${profile.average_response_minutes} min` : "—";
+      document.getElementById("dashMessages").textContent = "0";
+
+      renderPhotoPreview(profile?.photo_urls || (profile?.photo_url ? [profile.photo_url] : []));
+    }
+
+    async function uploadFamilyPhotos(userId) {
+      const photoInput = document.getElementById("fam_photos");
+      const files = Array.from(photoInput?.files || []).slice(0, 5);
+
+      if (!files.length) {
+        return existingProfile?.photo_urls || (existingProfile?.photo_url ? [existingProfile.photo_url] : []);
+      }
+
+      const photoUrls = [];
+
+      for (const file of files) {
+        const safeName = file.name.replace(/\s+/g, "_");
+        const filePath = `families/${userId}/${Date.now()}_${Math.random().toString(36).slice(2)}_${safeName}`;
+
+        const { error: uploadError } = await window.db
+          .storage
+          .from("profile-photos")
+          .upload(filePath, file);
+
+        if (uploadError) {
+          handleError(uploadError, "Photo upload failed");
+          return null;
+        }
+
+        const { data: publicData } = window.db
+          .storage
+          .from("profile-photos")
+          .getPublicUrl(filePath);
+
+        if (publicData?.publicUrl) {
+          photoUrls.push(publicData.publicUrl);
+        }
+      }
+
+      return photoUrls;
+    }
+
+    // -----------------------------------
+    // Save profile
+    // -----------------------------------
+    async function saveProfile(e) {
+      e.preventDefault();
+
+      if (!currentUser) {
+        alert("Please sign in first.");
+        return;
+      }
+
+      const photoUrls = await uploadFamilyPhotos(currentUser.id);
+      if (photoUrls === null) return;
+
+      const firstName = document.getElementById("fam_first_name").value.trim();
+      const lastName = document.getElementById("fam_last_name").value.trim();
+
+      const payload = {
+        user_id: currentUser.id,
+        first_name: firstName,
+        last_name: lastName,
+        name_display: `${firstName} ${lastName}`.trim(),
+        email: currentUser.email || "",
+        phone: document.getElementById("fam_phone").value.trim(),
+        location: document.getElementById("fam_location").value.trim(),
+        household_description: document.getElementById("fam_household_description").value.trim(),
+        children_description: document.getElementById("fam_children_description").value.trim(),
+        pets_description: document.getElementById("fam_pets_description").value.trim(),
+        photo_urls: photoUrls,
+        photo_url: photoUrls[0] || null
+      };
+
+      const { error } = await window.db
+        .from("family_profiles")
+        .upsert(payload, { onConflict: "user_id" });
+
+      if (error) {
+        handleError(error, "Profile save failed");
+        return;
+      }
+
+      document.getElementById("familyProfileSuccess").style.display = "block";
+      existingProfile = await loadOwnProfile();
+      fillProfileForm(existingProfile);
+    }
+
+    // -----------------------------------
+    // Session setup
+    // -----------------------------------
+    async function checkSessionAndSetup() {
+      const { data } = await window.db.auth.getSession();
+      currentUser = data?.session?.user || null;
+
+      const authCard = document.getElementById("authCard");
+      const profileCard = document.getElementById("profileCard");
+      const signedInText = document.getElementById("signedInText");
+      const emailInput = document.getElementById("fam_email");
+      const phoneInput = document.getElementById("fam_phone");
+
+      phoneInput?.addEventListener("input", (e) => {
+        e.target.value = formatPhoneNumber(e.target.value);
+      });
+
+      if (!currentUser) {
+        authCard.style.display = "block";
+        profileCard.style.display = "none";
+        return;
+      }
+
+      authCard.style.display = "none";
+      profileCard.style.display = "block";
+      signedInText.textContent = `Signed in as ${currentUser.email}. You can review and update your family profile below.`;
+      emailInput.value = currentUser.email || "";
+
+      existingProfile = await loadOwnProfile();
+      fillProfileForm(existingProfile);
+    }
+
+    // -----------------------------------
+    // Init
+    // -----------------------------------
+    window.addEventListener("DOMContentLoaded", () => {
+      document.getElementById("sendLinkBtn")?.addEventListener("click", sendMagicLink);
+      document.getElementById("signOutBtn")?.addEventListener("click", signOut);
+      document.getElementById("familyProfileForm")?.addEventListener("submit", saveProfile);
+      checkSessionAndSetup();
+    });
   </script>
 </body>
 </html>
