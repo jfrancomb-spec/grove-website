@@ -247,6 +247,19 @@ const { error } = await window.db.auth.signInWithOtp({
     function fillProfileForm(profile) {
       existingProfile = profile;
 
+      document.getElementById("dashProfileStatus").textContent =
+  profile?.status ? profile.status.charAt(0).toUpperCase() + profile.status.slice(1) : "Draft";
+
+document.getElementById("dashConfirmedEncounters").textContent =
+  profile?.confirmed_encounters != null ? profile.confirmed_encounters : 0;
+
+document.getElementById("dashResponseTime").textContent =
+  profile?.average_response_minutes != null
+    ? `${profile.average_response_minutes} min`
+    : "—";
+
+document.getElementById("dashMessages").textContent = "0";
+      
       document.getElementById("cg_first_name").value = profile?.first_name || "";
       document.getElementById("cg_last_name").value = profile?.last_name || "";
       document.getElementById("cg_email").value = currentUser?.email || profile?.email || "";
@@ -392,7 +405,7 @@ const { error } = await window.db.auth.signInWithOtp({
 
       authCard.style.display = "none";
       profileCard.style.display = "block";
-      signedInText.textContent = `Signed in as ${currentUser.email}`;
+signedInText.textContent = `Signed in as ${currentUser.email}. You can review and update your caregiver profile below.`;
       emailInput.value = currentUser.email || "";
 
       existingProfile = await loadOwnProfile();
