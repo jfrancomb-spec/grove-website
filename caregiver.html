@@ -247,9 +247,34 @@ const { error } = await window.db.auth.signInWithOtp({
     function fillProfileForm(profile) {
       existingProfile = profile;
 
-      document.getElementById("dashProfileStatus").textContent =
-  profile?.status ? profile.status.charAt(0).toUpperCase() + profile.status.slice(1) : "Draft";
+const status = profile?.status || "draft";
+const statusEl = document.getElementById("dashProfileStatus");
 
+let label = "Draft";
+let badgeClass = "badge-pending";
+
+if (status === "pending") {
+  label = "Pending Review";
+  badgeClass = "badge-pending";
+}
+
+if (status === "approved") {
+  label = "Approved";
+  badgeClass = "badge-approved";
+}
+
+if (status === "denied") {
+  label = "Needs Update";
+  badgeClass = "badge-denied";
+}
+
+if (status === "draft") {
+  label = "Draft";
+  badgeClass = "badge-pending";
+}
+
+statusEl.innerHTML = `<span class="badge ${badgeClass}">${label}</span>`;
+      
 document.getElementById("dashConfirmedEncounters").textContent =
   profile?.confirmed_encounters != null ? profile.confirmed_encounters : 0;
 
