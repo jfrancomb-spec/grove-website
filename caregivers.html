@@ -189,23 +189,29 @@
       // -----------------------------------
       // Action buttons helper
       // -----------------------------------
-      function buildActionButtons(cg) {
-        const profileBtn = `
-          <a class="button" href="./caregiver-profile.html?id=${cg.id}">
-            View Profile
-          </a>
-        `;
+function buildActionButtons(cg){
 
-        const messageBtn = cg.user_id
-          ? `
-            <a class="button" href="./messages.html?user=${cg.user_id}">
-              Contact This Caregiver
-            </a>
-          `
-          : "";
+  const profileBtn = `
+    <a class="button" href="./caregiver-profile.html?id=${cg.id}">
+      View Profile
+    </a>
+  `;
 
-        return `${profileBtn}${messageBtn}`;
-      }
+  const messageBtn = cg.user_id
+    ? `
+      <a class="button" href="./messages.html?user=${cg.user_id}">
+        Contact This Caregiver
+      </a>
+    `
+    : "";
+
+  return `
+    <div class="caregiver-actions">
+      ${profileBtn}
+      ${messageBtn}
+    </div>
+  `;
+}
 
       // -----------------------------------
       // Render caregiver cards
