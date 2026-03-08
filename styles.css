@@ -552,45 +552,46 @@ textarea:focus {
   background: #fdeaea;
   color: #a11a1a;
 }
-.profile-badges{
-  display:flex;
-  flex-wrap:wrap;
-  justify-content:center;
-  gap:8px;
-  margin:12px 0;
+.profile-badges {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  margin: 12px 0;
 }
 
-.profile-badge{
-  display:inline-block;
-  padding:5px 10px;
-  border-radius:999px;
-  font-size:12px;
-  font-weight:600;
-  background:#eef6f4;
-  color:var(--text);
-  border:1px solid var(--card-border);
-}
-.profile-gallery{
-  display:flex;
-  flex-wrap:wrap;
-  gap:6px;
-  justify-content:center;
-  margin-bottom:10px;
+.profile-badge {
+  display: inline-block;
+  padding: 5px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  background: #eef6f4;
+  color: var(--text);
+  border: 1px solid var(--card-border);
 }
 
-.profile-gallery img{
-  width:70px;
-  height:70px;
-  object-fit:cover;
-  border-radius:6px;
-  cursor:pointer;
+.profile-gallery {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: center;
+  margin-bottom: 10px;
 }
 
-.profile-main-photo{
-  width:180px;
-  height:180px;
-  object-fit:cover;
-  border-radius:12px;
-  display:block;
-  margin:0 auto 10px auto;
+.profile-gallery img {
+  width: 70px;
+  height: 70px;
+  object-fit: cover;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.profile-main-photo {
+  width: 180px;
+  height: 180px;
+  object-fit: cover;
+  border-radius: 12px;
+  display: block;
+  margin: 0 auto 10px auto;
 }
