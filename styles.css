@@ -552,3 +552,21 @@ textarea:focus {
   background: #fdeaea;
   color: #a11a1a;
 }
+.profile-badges{
+  display:flex;
+  flex-wrap:wrap;
+  justify-content:center;
+  gap:8px;
+  margin:12px 0;
+}
+
+.profile-badge{
+  display:inline-block;
+  padding:5px 10px;
+  border-radius:999px;
+  font-size:12px;
+  font-weight:600;
+  background:#eef6f4;
+  color:var(--text);
+  border:1px solid var(--card-border);
+}
