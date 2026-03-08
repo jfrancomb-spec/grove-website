@@ -530,3 +530,25 @@ textarea:focus {
   font-weight: 700;
   color: var(--text);
 }
+.badge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.badge-pending {
+  background: #fff4cc;
+  color: #8a6d00;
+}
+
+.badge-approved {
+  background: #e6f6ed;
+  color: #1f7a4d;
+}
+
+.badge-denied {
+  background: #fdeaea;
+  color: #a11a1a;
+}
