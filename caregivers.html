@@ -108,7 +108,24 @@
           </div>
         `;
       }
+function buildBadges(cg) {
+  const badges = [];
 
+  if (cg.has_drivers_license) badges.push("Driver’s License");
+  if (cg.cpr_certified) badges.push("CPR Certified");
+  if (cg.non_smoker) badges.push("Non-Smoker");
+  if (cg.non_vaper) badges.push("Non-Vaper");
+  if (cg.comfortable_with_cats) badges.push("Comfortable with Cats");
+  if (cg.comfortable_with_dogs) badges.push("Comfortable with Dogs");
+
+  if (!badges.length) return "";
+
+  return `
+    <div class="profile-badges">
+      ${badges.map(badge => `<span class="profile-badge">${badge}</span>`).join("")}
+    </div>
+  `;
+}
       function renderCaregivers(list) {
         const container = document.getElementById("caregiversContainer");
         const countEl = document.getElementById("cgCount");
@@ -152,6 +169,7 @@
             <a class="button" href="./request.html?caregiver_id=${cg.id}">
               Contact This Caregiver
             </a>
+            
           `;
 
           container.appendChild(card);
