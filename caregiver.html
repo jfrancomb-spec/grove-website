@@ -185,12 +185,12 @@
         return;
       }
 
-      const { error } = await window.db.auth.signInWithOtp({
-        email,
-        options: {
-          emailRedirectTo: window.location.origin + "/caregiver.html"
-        }
-      });
+const { error } = await window.db.auth.signInWithOtp({
+  email,
+  options: {
+    emailRedirectTo: "https://jfrancomb-spec.github.io/grove-website/caregiver.html"
+  }
+});
 
       if (error) {
         handleError(error, "Sign-in link failed");
