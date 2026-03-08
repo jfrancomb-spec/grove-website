@@ -142,6 +142,36 @@ function buildBadges(cg) {
     ${thumbs ? `<div class="profile-gallery">${thumbs}</div>` : ""}
   `;
 }
+let reviewMap = {};
+
+function buildStars(avg) {
+  if (!avg) return "";
+  const rounded = Math.round(avg * 10) / 10;
+  return `⭐ ${rounded}`;
+}
+
+function getReviewSummary(cgId) {
+  const reviews = reviewMap[cgId] || [];
+  if (!reviews.length) return "";
+
+  const avg = reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length;
+  return `
+    <p><strong>Rating:</strong> ${buildStars(avg)} (${reviews.length} review${reviews.length === 1 ? "" : "s"})</p>
+  `;
+}
+
+function getRecentReview(cgId) {
+  const reviews = reviewMap[cgId] || [];
+  if (!reviews.length) return "";
+
+  const latest = reviews[0];
+  if (!latest.review_text) return "";
+
+  return `
+    <p><strong>Recent Review:</strong> “${latest.review_text}”</p>
+  `;
+}
+      
       function renderCaregivers(list) {
         const container = document.getElementById("caregiversContainer");
         const countEl = document.getElementById("cgCount");
@@ -172,21 +202,22 @@ function buildBadges(cg) {
               ? `${cg.confirmed_encounters} confirmed encounter${cg.confirmed_encounters === 1 ? "" : "s"}`
               : "";
 
-          card.innerHTML = `
-            ${buildPhotoGallery(cg)}
-            <h3>${displayName}${careTypes ? ` — ${careTypes}` : ""}</h3>
-            <p><strong>Location:</strong> ${cg.location || ""}</p>
-            ${cg.years_experience ? `<p><strong>Experience:</strong> ${cg.years_experience}</p>` : ``}
-            ${cg.availability ? `<p><strong>Availability:</strong> ${cg.availability}</p>` : ``}
-            ${responseTime ? `<p><strong>Response Time:</strong> ${responseTime}</p>` : ``}
-            ${encounters ? `<p><strong>Confirmed Encounters:</strong> ${encounters}</p>` : ``}
-            ${buildBadges(cg)}
-            <p>${cg.bio || ""}</p>
-            <a class="button" href="./request.html?caregiver_id=${cg.id}">
-              Contact This Caregiver
-            </a>
-            
-          `;
+        card.innerHTML = `
+  ${buildPhotoGallery(cg)}
+  <h3>${displayName}${careTypes ? ` — ${careTypes}` : ""}</h3>
+  <p><strong>Location:</strong> ${cg.location || ""}</p>
+  ${cg.years_experience ? `<p><strong>Experience:</strong> ${cg.years_experience}</p>` : ``}
+  ${cg.availability ? `<p><strong>Availability:</strong> ${cg.availability}</p>` : ``}
+  ${responseTime ? `<p><strong>Response Time:</strong> ${responseTime}</p>` : ``}
+  ${encounters ? `<p><strong>Confirmed Encounters:</strong> ${encounters}</p>` : ``}
+  ${getReviewSummary(cg.id)}
+  ${getRecentReview(cg.id)}
+  ${buildBadges(cg)}
+  <p>${cg.bio || ""}</p>
+  <a class="button" href="./request.html?caregiver_id=${cg.id}">
+    Contact This Caregiver
+  </a>
+`;
 
           container.appendChild(card);
         });
@@ -261,7 +292,23 @@ function buildBadges(cg) {
         allCaregivers = data || [];
         applyFilters();
       }
+const { data: reviewData, error: reviewError } = await window.db
+  .from("caregiver_reviews")
+  .select("*")
+  .eq("is_visible", true)
+  .order("created_at", { ascending: false });
 
+if (reviewError) {
+  console.error(reviewError);
+} else {
+  reviewMap = {};
+  (reviewData || []).forEach((review) => {
+    if (!reviewMap[review.caregiver_profile_id]) {
+      reviewMap[review.caregiver_profile_id] = [];
+    }
+    reviewMap[review.caregiver_profile_id].push(review);
+  });
+}
       function wireEvents() {
         document.getElementById("cgApplyBtn")?.addEventListener("click", applyFilters);
 
