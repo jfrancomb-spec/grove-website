@@ -10,9 +10,11 @@
 </head>
 
 <body>
+  <!-- Shared header -->
   <div id="header-placeholder"></div>
 
   <main>
+    <!-- Hero -->
     <div class="hero">
       <h1>Caregivers</h1>
       <div class="subtitle">
@@ -23,6 +25,7 @@
       <a class="button" href="./jobs.html">Browse Care Opportunities</a>
     </div>
 
+    <!-- Filters + results -->
     <section>
       <div class="form-card mb-16">
         <h2 class="mt-0">Filter Caregivers</h2>
@@ -69,15 +72,25 @@
     </section>
   </main>
 
+  <!-- Shared footer -->
   <div id="footer-placeholder"></div>
 
+  <!-- Scripts -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
   <script src="./app.js"></script>
 
+  <!-- Page script -->
   <script>
     (function () {
+      // -----------------------------------
+      // Page state
+      // -----------------------------------
       let allCaregivers = [];
+      let reviewMap = {};
 
+      // -----------------------------------
+      // Display helpers
+      // -----------------------------------
       function formatDisplayName(cg) {
         const first = cg.first_name || "";
         const lastInitial = cg.last_name ? `${cg.last_name.charAt(0)}.` : "";
@@ -91,6 +104,41 @@
         return cg.care_type || "";
       }
 
+      function buildStars(avg) {
+        if (!avg) return "";
+        const rounded = Math.round(avg * 10) / 10;
+        return `⭐ ${rounded}`;
+      }
+
+      // -----------------------------------
+      // Review helpers
+      // -----------------------------------
+      function getReviewSummary(cgId) {
+        const reviews = reviewMap[cgId] || [];
+        if (!reviews.length) return "";
+
+        const avg = reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length;
+
+        return `
+          <p><strong>Rating:</strong> ${buildStars(avg)} (${reviews.length} review${reviews.length === 1 ? "" : "s"})</p>
+        `;
+      }
+
+      function getRecentReview(cgId) {
+        const reviews = reviewMap[cgId] || [];
+        if (!reviews.length) return "";
+
+        const latest = reviews[0];
+        if (!latest.review_text) return "";
+
+        return `
+          <p><strong>Recent Review:</strong> “${latest.review_text}”</p>
+        `;
+      }
+
+      // -----------------------------------
+      // Badge helpers
+      // -----------------------------------
       function buildBadges(cg) {
         const badges = [];
 
@@ -102,81 +150,49 @@
         if (cg.comfortable_with_dogs) badges.push("Comfortable with Dogs");
 
         if (!badges.length) return "";
+
         return `
           <div class="profile-badges">
             ${badges.map(badge => `<span class="profile-badge">${badge}</span>`).join("")}
           </div>
         `;
       }
-function buildBadges(cg) {
-  const badges = [];
 
-  if (cg.has_drivers_license) badges.push("Driver’s License");
-  if (cg.cpr_certified) badges.push("CPR Certified");
-  if (cg.non_smoker) badges.push("Non-Smoker");
-  if (cg.non_vaper) badges.push("Non-Vaper");
-  if (cg.comfortable_with_cats) badges.push("Comfortable with Cats");
-  if (cg.comfortable_with_dogs) badges.push("Comfortable with Dogs");
+      // -----------------------------------
+      // Photo gallery helper
+      // -----------------------------------
+      function buildPhotoGallery(cg) {
+        const photos = cg.photo_urls || (cg.photo_url ? [cg.photo_url] : []);
+        if (!photos.length) return "";
 
-  if (!badges.length) return "";
+        const main = photos[0];
+        const thumbs = photos
+          .slice(1)
+          .map(photo => `
+            <img
+              src="${photo}"
+              alt="Caregiver photo thumbnail"
+              onclick="this.closest('.card').querySelector('.profile-main-photo').src='${photo}'"
+            >
+          `)
+          .join("");
 
-  return `
-    <div class="profile-badges">
-      ${badges.map(badge => `<span class="profile-badge">${badge}</span>`).join("")}
-    </div>
-  `;
-}
-      function buildPhotoGallery(cg){
-  const photos = cg.photo_urls || (cg.photo_url ? [cg.photo_url] : []);
+        return `
+          <img class="profile-main-photo" src="${main}" alt="${formatDisplayName(cg)}">
+          ${thumbs ? `<div class="profile-gallery">${thumbs}</div>` : ""}
+        `;
+      }
 
-  if(!photos.length) return "";
-
-  const main = photos[0];
-
-  const thumbs = photos.slice(1).map(p =>
-    `<img src="${p}" onclick="this.closest('.card').querySelector('.profile-main-photo').src='${p}'">`
-  ).join("");
-
-  return `
-    <img class="profile-main-photo" src="${main}">
-    ${thumbs ? `<div class="profile-gallery">${thumbs}</div>` : ""}
-  `;
-}
-let reviewMap = {};
-
-function buildStars(avg) {
-  if (!avg) return "";
-  const rounded = Math.round(avg * 10) / 10;
-  return `⭐ ${rounded}`;
-}
-
-function getReviewSummary(cgId) {
-  const reviews = reviewMap[cgId] || [];
-  if (!reviews.length) return "";
-
-  const avg = reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length;
-  return `
-    <p><strong>Rating:</strong> ${buildStars(avg)} (${reviews.length} review${reviews.length === 1 ? "" : "s"})</p>
-  `;
-}
-
-function getRecentReview(cgId) {
-  const reviews = reviewMap[cgId] || [];
-  if (!reviews.length) return "";
-
-  const latest = reviews[0];
-  if (!latest.review_text) return "";
-
-  return `
-    <p><strong>Recent Review:</strong> “${latest.review_text}”</p>
-  `;
-}
-      
+      // -----------------------------------
+      // Render caregiver cards
+      // -----------------------------------
       function renderCaregivers(list) {
         const container = document.getElementById("caregiversContainer");
         const countEl = document.getElementById("cgCount");
 
-        if (countEl) countEl.innerHTML = `<strong>${list.length} caregiver(s) shown</strong>`;
+        if (countEl) {
+          countEl.innerHTML = `<strong>${list.length} caregiver(s) shown</strong>`;
+        }
 
         container.innerHTML = "";
 
@@ -202,27 +218,30 @@ function getRecentReview(cgId) {
               ? `${cg.confirmed_encounters} confirmed encounter${cg.confirmed_encounters === 1 ? "" : "s"}`
               : "";
 
-        card.innerHTML = `
-  ${buildPhotoGallery(cg)}
-  <h3>${displayName}${careTypes ? ` — ${careTypes}` : ""}</h3>
-  <p><strong>Location:</strong> ${cg.location || ""}</p>
-  ${cg.years_experience ? `<p><strong>Experience:</strong> ${cg.years_experience}</p>` : ``}
-  ${cg.availability ? `<p><strong>Availability:</strong> ${cg.availability}</p>` : ``}
-  ${responseTime ? `<p><strong>Response Time:</strong> ${responseTime}</p>` : ``}
-  ${encounters ? `<p><strong>Confirmed Encounters:</strong> ${encounters}</p>` : ``}
-  ${getReviewSummary(cg.id)}
-  ${getRecentReview(cg.id)}
-  ${buildBadges(cg)}
-  <p>${cg.bio || ""}</p>
-  <a class="button" href="./request.html?caregiver_id=${cg.id}">
-    Contact This Caregiver
-  </a>
-`;
+          card.innerHTML = `
+            ${buildPhotoGallery(cg)}
+            <h3>${displayName}${careTypes ? ` — ${careTypes}` : ""}</h3>
+            <p><strong>Location:</strong> ${cg.location || ""}</p>
+            ${cg.years_experience ? `<p><strong>Experience:</strong> ${cg.years_experience}</p>` : ``}
+            ${cg.availability ? `<p><strong>Availability:</strong> ${cg.availability}</p>` : ``}
+            ${responseTime ? `<p><strong>Response Time:</strong> ${responseTime}</p>` : ``}
+            ${encounters ? `<p><strong>Confirmed Encounters:</strong> ${encounters}</p>` : ``}
+            ${getReviewSummary(cg.id)}
+            ${getRecentReview(cg.id)}
+            ${buildBadges(cg)}
+            <p>${cg.bio || ""}</p>
+            <a class="button" href="./request.html?caregiver_id=${cg.id}">
+              Contact This Caregiver
+            </a>
+          `;
 
           container.appendChild(card);
         });
       }
 
+      // -----------------------------------
+      // Filter caregivers
+      // -----------------------------------
       function applyFilters() {
         const typeVal = (document.getElementById("cgFilterType")?.value || "").trim().toLowerCase();
         const locVal = (document.getElementById("cgFilterLocation")?.value || "").trim().toLowerCase();
@@ -231,7 +250,7 @@ function getRecentReview(cgId) {
         const filtered = allCaregivers.filter((cg) => {
           const careTypes = Array.isArray(cg.care_types)
             ? cg.care_types.join(" ").toLowerCase()
-            : ((cg.care_type || "").trim().toLowerCase());
+            : (cg.care_type || "").trim().toLowerCase();
 
           const cgLoc = (cg.location || "").trim().toLowerCase();
           const cgAvail = (cg.availability || "").trim().toLowerCase();
@@ -263,10 +282,38 @@ function getRecentReview(cgId) {
         renderCaregivers(filtered);
       }
 
+      // -----------------------------------
+      // Load reviews
+      // -----------------------------------
+      async function loadReviews() {
+        const { data: reviewData, error: reviewError } = await window.db
+          .from("caregiver_reviews")
+          .select("*")
+          .eq("is_visible", true)
+          .order("created_at", { ascending: false });
+
+        if (reviewError) {
+          console.error(reviewError);
+          reviewMap = {};
+          return;
+        }
+
+        reviewMap = {};
+        (reviewData || []).forEach((review) => {
+          if (!reviewMap[review.caregiver_profile_id]) {
+            reviewMap[review.caregiver_profile_id] = [];
+          }
+          reviewMap[review.caregiver_profile_id].push(review);
+        });
+      }
+
+      // -----------------------------------
+      // Load caregiver profiles
+      // -----------------------------------
       async function loadCaregiversOnce() {
         let tries = 0;
         while (!window.db && tries < 40) {
-          await new Promise((r) => setTimeout(r, 50));
+          await new Promise((resolve) => setTimeout(resolve, 50));
           tries++;
         }
 
@@ -290,25 +337,13 @@ function getRecentReview(cgId) {
         }
 
         allCaregivers = data || [];
+        await loadReviews();
         applyFilters();
       }
-const { data: reviewData, error: reviewError } = await window.db
-  .from("caregiver_reviews")
-  .select("*")
-  .eq("is_visible", true)
-  .order("created_at", { ascending: false });
 
-if (reviewError) {
-  console.error(reviewError);
-} else {
-  reviewMap = {};
-  (reviewData || []).forEach((review) => {
-    if (!reviewMap[review.caregiver_profile_id]) {
-      reviewMap[review.caregiver_profile_id] = [];
-    }
-    reviewMap[review.caregiver_profile_id].push(review);
-  });
-}
+      // -----------------------------------
+      // Wire filter controls
+      // -----------------------------------
       function wireEvents() {
         document.getElementById("cgApplyBtn")?.addEventListener("click", applyFilters);
 
@@ -324,6 +359,9 @@ if (reviewError) {
         document.getElementById("cgFilterKeyword")?.addEventListener("input", applyFilters);
       }
 
+      // -----------------------------------
+      // Initialize page
+      // -----------------------------------
       window.addEventListener("DOMContentLoaded", () => {
         wireEvents();
         loadCaregiversOnce();
