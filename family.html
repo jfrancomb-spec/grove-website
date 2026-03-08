@@ -237,8 +237,29 @@
       document.getElementById("fam_children_description").value = profile?.children_description || "";
       document.getElementById("fam_pets_description").value = profile?.pets_description || "";
 
-      document.getElementById("dashProfileStatus").textContent =
-        profile?.status ? profile.status : "Active";
+const status = profile?.status || "pending";
+const statusEl = document.getElementById("dashProfileStatus");
+
+let label = "Pending Review";
+let badgeClass = "badge-pending";
+
+if (status === "approved") {
+  label = "Approved";
+  badgeClass = "badge-approved";
+}
+
+if (status === "denied") {
+  label = "Needs Update";
+  badgeClass = "badge-denied";
+}
+
+if (status === "pending") {
+  label = "Pending Review";
+  badgeClass = "badge-pending";
+}
+
+statusEl.innerHTML = `<span class="badge ${badgeClass}">${label}</span>`;
+      
       document.getElementById("dashConfirmedEncounters").textContent =
         profile?.confirmed_encounters != null ? profile.confirmed_encounters : 0;
       document.getElementById("dashResponseTime").textContent =
