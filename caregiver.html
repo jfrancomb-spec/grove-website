@@ -35,13 +35,37 @@
         <p id="authMessage" class="success"></p>
       </div>
 
-      <div class="form-card" id="profileCard" style="display:none;">
-        <div class="flex-between">
-          <h2 class="mb-0">Your Caregiver Profile</h2>
-          <button class="button" type="button" id="signOutBtn">Sign Out</button>
-        </div>
+<div class="form-card" id="profileCard" style="display:none;">
+  <div class="flex-between">
+    <h2 class="mb-0">Your Caregiver Dashboard</h2>
+    <button class="button" type="button" id="signOutBtn">Sign Out</button>
+  </div>
 
-        <p class="mt-10" id="signedInText"></p>
+  <p class="mt-10" id="signedInText"></p>
+
+  <div class="dashboard-stats">
+    <div class="dashboard-stat">
+      <div class="dashboard-label">Profile Status</div>
+      <div class="dashboard-value" id="dashProfileStatus">—</div>
+    </div>
+
+    <div class="dashboard-stat">
+      <div class="dashboard-label">Confirmed Encounters</div>
+      <div class="dashboard-value" id="dashConfirmedEncounters">0</div>
+    </div>
+
+    <div class="dashboard-stat">
+      <div class="dashboard-label">Average Response Time</div>
+      <div class="dashboard-value" id="dashResponseTime">—</div>
+    </div>
+
+    <div class="dashboard-stat">
+      <div class="dashboard-label">Messages</div>
+      <div class="dashboard-value" id="dashMessages">0</div>
+    </div>
+  </div>
+
+  <h3 class="mt-22">Your Profile</h3>
 
         <form id="caregiverProfileForm">
           <div class="row">
