@@ -153,7 +153,7 @@
 
         return `
           <div class="profile-badges">
-            ${badges.map(badge => `<span class="profile-badge">${badge}</span>`).join("")}
+            ${badges.map((badge) => `<span class="profile-badge">${badge}</span>`).join("")}
           </div>
         `;
       }
@@ -162,13 +162,16 @@
       // Photo gallery helper
       // -----------------------------------
       function buildPhotoGallery(cg) {
-        const photos = cg.photo_urls || (cg.photo_url ? [cg.photo_url] : []);
+        const photos = Array.isArray(cg.photo_urls) && cg.photo_urls.length
+          ? cg.photo_urls
+          : (cg.photo_url ? [cg.photo_url] : []);
+
         if (!photos.length) return "";
 
         const main = photos[0];
         const thumbs = photos
           .slice(1)
-          .map(photo => `
+          .map((photo) => `
             <img
               src="${photo}"
               alt="Caregiver photo thumbnail"
@@ -181,6 +184,27 @@
           <img class="profile-main-photo" src="${main}" alt="${formatDisplayName(cg)}">
           ${thumbs ? `<div class="profile-gallery">${thumbs}</div>` : ""}
         `;
+      }
+
+      // -----------------------------------
+      // Action buttons helper
+      // -----------------------------------
+      function buildActionButtons(cg) {
+        const profileBtn = `
+          <a class="button" href="./caregiver-profile.html?id=${cg.id}">
+            View Profile
+          </a>
+        `;
+
+        const messageBtn = cg.user_id
+          ? `
+            <a class="button" href="./messages.html?user=${cg.user_id}">
+              Contact This Caregiver
+            </a>
+          `
+          : "";
+
+        return `${profileBtn}${messageBtn}`;
       }
 
       // -----------------------------------
@@ -230,12 +254,7 @@
             ${getRecentReview(cg.id)}
             ${buildBadges(cg)}
             <p>${cg.bio || ""}</p>
-<a class="button" href="./caregiver-profile.html?id=${cg.id}">
-  View Profile
-</a>
-<a class="button" href="./messages.html?user=${cg.user_id}">
-  Contact This Caregiver
-</a>
+            ${buildActionButtons(cg)}
           `;
 
           container.appendChild(card);
@@ -329,7 +348,7 @@
 
         const { data, error } = await window.db
           .from("caregiver_profiles")
-          .select("*, user_id")
+          .select("*")
           .eq("is_active", true)
           .order("created_at", { ascending: false });
 
