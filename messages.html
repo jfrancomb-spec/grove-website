@@ -1,0 +1,101 @@
+<div class="hero">
+<h1>Messages</h1>
+</div>
+
+<section>
+
+<div id="messageThread"></div>
+
+<div class="row">
+<textarea id="messageText" placeholder="Write your message..."></textarea>
+</div>
+
+<button class="button" id="sendMessageBtn">Send Message</button>
+
+</section>
+//------------------------
+// Send Message Script
+//------------------------
+let currentUser = null;
+let receiverId = null;
+
+async function loadSession(){
+  const { data } = await window.db.auth.getSession();
+  currentUser = data?.session?.user;
+}
+
+async function sendMessage(){
+
+  const text = document.getElementById("messageText").value.trim();
+  if(!text) return;
+
+  const payload = {
+    sender_id: currentUser.id,
+    receiver_id: receiverId,
+    message_text: text
+  };
+
+  const { error } = await window.db
+    .from("messages")
+    .insert([payload]);
+
+  if(error){
+    handleError(error,"Message send failed");
+    return;
+  }
+
+  document.getElementById("messageText").value="";
+  loadMessages();
+}
+
+//----------------------
+// Load Conversation
+//----------------------
+async function loadMessages(){
+
+  const { data, error } = await window.db
+  .from("messages")
+  .select("*")
+  .or(`sender_id.eq.${currentUser.id},receiver_id.eq.${currentUser.id}`)
+  .order("created_at");
+
+  if(error){
+    console.error(error);
+    return;
+  }
+
+  const container = document.getElementById("messageThread");
+  container.innerHTML="";
+
+  data.forEach(msg=>{
+    
+    const div = document.createElement("div");
+
+    div.className = msg.sender_id === currentUser.id
+      ? "message-sent"
+      : "message-received";
+
+    div.innerText = msg.message_text;
+
+    container.appendChild(div);
+
+  });
+
+}
+//--------------------------
+// Listener Events
+//--------------------------
+window.addEventListener("DOMContentLoaded", async () => {
+
+  await loadSession();
+
+  const params = new URLSearchParams(window.location.search);
+  receiverId = params.get("user");
+
+  loadMessages();
+
+  document
+  .getElementById("sendMessageBtn")
+  .addEventListener("click",sendMessage);
+
+});
