@@ -503,3 +503,30 @@ textarea:focus {
   object-fit: cover;
   border-radius: 8px;
 }
+.dashboard-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 12px;
+  margin: 20px 0 24px 0;
+}
+
+.dashboard-stat {
+  background: #f6faf9;
+  border: 1px solid var(--card-border);
+  border-radius: 10px;
+  padding: 14px;
+  text-align: center;
+}
+
+.dashboard-label {
+  font-size: 13px;
+  color: var(--muted);
+  margin-bottom: 6px;
+  font-weight: 600;
+}
+
+.dashboard-value {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text);
+}
