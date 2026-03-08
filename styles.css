@@ -662,3 +662,15 @@ textarea:focus {
   background: #fdeaea;
   color: #a11a1a;
 }
+/* caregiver card actions */
+.caregiver-actions{
+  margin-top:14px;
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+}
+
+.caregiver-actions .button{
+  width:100%;
+  text-align:center;
+}
