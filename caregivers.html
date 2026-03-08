@@ -230,9 +230,9 @@
             ${getRecentReview(cg.id)}
             ${buildBadges(cg)}
             <p>${cg.bio || ""}</p>
-            <a class="button" href="./request.html?caregiver_id=${cg.id}">
-              Contact This Caregiver
-            </a>
+<a class="button" href="./caregiver-profile.html?id=${cg.id}">
+  View Profile
+</a>
           `;
 
           container.appendChild(card);
