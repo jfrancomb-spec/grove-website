@@ -126,6 +126,22 @@ function buildBadges(cg) {
     </div>
   `;
 }
+      function buildPhotoGallery(cg){
+  const photos = cg.photo_urls || (cg.photo_url ? [cg.photo_url] : []);
+
+  if(!photos.length) return "";
+
+  const main = photos[0];
+
+  const thumbs = photos.slice(1).map(p =>
+    `<img src="${p}" onclick="this.closest('.card').querySelector('.profile-main-photo').src='${p}'">`
+  ).join("");
+
+  return `
+    <img class="profile-main-photo" src="${main}">
+    ${thumbs ? `<div class="profile-gallery">${thumbs}</div>` : ""}
+  `;
+}
       function renderCaregivers(list) {
         const container = document.getElementById("caregiversContainer");
         const countEl = document.getElementById("cgCount");
@@ -157,7 +173,7 @@ function buildBadges(cg) {
               : "";
 
           card.innerHTML = `
-            ${cg.photo_url ? `<img class="profile-photo" src="${cg.photo_url}" alt="${displayName}">` : ``}
+            ${buildPhotoGallery(cg)}
             <h3>${displayName}${careTypes ? ` — ${careTypes}` : ""}</h3>
             <p><strong>Location:</strong> ${cg.location || ""}</p>
             ${cg.years_experience ? `<p><strong>Experience:</strong> ${cg.years_experience}</p>` : ``}
