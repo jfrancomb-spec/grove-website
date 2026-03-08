@@ -471,3 +471,23 @@ textarea:focus {
   font-size: 13px;
   font-weight: 600;
 }
+.caregiver-card {
+  text-align: center;
+}
+
+.profile-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+  margin: 12px 0;
+}
+
+.profile-badge {
+  background: #eef6f4;
+  border: 1px solid var(--card-border);
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-size: 13px;
+  font-weight: 600;
+}
