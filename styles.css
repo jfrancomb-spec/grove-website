@@ -624,3 +624,41 @@ textarea:focus {
   max-width: 700px;
   margin: 0 auto;
 }
+.checkbox-group {
+  display: grid;
+  gap: 8px;
+}
+
+.checkbox-group label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 500;
+}
+
+.checkbox-group input[type="checkbox"] {
+  width: auto;
+}
+
+.badge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.badge-pending {
+  background: #fff4cc;
+  color: #8a6d00;
+}
+
+.badge-approved {
+  background: #e6f6ed;
+  color: #1f7a4d;
+}
+
+.badge-denied {
+  background: #fdeaea;
+  color: #a11a1a;
+}
