@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Grove | Edit Caregiver Profile</title>
+  <link rel="stylesheet" href="./styles.css" />
+  <link rel="icon" type="image/png" href="./MainIcon.png" />
+</head>
+
+<body>
+  <div id="header-placeholder"></div>
+
+  <main>
+    <div class="hero">
+      <h1>Edit Caregiver Profile</h1>
+      <div class="subtitle">
+        Find your profile and make updates.
+      </div>
+    </div>
+
+    <section>
+      <div class="form-card" id="lookupCard">
+        <h2 class="mt-0">Find Your Profile</h2>
+
+        <form id="lookupForm">
+          <div class="row">
+            <input id="lookup_email" type="email" placeholder="Email Address" required />
+          </div>
+
+          <div class="row">
+            <input id="lookup_phone" type="text" placeholder="Phone Number" required />
+          </div>
+
+          <button class="button" type="submit">Find My Profile</button>
+        </form>
+      </div>
+
+      <div class="form-card" id="editCard" style="display:none;">
+        <h2 class="mt-0">Update Profile</h2>
+
+        <form id="editCaregiverForm">
+          <input id="edit_id" type="hidden" />
+
+          <div class="row">
+            <input id="edit_first_name" type="text" placeholder="First Name" required />
+          </div>
+
+          <div class="row">
+            <input id="edit_last_name" type="text" placeholder="Last Name" required />
+          </div>
+
+          <div class="row">
+            <input id="edit_email" type="email" placeholder="Email Address" required />
+          </div>
+
+          <div class="row">
+            <input id="edit_phone" type="text" placeholder="Phone Number" required />
+          </div>
+
+          <div class="row">
+            <input id="edit_location" type="text" placeholder="City or Neighborhood" required />
+          </div>
+
+          <div class="row">
+            <label class="mb-6"><strong>Types of Care You Provide</strong></label>
+            <div class="checkbox-group">
+              <label><input type="checkbox" name="edit_care_types" value="Childcare" /> Childcare</label>
+              <label><input type="checkbox" name="edit_care_types" value="Senior Care" /> Senior Care</label>
+              <label><input type="checkbox" name="edit_care_types" value="Pet Care" /> Pet Care</label>
+              <label><input type="checkbox" name="edit_care_types" value="Household Help" /> Household Help</label>
+              <label><input type="checkbox" name="edit_care_types" value="Other" /> Other</label>
+            </div>
+          </div>
+
+          <div class="row">
+            <select id="edit_years_experience" required>
+              <option value="">Years of Experience</option>
+              <option value="none">None</option>
+              <option value="1-2">1–2</option>
+              <option value="2-5">2–5</option>
+              <option value="5-10">5–10</option>
+              <option value="10+">10+</option>
+            </select>
+          </div>
+
+          <div class="row">
+            <input id="edit_availability" type="text" placeholder="Availability (days/times)" />
+          </div>
+
+          <div class="row">
+            <label class="mb-6"><strong>Profile Details</strong></label>
+            <div class="checkbox-group">
+              <label><input id="edit_drivers_license" type="checkbox" /> Driver’s License</label>
+              <label><input id="edit_cpr_certified" type="checkbox" /> CPR Certified</label>
+              <label><input id="edit_non_smoker" type="checkbox" /> Non-Smoker</label>
+              <label><input id="edit_non_vaper" type="checkbox" /> Non-Vaper</label>
+              <label><input id="edit_comfortable_with_cats" type="checkbox" /> Comfortable with Cats</label>
+              <label><input id="edit_comfortable_with_dogs" type="checkbox" /> Comfortable with Dogs</label>
+            </div>
+          </div>
+
+          <div class="row">
+            <textarea id="edit_bio" placeholder="Tell families about your experience" required></textarea>
+          </div>
+
+          <button class="button" type="submit">Save Changes</button>
+        </form>
+
+        <p id="editSuccess" class="success">
+          ✅ Profile updated successfully.
+        </p>
+      </div>
+    </section>
+  </main>
+
+  <div id="footer-placeholder"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script src="./app.js"></script>
+
+  <script>
+    function formatPhoneNumber(value) {
+      const digits = value.replace(/\D/g, "").slice(0, 10);
+      if (digits.length === 0) return "";
+      if (digits.length < 4) return digits;
+      if (digits.length < 7) return `(${digits.slice(0, 3)}) ${digits.slice(3)}`;
+      return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
+    }
+
+    function getSelectedCareTypes() {
+      return Array.from(document.querySelectorAll('input[name="edit_care_types"]:checked'))
+        .map(cb => cb.value);
+    }
+
+    function setSelectedCareTypes(careTypes) {
+      const values = Array.isArray(careTypes) ? careTypes : [];
+      document.querySelectorAll('input[name="edit_care_types"]').forEach(cb => {
+        cb.checked = values.includes(cb.value);
+      });
+    }
+
+    function fillForm(profile) {
+      document.getElementById("edit_id").value = profile.id || "";
+      document.getElementById("edit_first_name").value = profile.first_name || "";
+      document.getElementById("edit_last_name").value = profile.last_name || "";
+      document.getElementById("edit_email").value = profile.email || "";
+      document.getElementById("edit_phone").value = profile.phone || "";
+      document.getElementById("edit_location").value = profile.location || "";
+      document.getElementById("edit_years_experience").value = profile.years_experience || "";
+      document.getElementById("edit_availability").value = profile.availability || "";
+      document.getElementById("edit_bio").value = profile.bio || "";
+
+      document.getElementById("edit_drivers_license").checked = !!profile.has_drivers_license;
+      document.getElementById("edit_cpr_certified").checked = !!profile.cpr_certified;
+      document.getElementById("edit_non_smoker").checked = !!profile.non_smoker;
+      document.getElementById("edit_non_vaper").checked = !!profile.non_vaper;
+      document.getElementById("edit_comfortable_with_cats").checked = !!profile.comfortable_with_cats;
+      document.getElementById("edit_comfortable_with_dogs").checked = !!profile.comfortable_with_dogs;
+
+      setSelectedCareTypes(profile.care_types || []);
+    }
+
+    async function wireLookup() {
+      const lookupForm = document.getElementById("lookupForm");
+      if (!lookupForm) return;
+
+      const lookupPhone = document.getElementById("lookup_phone");
+      lookupPhone?.addEventListener("input", (e) => {
+        e.target.value = formatPhoneNumber(e.target.value);
+      });
+
+      lookupForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+
+        const email = document.getElementById("lookup_email").value.trim();
+        const phone = document.getElementById("lookup_phone").value.trim();
+
+        const { data, error } = await window.db
+          .from("caregiver_profiles")
+          .select("*")
+          .eq("email", email)
+          .eq("phone", phone)
+          .limit(1);
+
+        if (error) {
+          handleError(error, "Lookup failed");
+          return;
+        }
+
+        if (!data || data.length === 0) {
+          alert("No caregiver profile matched that email and phone number.");
+          return;
+        }
+
+        fillForm(data[0]);
+        document.getElementById("editCard").style.display = "block";
+        document.getElementById("editCard").scrollIntoView({ behavior: "smooth" });
+      });
+    }
+
+    async function wireEditForm() {
+      const form = document.getElementById("editCaregiverForm");
+      if (!form) return;
+
+      const editPhone = document.getElementById("edit_phone");
+      editPhone?.addEventListener("input", (e) => {
+        e.target.value = formatPhoneNumber(e.target.value);
+      });
+
+      form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+
+        const id = document.getElementById("edit_id").value;
+        const careTypes = getSelectedCareTypes();
+
+        if (!careTypes.length) {
+          alert("Please select at least one type of care.");
+          return;
+        }
+
+        const firstName = document.getElementById("edit_first_name").value.trim();
+        const lastName = document.getElementById("edit_last_name").value.trim();
+
+        const payload = {
+          first_name: firstName,
+          last_name: lastName,
+          name_display: `${firstName} ${lastName}`.trim(),
+          email: document.getElementById("edit_email").value.trim(),
+          phone: document.getElementById("edit_phone").value.trim(),
+          location: document.getElementById("edit_location").value.trim(),
+          care_types: careTypes,
+          care_type: careTypes[0] || "",
+          years_experience: document.getElementById("edit_years_experience").value,
+          availability: document.getElementById("edit_availability").value.trim(),
+          has_drivers_license: document.getElementById("edit_drivers_license").checked,
+          cpr_certified: document.getElementById("edit_cpr_certified").checked,
+          non_smoker: document.getElementById("edit_non_smoker").checked,
+          non_vaper: document.getElementById("edit_non_vaper").checked,
+          comfortable_with_cats: document.getElementById("edit_comfortable_with_cats").checked,
+          comfortable_with_dogs: document.getElementById("edit_comfortable_with_dogs").checked,
+          bio: document.getElementById("edit_bio").value.trim()
+        };
+
+        const { error } = await window.db
+          .from("caregiver_profiles")
+          .update(payload)
+          .eq("id", id);
+
+        if (error) {
+          handleError(error, "Update failed");
+          return;
+        }
+
+        document.getElementById("editSuccess").style.display = "block";
+        document.getElementById("editSuccess").scrollIntoView({ behavior: "smooth" });
+      });
+    }
+
+    window.addEventListener("DOMContentLoaded", () => {
+      wireLookup();
+      wireEditForm();
+    });
+  </script>
+</body>
+</html>
