@@ -1,101 +1,318 @@
-<div class="hero">
-<h1>Messages</h1>
-</div>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Grove | Messages</title>
 
-<section>
+  <link rel="stylesheet" href="./styles.css" />
+  <link rel="icon" type="image/png" href="./MainIcon.png" />
+</head>
 
-<div id="messageThread"></div>
+<body>
+  <div id="header-placeholder"></div>
 
-<div class="row">
-<textarea id="messageText" placeholder="Write your message..."></textarea>
-</div>
+  <main>
+    <!-- Hero -->
+    <div class="hero">
+      <h1>Messages</h1>
+      <div class="subtitle">
+        View your conversations and send messages.
+      </div>
+    </div>
 
-<button class="button" id="sendMessageBtn">Send Message</button>
+    <!-- Messaging layout -->
+    <section>
+      <div class="messages-layout">
+        <div class="form-card">
+          <h2 class="mt-0">Inbox</h2>
+          <div id="conversationList"></div>
+        </div>
 
-</section>
-//------------------------
-// Send Message Script
-//------------------------
-let currentUser = null;
-let receiverId = null;
+        <div class="form-card">
+          <h2 class="mt-0">Conversation</h2>
+          <div id="threadHeader" class="mb-16 text-muted">Select a conversation to view messages.</div>
+          <div id="messageThread" class="message-thread"></div>
 
-async function loadSession(){
-  const { data } = await window.db.auth.getSession();
-  currentUser = data?.session?.user;
-}
+          <div id="messageComposer" style="display:none;">
+            <div class="row">
+              <textarea id="messageText" placeholder="Write your message..."></textarea>
+            </div>
+            <button class="button" id="sendMessageBtn" type="button">Send Message</button>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
 
-async function sendMessage(){
+  <div id="footer-placeholder"></div>
 
-  const text = document.getElementById("messageText").value.trim();
-  if(!text) return;
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script src="./app.js"></script>
 
-  const payload = {
-    sender_id: currentUser.id,
-    receiver_id: receiverId,
-    message_text: text
-  };
+  <script>
+    // -----------------------------------
+    // Page state
+    // -----------------------------------
+    let currentUser = null;
+    let allMessages = [];
+    let selectedUserId = null;
 
-  const { error } = await window.db
-    .from("messages")
-    .insert([payload]);
+    // -----------------------------------
+    // Helpers
+    // -----------------------------------
+    function groupMessagesByOtherUser(messages, currentUserId) {
+      const map = {};
 
-  if(error){
-    handleError(error,"Message send failed");
-    return;
-  }
+      messages.forEach((msg) => {
+        const otherUserId = msg.sender_id === currentUserId ? msg.receiver_id : msg.sender_id;
+        if (!map[otherUserId]) map[otherUserId] = [];
+        map[otherUserId].push(msg);
+      });
 
-  document.getElementById("messageText").value="";
-  loadMessages();
-}
+      Object.values(map).forEach((group) => {
+        group.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+      });
 
-//----------------------
-// Load Conversation
-//----------------------
-async function loadMessages(){
+      return map;
+    }
 
-  const { data, error } = await window.db
-  .from("messages")
-  .select("*")
-  .or(`sender_id.eq.${currentUser.id},receiver_id.eq.${currentUser.id}`)
-  .order("created_at");
+    function formatMessageTime(ts) {
+      try {
+        return new Date(ts).toLocaleString();
+      } catch {
+        return "";
+      }
+    }
 
-  if(error){
-    console.error(error);
-    return;
-  }
+    // -----------------------------------
+    // Session
+    // -----------------------------------
+    async function loadSession() {
+      const { data } = await window.db.auth.getSession();
+      currentUser = data?.session?.user || null;
 
-  const container = document.getElementById("messageThread");
-  container.innerHTML="";
+      if (!currentUser) {
+        document.getElementById("conversationList").innerHTML =
+          "<p>Please sign in first.</p>";
+        document.getElementById("threadHeader").textContent =
+          "You must be signed in to view messages.";
+        return false;
+      }
 
-  data.forEach(msg=>{
-    
-    const div = document.createElement("div");
+      return true;
+    }
 
-    div.className = msg.sender_id === currentUser.id
-      ? "message-sent"
-      : "message-received";
+    // -----------------------------------
+    // Load all messages for current user
+    // -----------------------------------
+    async function loadMessages() {
+      const { data, error } = await window.db
+        .from("messages")
+        .select("*")
+        .or(`sender_id.eq.${currentUser.id},receiver_id.eq.${currentUser.id}`)
+        .order("created_at", { ascending: true });
 
-    div.innerText = msg.message_text;
+      if (error) {
+        handleError(error, "Unable to load messages");
+        return;
+      }
 
-    container.appendChild(div);
+      allMessages = data || [];
+      renderConversationList();
+      renderThreadFromQuery();
+    }
 
-  });
+    // -----------------------------------
+    // Render inbox conversation list
+    // -----------------------------------
+    function renderConversationList() {
+      const container = document.getElementById("conversationList");
+      container.innerHTML = "";
 
-}
-//--------------------------
-// Listener Events
-//--------------------------
-window.addEventListener("DOMContentLoaded", async () => {
+      if (!allMessages.length) {
+        container.innerHTML = "<p>No conversations yet.</p>";
+        return;
+      }
 
-  await loadSession();
+      const grouped = groupMessagesByOtherUser(allMessages, currentUser.id);
+      const userIds = Object.keys(grouped);
 
-  const params = new URLSearchParams(window.location.search);
-  receiverId = params.get("user");
+      userIds.sort((a, b) => {
+        const lastA = grouped[a][grouped[a].length - 1];
+        const lastB = grouped[b][grouped[b].length - 1];
+        return new Date(lastB.created_at) - new Date(lastA.created_at);
+      });
 
-  loadMessages();
+      userIds.forEach((userId) => {
+        const thread = grouped[userId];
+        const last = thread[thread.length - 1];
+        const unreadCount = thread.filter(
+          (m) => m.receiver_id === currentUser.id && !m.is_read
+        ).length;
 
-  document
-  .getElementById("sendMessageBtn")
-  .addEventListener("click",sendMessage);
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "conversation-item";
+        if (selectedUserId === userId) button.classList.add("active");
 
-});
+        button.innerHTML = `
+          <div class="conversation-top">
+            <span><strong>${userId}</strong></span>
+            ${unreadCount ? `<span class="unread-pill">${unreadCount}</span>` : ""}
+          </div>
+          <div class="conversation-preview">${last.message_text || ""}</div>
+          <div class="conversation-time">${formatMessageTime(last.created_at)}</div>
+        `;
+
+        button.addEventListener("click", () => {
+          selectedUserId = userId;
+          const url = new URL(window.location.href);
+          url.searchParams.set("user", userId);
+          window.history.replaceState({}, "", url);
+          renderConversationList();
+          renderSelectedThread();
+        });
+
+        container.appendChild(button);
+      });
+    }
+
+    // -----------------------------------
+    // Render thread selected by query param
+    // -----------------------------------
+    function renderThreadFromQuery() {
+      const params = new URLSearchParams(window.location.search);
+      const requestedUser = params.get("user");
+
+      if (requestedUser) {
+        selectedUserId = requestedUser;
+        renderConversationList();
+        renderSelectedThread();
+      }
+    }
+
+    // -----------------------------------
+    // Render current thread
+    // -----------------------------------
+    async function renderSelectedThread() {
+      const threadHeader = document.getElementById("threadHeader");
+      const threadEl = document.getElementById("messageThread");
+      const composer = document.getElementById("messageComposer");
+
+      threadEl.innerHTML = "";
+
+      if (!selectedUserId) {
+        threadHeader.textContent = "Select a conversation to view messages.";
+        composer.style.display = "none";
+        return;
+      }
+
+      threadHeader.textContent = `Conversation with ${selectedUserId}`;
+      composer.style.display = "block";
+
+      const thread = allMessages.filter((msg) => {
+        const isBetweenUsers =
+          (msg.sender_id === currentUser.id && msg.receiver_id === selectedUserId) ||
+          (msg.sender_id === selectedUserId && msg.receiver_id === currentUser.id);
+        return isBetweenUsers;
+      });
+
+      if (!thread.length) {
+        threadEl.innerHTML = "<p>No messages yet. Start the conversation below.</p>";
+        return;
+      }
+
+      thread.forEach((msg) => {
+        const div = document.createElement("div");
+        div.className =
+          msg.sender_id === currentUser.id ? "message-bubble sent" : "message-bubble received";
+
+        div.innerHTML = `
+          <div>${msg.message_text}</div>
+          <div class="message-time">${formatMessageTime(msg.created_at)}</div>
+        `;
+
+        threadEl.appendChild(div);
+      });
+
+      threadEl.scrollTop = threadEl.scrollHeight;
+
+      await markMessagesRead(thread);
+    }
+
+    // -----------------------------------
+    // Mark received messages as read
+    // -----------------------------------
+    async function markMessagesRead(thread) {
+      const unreadIds = thread
+        .filter((msg) => msg.receiver_id === currentUser.id && !msg.is_read)
+        .map((msg) => msg.id);
+
+      if (!unreadIds.length) return;
+
+      const { error } = await window.db
+        .from("messages")
+        .update({ is_read: true })
+        .in("id", unreadIds);
+
+      if (error) {
+        console.error(error);
+        return;
+      }
+
+      allMessages = allMessages.map((msg) =>
+        unreadIds.includes(msg.id) ? { ...msg, is_read: true } : msg
+      );
+
+      renderConversationList();
+    }
+
+    // -----------------------------------
+    // Send a new message
+    // -----------------------------------
+    async function sendMessage() {
+      const textEl = document.getElementById("messageText");
+      const text = textEl.value.trim();
+
+      if (!selectedUserId) {
+        alert("No conversation selected.");
+        return;
+      }
+
+      if (!text) return;
+
+      const payload = {
+        sender_id: currentUser.id,
+        receiver_id: selectedUserId,
+        message_text: text
+      };
+
+      const { error } = await window.db
+        .from("messages")
+        .insert([payload]);
+
+      if (error) {
+        handleError(error, "Message send failed");
+        return;
+      }
+
+      textEl.value = "";
+      await loadMessages();
+      await renderSelectedThread();
+    }
+
+    // -----------------------------------
+    // Init
+    // -----------------------------------
+    window.addEventListener("DOMContentLoaded", async () => {
+      const ok = await loadSession();
+      if (!ok) return;
+
+      document.getElementById("sendMessageBtn")?.addEventListener("click", sendMessage);
+
+      await loadMessages();
+    });
+  </script>
+</body>
+</html>
