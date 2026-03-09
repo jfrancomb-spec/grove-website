@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Grove | Family Profile</title>
+
+  <link rel="stylesheet" href="./styles.css" />
+  <link rel="icon" type="image/png" href="./MainIcon.png" />
+</head>
+
+<body>
+  <!-- Shared header -->
+  <div id="header-placeholder"></div>
+
+  <main>
+    <!-- Hero -->
+    <div class="hero">
+      <h1>Family Profile</h1>
+      <div class="subtitle" id="profileSubtitle">Loading family profile...</div>
+    </div>
+
+    <!-- Profile content -->
+    <section>
+      <div class="form-card" id="profileCard" style="display:none;">
+        <div id="profileContent"></div>
+
+        <div class="caregiver-actions mt-22">
+          <a class="button" id="contactBtn" href="#">Message This Family</a>
+          <a class="button" href="./findcare.html">Back</a>
+        </div>
+      </div>
+
+      <div id="profileError" style="display:none;">
+        <p>Unable to load this family profile.</p>
+        <p class="mt-16">
+          <a href="./findcare.html">← Back</a>
+        </p>
+      </div>
+    </section>
+  </main>
+
+  <!-- Shared footer -->
+  <div id="footer-placeholder"></div>
+
+  <!-- Scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script src="./app.js"></script>
+
+  <!-- Page script -->
+  <script>
+    (function () {
+      // -----------------------------------
+      // Page state
+      // -----------------------------------
+      let currentFamily = null;
+      let currentReviews = [];
+      let currentPhotoIndex = 0;
+
+      // -----------------------------------
+      // Display helpers
+      // -----------------------------------
+      function formatDisplayName(profile) {
+        const first = profile.first_name || "";
+        const lastInitial = profile.last_name ? `${profile.last_name.charAt(0)}.` : "";
+        return `${first} ${lastInitial}`.trim();
+      }
+
+      function careTypesNeededText(profile) {
+        if (Array.isArray(profile.care_types_needed) && profile.care_types_needed.length) {
+          return profile.care_types_needed.join(", ");
+        }
+        return "";
+      }
+
+      function buildStars(avg) {
+        if (!avg) return "";
+        const rounded = Math.round(avg * 10) / 10;
+        return `⭐ ${rounded}`;
+      }
+
+      // -----------------------------------
+      // Home detail badges
+      // -----------------------------------
+      function buildHomeBadges(profile) {
+        const badges = [];
+
+        if (profile.has_cats) badges.push("Cats in Home");
+        if (profile.has_dogs) badges.push("Dogs in Home");
+        if (profile.smoking_in_home) badges.push("Smoking in Home");
+        if (profile.driving_needed) badges.push("Driving Needed");
+
+        if (!badges.length) return "";
+
+        return `
+          <div class="profile-badges">
+            ${badges.map((badge) => `<span class="profile-badge">${badge}</span>`).join("")}
+          </div>
+        `;
+      }
+
+      // -----------------------------------
+      // Review helpers
+      // -----------------------------------
+      function buildReviewSummary(reviews) {
+        if (!reviews.length) {
+          return "<p><strong>Rating:</strong> No reviews yet.</p>";
+        }
+
+        const avg = reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length;
+        return `<p><strong>Rating:</strong> ${buildStars(avg)} (${reviews.length} review${reviews.length === 1 ? "" : "s"})</p>`;
+      }
+
+      function buildReviews(reviews) {
+        if (!reviews.length) {
+          return "<p>No reviews yet.</p>";
+        }
+
+        return `
+          <div class="review-list">
+            ${reviews.map((review) => `
+              <div class="review-card">
+                <p><strong>${review.reviewer_name || "Anonymous"}</strong> • ${buildStars(review.rating)}</p>
+                ${review.review_text ? `<p>${review.review_text}</p>` : ""}
+              </div>
+            `).join("")}
+          </div>
+        `;
+      }
+
+      // -----------------------------------
+      // Photo gallery helpers
+      // -----------------------------------
+      function getPhotos(profile) {
+        if (Array.isArray(profile.photo_urls) && profile.photo_urls.length) {
+          return profile.photo_urls;
+        }
+        return profile.photo_url ? [profile.photo_url] : [];
+      }
+
+      function renderGallery(profile) {
+        const photos = getPhotos(profile);
+        if (!photos.length) return "";
+
+        const safeIndex = Math.min(currentPhotoIndex, photos.length - 1);
+        const main = photos[safeIndex];
+
+        return `
+          <div class="profile-gallery-wrap">
+            <img
+              class="profile-detail-main-photo"
+              id="mainProfilePhoto"
+              src="${main}"
+              alt="${formatDisplayName(profile)}"
+            >
+            ${photos.length > 1 ? `
+              <div class="profile-gallery">
+                ${photos.map((photo, index) => `
+                  <img
+                    src="${photo}"
+                    alt="Family photo ${index + 1}"
+                    class="${index === safeIndex ? "active-thumb" : ""}"
+                    onclick="changeProfilePhoto(${index})"
+                  >
+                `).join("")}
+              </div>
+            ` : ""}
+          </div>
+        `;
+      }
+
+      function changeProfilePhoto(index) {
+        currentPhotoIndex = index;
+        renderProfile();
+      }
+
+      window.changeProfilePhoto = changeProfilePhoto;
+
+      // -----------------------------------
+      // Render full profile
+      // -----------------------------------
+      function renderProfile() {
+        if (!currentFamily) return;
+
+        const profile = currentFamily;
+        const displayName = formatDisplayName(profile);
+        const careTypesNeeded = careTypesNeededText(profile);
+
+        const responseTime =
+          profile.average_response_minutes != null
+            ? `${profile.average_response_minutes} min average response`
+            : "—";
+
+        const encounters =
+          profile.confirmed_encounters != null
+            ? `${profile.confirmed_encounters} confirmed encounter${profile.confirmed_encounters === 1 ? "" : "s"}`
+            : "0 confirmed encounters";
+
+        document.getElementById("profileSubtitle").textContent =
+          `${displayName}${profile.location ? ` • ${profile.location}` : ""}`;
+
+        document.getElementById("contactBtn").href = profile.user_id
+          ? `./messages.html?user=${profile.user_id}`
+          : "#";
+
+        document.getElementById("profileContent").innerHTML = `
+          <div class="profile-detail">
+            ${renderGallery(profile)}
+
+            <h2 class="text-center">${displayName}</h2>
+
+            ${profile.location ? `<p class="text-center"><strong>Location:</strong> ${profile.location}</p>` : ""}
+            ${careTypesNeeded ? `<p class="text-center"><strong>Care Needed:</strong> ${careTypesNeeded}</p>` : ""}
+            <p class="text-center"><strong>Response Time:</strong> ${responseTime}</p>
+            <p class="text-center"><strong>Confirmed Encounters:</strong> ${encounters}</p>
+
+            ${buildReviewSummary(currentReviews)}
+            ${buildHomeBadges(profile)}
+
+            ${profile.household_description ? `
+              <div class="mt-22">
+                <h3 class="mb-6">Household</h3>
+                <p>${profile.household_description}</p>
+              </div>
+            ` : ""}
+
+            ${profile.children_description ? `
+              <div class="mt-22">
+                <h3 class="mb-6">Children</h3>
+                <p>${profile.children_description}</p>
+              </div>
+            ` : ""}
+
+            ${profile.pets_description ? `
+              <div class="mt-22">
+                <h3 class="mb-6">Pets</h3>
+                <p>${profile.pets_description}</p>
+              </div>
+            ` : ""}
+
+            <div class="mt-22">
+              <h3 class="mb-6">Reviews</h3>
+              ${buildReviews(currentReviews)}
+            </div>
+          </div>
+        `;
+      }
+
+      // -----------------------------------
+      // Load family + reviews
+      // -----------------------------------
+      async function loadProfile() {
+        const params = new URLSearchParams(window.location.search);
+        const familyId = params.get("id");
+
+        if (!familyId) {
+          document.getElementById("profileError").style.display = "block";
+          return;
+        }
+
+        let tries = 0;
+        while (!window.db && tries < 40) {
+          await new Promise((resolve) => setTimeout(resolve, 50));
+          tries++;
+        }
+
+        if (!window.db) {
+          document.getElementById("profileError").style.display = "block";
+          return;
+        }
+
+        const { data: profile, error: profileError } = await window.db
+          .from("family_profiles")
+          .select("*")
+          .eq("id", familyId)
+          .eq("is_active", true)
+          .maybeSingle();
+
+        if (profileError || !profile) {
+          console.error(profileError);
+          document.getElementById("profileError").style.display = "block";
+          return;
+        }
+
+        const { data: reviews, error: reviewError } = await window.db
+          .from("family_reviews")
+          .select("*")
+          .eq("family_profile_id", familyId)
+          .eq("is_visible", true)
+          .order("created_at", { ascending: false });
+
+        if (reviewError) {
+          console.error(reviewError);
+        }
+
+        currentFamily = profile;
+        currentReviews = reviews || [];
+        currentPhotoIndex = 0;
+
+        document.getElementById("profileCard").style.display = "block";
+        renderProfile();
+      }
+
+      // -----------------------------------
+      // Init
+      // -----------------------------------
+      window.addEventListener("DOMContentLoaded", () => {
+        loadProfile();
+      });
+    })();
+  </script>
+</body>
+</html>
