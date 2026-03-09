@@ -57,7 +57,7 @@
     let currentUser = null;
     let allMessages = [];
     let selectedUserId = null;
-    let userNameMap = {};
+    let userInfoMap = {};
 
     // -----------------------------------
     // Helpers
@@ -95,12 +95,27 @@
     function formatFamilyName(profile) {
       const first = profile.first_name || "";
       const lastInitial = profile.last_name ? `${profile.last_name.charAt(0)}.` : "";
-      const fullName = `${first} ${lastInitial}`.trim();
-      return fullName || "Family";
+      return `${first} ${lastInitial}`.trim() || "Family";
     }
 
     function getDisplayName(userId) {
-      return userNameMap[userId] || "Conversation";
+      return userInfoMap[userId]?.name || "Conversation";
+    }
+
+    function getDisplayPhoto(userId) {
+      return userInfoMap[userId]?.photo_url || "";
+    }
+
+    function getConversationAvatar(userId) {
+      const photo = getDisplayPhoto(userId);
+      const name = getDisplayName(userId);
+      const initial = name ? name.charAt(0).toUpperCase() : "?";
+
+      if (photo) {
+        return `<img class="conversation-avatar" src="${photo}" alt="${name}">`;
+      }
+
+      return `<div class="conversation-avatar conversation-avatar-fallback">${initial}</div>`;
     }
 
     // -----------------------------------
@@ -111,10 +126,8 @@
       currentUser = data?.session?.user || null;
 
       if (!currentUser) {
-        document.getElementById("conversationList").innerHTML =
-          "<p>Please sign in first.</p>";
-        document.getElementById("threadHeader").textContent =
-          "You must be signed in to view messages.";
+        document.getElementById("conversationList").innerHTML = "<p>Please sign in first.</p>";
+        document.getElementById("threadHeader").textContent = "You must be signed in to view messages.";
         return false;
       }
 
@@ -137,15 +150,15 @@
       }
 
       allMessages = data || [];
-      await loadConversationNames();
+      await loadConversationInfo();
       renderConversationList();
       renderThreadFromQuery();
     }
 
     // -----------------------------------
-    // Load display names for conversation partners
+    // Load names + photos for other users
     // -----------------------------------
-    async function loadConversationNames() {
+    async function loadConversationInfo() {
       const otherUserIds = Array.from(
         new Set(
           allMessages.map((msg) =>
@@ -155,36 +168,40 @@
       );
 
       if (!otherUserIds.length) {
-        userNameMap = {};
+        userInfoMap = {};
         return;
       }
 
-      userNameMap = {};
+      userInfoMap = {};
 
-      // Look for caregiver profiles
       const { data: caregiverProfiles, error: caregiverError } = await window.db
         .from("caregiver_profiles")
-        .select("user_id, first_name, last_name")
+        .select("user_id, first_name, last_name, photo_url")
         .in("user_id", otherUserIds);
 
       if (!caregiverError && caregiverProfiles) {
         caregiverProfiles.forEach((profile) => {
-          userNameMap[profile.user_id] = formatCaregiverName(profile);
+          userInfoMap[profile.user_id] = {
+            name: formatCaregiverName(profile),
+            photo_url: profile.photo_url || ""
+          };
         });
       } else if (caregiverError) {
         console.error(caregiverError);
       }
 
-      // Look for family profiles
       const { data: familyProfiles, error: familyError } = await window.db
         .from("family_profiles")
-        .select("user_id, first_name, last_name")
+        .select("user_id, first_name, last_name, photo_url")
         .in("user_id", otherUserIds);
 
       if (!familyError && familyProfiles) {
         familyProfiles.forEach((profile) => {
-          if (!userNameMap[profile.user_id]) {
-            userNameMap[profile.user_id] = formatFamilyName(profile);
+          if (!userInfoMap[profile.user_id]) {
+            userInfoMap[profile.user_id] = {
+              name: formatFamilyName(profile),
+              photo_url: profile.photo_url || ""
+            };
           }
         });
       } else if (familyError) {
@@ -193,7 +210,7 @@
     }
 
     // -----------------------------------
-    // Render inbox conversation list
+    // Render inbox list
     // -----------------------------------
     function renderConversationList() {
       const container = document.getElementById("conversationList");
@@ -226,12 +243,17 @@
         if (selectedUserId === userId) button.classList.add("active");
 
         button.innerHTML = `
-          <div class="conversation-top">
-            <span><strong>${getDisplayName(userId)}</strong></span>
-            ${unreadCount ? `<span class="unread-pill">${unreadCount}</span>` : ""}
+          <div class="conversation-row">
+            ${getConversationAvatar(userId)}
+            <div class="conversation-main">
+              <div class="conversation-top">
+                <span><strong>${getDisplayName(userId)}</strong></span>
+                ${unreadCount ? `<span class="unread-pill">${unreadCount}</span>` : ""}
+              </div>
+              <div class="conversation-preview">${last.message_text || ""}</div>
+              <div class="conversation-time">${formatMessageTime(last.created_at)}</div>
+            </div>
           </div>
-          <div class="conversation-preview">${last.message_text || ""}</div>
-          <div class="conversation-time">${formatMessageTime(last.created_at)}</div>
         `;
 
         button.addEventListener("click", () => {
