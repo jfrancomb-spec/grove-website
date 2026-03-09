@@ -57,10 +57,19 @@
     let currentUser = null;
     let allMessages = [];
     let selectedUserId = null;
+    let userNameMap = {};
 
     // -----------------------------------
     // Helpers
     // -----------------------------------
+    function formatMessageTime(ts) {
+      try {
+        return new Date(ts).toLocaleString();
+      } catch {
+        return "";
+      }
+    }
+
     function groupMessagesByOtherUser(messages, currentUserId) {
       const map = {};
 
@@ -77,12 +86,21 @@
       return map;
     }
 
-    function formatMessageTime(ts) {
-      try {
-        return new Date(ts).toLocaleString();
-      } catch {
-        return "";
-      }
+    function formatCaregiverName(profile) {
+      const first = profile.first_name || "";
+      const lastInitial = profile.last_name ? `${profile.last_name.charAt(0)}.` : "";
+      return `${first} ${lastInitial}`.trim() || "Caregiver";
+    }
+
+    function formatFamilyName(profile) {
+      const first = profile.first_name || "";
+      const lastInitial = profile.last_name ? `${profile.last_name.charAt(0)}.` : "";
+      const fullName = `${first} ${lastInitial}`.trim();
+      return fullName || "Family";
+    }
+
+    function getDisplayName(userId) {
+      return userNameMap[userId] || "Conversation";
     }
 
     // -----------------------------------
@@ -104,7 +122,7 @@
     }
 
     // -----------------------------------
-    // Load all messages for current user
+    // Load messages for current user
     // -----------------------------------
     async function loadMessages() {
       const { data, error } = await window.db
@@ -119,8 +137,59 @@
       }
 
       allMessages = data || [];
+      await loadConversationNames();
       renderConversationList();
       renderThreadFromQuery();
+    }
+
+    // -----------------------------------
+    // Load display names for conversation partners
+    // -----------------------------------
+    async function loadConversationNames() {
+      const otherUserIds = Array.from(
+        new Set(
+          allMessages.map((msg) =>
+            msg.sender_id === currentUser.id ? msg.receiver_id : msg.sender_id
+          )
+        )
+      );
+
+      if (!otherUserIds.length) {
+        userNameMap = {};
+        return;
+      }
+
+      userNameMap = {};
+
+      // Look for caregiver profiles
+      const { data: caregiverProfiles, error: caregiverError } = await window.db
+        .from("caregiver_profiles")
+        .select("user_id, first_name, last_name")
+        .in("user_id", otherUserIds);
+
+      if (!caregiverError && caregiverProfiles) {
+        caregiverProfiles.forEach((profile) => {
+          userNameMap[profile.user_id] = formatCaregiverName(profile);
+        });
+      } else if (caregiverError) {
+        console.error(caregiverError);
+      }
+
+      // Look for family profiles
+      const { data: familyProfiles, error: familyError } = await window.db
+        .from("family_profiles")
+        .select("user_id, first_name, last_name")
+        .in("user_id", otherUserIds);
+
+      if (!familyError && familyProfiles) {
+        familyProfiles.forEach((profile) => {
+          if (!userNameMap[profile.user_id]) {
+            userNameMap[profile.user_id] = formatFamilyName(profile);
+          }
+        });
+      } else if (familyError) {
+        console.error(familyError);
+      }
     }
 
     // -----------------------------------
@@ -158,7 +227,7 @@
 
         button.innerHTML = `
           <div class="conversation-top">
-            <span><strong>${userId}</strong></span>
+            <span><strong>${getDisplayName(userId)}</strong></span>
             ${unreadCount ? `<span class="unread-pill">${unreadCount}</span>` : ""}
           </div>
           <div class="conversation-preview">${last.message_text || ""}</div>
@@ -179,7 +248,7 @@
     }
 
     // -----------------------------------
-    // Render thread selected by query param
+    // Read selected thread from query string
     // -----------------------------------
     function renderThreadFromQuery() {
       const params = new URLSearchParams(window.location.search);
@@ -193,7 +262,7 @@
     }
 
     // -----------------------------------
-    // Render current thread
+    // Render selected thread
     // -----------------------------------
     async function renderSelectedThread() {
       const threadHeader = document.getElementById("threadHeader");
@@ -208,14 +277,14 @@
         return;
       }
 
-      threadHeader.textContent = `Conversation with ${selectedUserId}`;
+      threadHeader.textContent = `Conversation with ${getDisplayName(selectedUserId)}`;
       composer.style.display = "block";
 
       const thread = allMessages.filter((msg) => {
-        const isBetweenUsers =
+        return (
           (msg.sender_id === currentUser.id && msg.receiver_id === selectedUserId) ||
-          (msg.sender_id === selectedUserId && msg.receiver_id === currentUser.id);
-        return isBetweenUsers;
+          (msg.sender_id === selectedUserId && msg.receiver_id === currentUser.id)
+        );
       });
 
       if (!thread.length) {
@@ -226,7 +295,9 @@
       thread.forEach((msg) => {
         const div = document.createElement("div");
         div.className =
-          msg.sender_id === currentUser.id ? "message-bubble sent" : "message-bubble received";
+          msg.sender_id === currentUser.id
+            ? "message-bubble sent"
+            : "message-bubble received";
 
         div.innerHTML = `
           <div>${msg.message_text}</div>
@@ -237,7 +308,6 @@
       });
 
       threadEl.scrollTop = threadEl.scrollHeight;
-
       await markMessagesRead(thread);
     }
 
@@ -269,7 +339,7 @@
     }
 
     // -----------------------------------
-    // Send a new message
+    // Send a message
     // -----------------------------------
     async function sendMessage() {
       const textEl = document.getElementById("messageText");
@@ -310,7 +380,6 @@
       if (!ok) return;
 
       document.getElementById("sendMessageBtn")?.addEventListener("click", sendMessage);
-
       await loadMessages();
     });
   </script>
