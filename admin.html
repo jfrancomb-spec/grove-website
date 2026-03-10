@@ -121,8 +121,7 @@ async function setCaregiverPostStatus(id, approve) {
     // =====================================================
     // Load all admin data
     // =====================================================
-
-    function renderAdminSection(container, profiles, sectionType) {
+function renderAdminSection(container, profiles, sectionType) {
   if (!container) return;
 
   if (!profiles.length) {
@@ -134,6 +133,37 @@ async function setCaregiverPostStatus(id, approve) {
     .map((profile) => {
       const roleLabel = profile.profile_type === "family" ? "Family" : "Caregiver";
       const badges = getAdminBadges(profile);
+
+      const photoList =
+        Array.isArray(profile.photo_urls) && profile.photo_urls.length
+          ? profile.photo_urls.filter(Boolean)
+          : profile.photo_url
+            ? [profile.photo_url]
+            : [];
+
+      const mainPhoto = photoList.length
+        ? `<img src="${escapeHtml(photoList[0])}" alt="${escapeHtml(profile.name_display || "Profile photo")}" class="admin-photo-main">`
+        : `<div class="admin-photo-placeholder">No Photo</div>`;
+
+      const photoStrip =
+        photoList.length > 1
+          ? `
+            <div class="admin-photo-strip">
+              ${photoList
+                .slice(0, 5)
+                .map(
+                  (url) => `
+                    <img
+                      src="${escapeHtml(url)}"
+                      alt="Profile photo"
+                      class="admin-photo-thumb"
+                    >
+                  `
+                )
+                .join("")}
+            </div>
+          `
+          : "";
 
       const caregiverDetails = `
         ${profile.location ? `<div class="admin-meta">${escapeHtml(profile.location)}</div>` : ""}
@@ -147,6 +177,8 @@ async function setCaregiverPostStatus(id, approve) {
             ? `<div class="admin-meta"><strong>Experience:</strong> ${escapeHtml(profile.years_experience)}</div>`
             : ""
         }
+        ${profile.email ? `<div class="admin-meta"><strong>Email:</strong> ${escapeHtml(profile.email)}</div>` : ""}
+        ${profile.phone ? `<div class="admin-meta"><strong>Phone:</strong> ${escapeHtml(profile.phone)}</div>` : ""}
         ${profile.bio ? `<div><strong>Bio:</strong> ${escapeHtml(profile.bio)}</div>` : ""}
       `;
 
@@ -179,39 +211,46 @@ async function setCaregiverPostStatus(id, approve) {
 
       return `
         <div class="admin-card">
-          <div class="admin-card-top">
-            <div>
-              <h3>${escapeHtml(profile.name_display || "Unnamed Profile")}</h3>
-              <div class="admin-meta">${roleLabel}</div>
-
-              ${profile.profile_type === "family" ? familyDetails : caregiverDetails}
-
-              ${
-                badges.length
-                  ? `<div class="admin-badges">
-                      ${badges.map((badge) => `<span class="admin-badge">${escapeHtml(badge)}</span>`).join("")}
-                    </div>`
-                  : ""
-              }
+          <div class="admin-card-layout">
+            <div class="admin-photo-column">
+              ${mainPhoto}
+              ${photoStrip}
             </div>
 
-            <div class="admin-actions">
-              ${
-                sectionType !== "approved"
-                  ? `<button class="button-admin button-approve" onclick="updateApprovalStatus('${profile.table_name}', '${profile.id}', 'approved')">Approve</button>`
-                  : ""
-              }
-              ${
-                sectionType !== "denied"
-                  ? `<button class="button-admin button-deny" onclick="updateApprovalStatus('${profile.table_name}', '${profile.id}', 'denied')">Deny</button>`
-                  : ""
-              }
-              ${
-                sectionType !== "pending"
-                  ? `<button class="button-admin" onclick="updateApprovalStatus('${profile.table_name}', '${profile.id}', 'pending')">Move to Pending</button>`
-                  : ""
-              }
-              <button class="button-admin button-delete" onclick="deleteProfile('${profile.table_name}', '${profile.id}')">Delete</button>
+            <div class="admin-card-top">
+              <div>
+                <h3>${escapeHtml(profile.name_display || "Unnamed Profile")}</h3>
+                <div class="admin-meta">${roleLabel}</div>
+
+                ${profile.profile_type === "family" ? familyDetails : caregiverDetails}
+
+                ${
+                  badges.length
+                    ? `<div class="admin-badges">
+                        ${badges.map((badge) => `<span class="admin-badge">${escapeHtml(badge)}</span>`).join("")}
+                      </div>`
+                    : ""
+                }
+              </div>
+
+              <div class="admin-actions">
+                ${
+                  sectionType !== "approved"
+                    ? `<button class="button-admin button-approve" onclick="updateApprovalStatus('${profile.table_name}', '${profile.id}', 'approved')">Approve</button>`
+                    : ""
+                }
+                ${
+                  sectionType !== "denied"
+                    ? `<button class="button-admin button-deny" onclick="updateApprovalStatus('${profile.table_name}', '${profile.id}', 'denied')">Deny</button>`
+                    : ""
+                }
+                ${
+                  sectionType !== "pending"
+                    ? `<button class="button-admin" onclick="updateApprovalStatus('${profile.table_name}', '${profile.id}', 'pending')">Move to Pending</button>`
+                    : ""
+                }
+                <button class="button-admin button-delete" onclick="deleteProfile('${profile.table_name}', '${profile.id}')">Delete</button>
+              </div>
             </div>
           </div>
         </div>
