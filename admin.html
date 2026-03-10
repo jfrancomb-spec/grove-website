@@ -13,84 +13,28 @@
   <!-- Shared header -->
   <div id="header-placeholder"></div>
 
-  <main>
-    <!-- HERO -->
-    <div class="hero">
-      <h1>Admin Dashboard</h1>
-      <div class="subtitle">
-        Review submissions and manage what’s visible in the Grove network.
-      </div>
-    </div>
+<main class="admin-page">
+  <section class="admin-section">
+    <h1>Admin Dashboard</h1>
+    <p class="admin-subtext">Review caregiver and family profiles.</p>
+  </section>
 
-    <section>
-      <!-- LOGIN -->
-      <div class="form-card" id="loginCard">
-        <h2 style="margin-top: 0;">Admin Login</h2>
+  <section class="admin-section">
+    <h2>Approval Needed</h2>
+    <div id="pending-list" class="admin-list"></div>
+  </section>
 
-        <form id="loginForm">
-          <div class="row">
-            <input id="adminEmail" type="email" placeholder="Admin email" required />
-          </div>
+  <section class="admin-section">
+    <h2>Approved</h2>
+    <div id="approved-list" class="admin-list"></div>
+  </section>
 
-          <div class="row">
-            <input id="adminPassword" type="password" placeholder="Password" required />
-          </div>
-
-          <button class="button" type="submit">Sign in</button>
-        </form>
-
-        <p id="loginMsg" class="success"></p>
-      </div>
-
-      <!-- DASHBOARD -->
-      <div id="dashboard" style="display: none;">
-        <!-- OVERVIEW -->
-        <div class="form-card" style="margin-bottom: 16px;">
-          <div style="display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap;">
-            <h2 style="margin: 0;">Overview</h2>
-            <button class="button" id="signOutBtn" type="button">Sign out</button>
-          </div>
-
-          <p style="margin-top: 10px;">
-            Approving a listing makes it visible on the public site. Denying a listing removes it from public view.
-          </p>
-        </div>
-
-        <!-- LISTINGS REVIEW -->
-        <section>
-          <h2>Job Listings</h2>
-          <div id="jobPostsAdmin" class="cards"></div>
-        </section>
-
-        <section>
-          <h2>Caregiver Listings</h2>
-          <div id="caregiverPostsAdmin" class="cards"></div>
-        </section>
-
-        <!-- REQUESTS / APPLICATIONS -->
-        <section>
-          <h2>Care Requests</h2>
-          <div id="careRequests" class="cards"></div>
-        </section>
-
-        <section>
-          <h2>Caregiver Applications</h2>
-          <div id="caregiverApps" class="cards"></div>
-        </section>
-
-        <section>
-          <h2>Job Applications</h2>
-          <div id="jobApps" class="cards"></div>
-        </section>
-
-        <section>
-          <h2>Caregiver Requests</h2>
-          <div id="caregiverReqs" class="cards"></div>
-        </section>
-      </div>
-    </section>
-  </main>
-
+  <section class="admin-section">
+    <h2>Denied</h2>
+    <div id="denied-list" class="admin-list"></div>
+  </section>
+</main>
+  
   <!-- Shared footer -->
   <div id="footer-placeholder"></div>
 
