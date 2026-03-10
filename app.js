@@ -7,11 +7,11 @@
 // - Mobile hamburger menu
 // - Form submissions
 // - Prefilling caregiver forms from job links
+// - Admin approval dashboard
 // ======================================================
 
 // ======================================================
 // Supabase client (global)
-// Creates a connection used for all database actions
 // ======================================================
 const SUPABASE_URL = "https://apjdknqppglnamndwwya.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_JwsPcXgi_T-NQZo1tGZY_w_kcRc9kWc";
@@ -20,7 +20,6 @@ window.db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // ======================================================
 // Error handler
-// Displays user-friendly errors and logs details
 // ======================================================
 function handleError(error, message = "Something went wrong") {
   const text = `${message}: ${error?.message || "Unknown error"}`;
@@ -30,7 +29,6 @@ function handleError(error, message = "Something went wrong") {
 
 // ======================================================
 // Success helper
-// Displays success messages consistently
 // ======================================================
 function showSuccess(messageId, formElement) {
   const msg = document.getElementById(messageId);
@@ -40,15 +38,28 @@ function showSuccess(messageId, formElement) {
 }
 
 // ======================================================
+// Safe HTML escaping
+// ======================================================
+function escapeHtml(value) {
+  if (value === null || value === undefined) return "";
+  return String(value)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
+}
+
+// ======================================================
 // Header / Footer injection
-// Loads shared header.html and footer.html into pages
 // ======================================================
 async function loadPart(id, file) {
   const el = document.getElementById(id);
   if (!el) return;
+
   const res = await fetch(file);
   el.innerHTML = await res.text();
-  // After header loads we can enable menu/nav features
+
   if (id === "header-placeholder") {
     highlightCurrentNav();
     wireMobileMenu();
@@ -57,7 +68,6 @@ async function loadPart(id, file) {
 
 // ======================================================
 // Navigation helper
-// Determines which page we are on
 // ======================================================
 function getCurrentFileName() {
   const last = window.location.pathname.split("/").pop();
@@ -66,7 +76,6 @@ function getCurrentFileName() {
 
 // ======================================================
 // Navigation highlighting
-// Adds an "active" class to the current page link
 // ======================================================
 function highlightCurrentNav() {
   const file = getCurrentFileName();
@@ -79,24 +88,27 @@ function highlightCurrentNav() {
 
 // ======================================================
 // Mobile hamburger menu
-// Controls opening/closing navigation on small screens
 // ======================================================
 function wireMobileMenu() {
-  const toggle=document.getElementById("menuToggle");
-  const nav=document.getElementById("mainNav");
-  if(!toggle||!nav) return;
-  if(toggle.dataset.wired==="1") return;
-  toggle.dataset.wired="1";
+  const toggle = document.getElementById("menuToggle");
+  const nav = document.getElementById("mainNav");
 
-  const setExpanded=(open)=>toggle.setAttribute("aria-expanded",open?"true":"false");
+  if (!toggle || !nav) return;
+  if (toggle.dataset.wired === "1") return;
 
-  toggle.addEventListener("click",()=>{
-    const open=nav.classList.toggle("open");
+  toggle.dataset.wired = "1";
+
+  const setExpanded = (open) => {
+    toggle.setAttribute("aria-expanded", open ? "true" : "false");
+  };
+
+  toggle.addEventListener("click", () => {
+    const open = nav.classList.toggle("open");
     setExpanded(open);
   });
 
-  nav.querySelectorAll("a").forEach(a=>{
-    a.addEventListener("click",()=>{
+  nav.querySelectorAll("a").forEach((a) => {
+    a.addEventListener("click", () => {
       nav.classList.remove("open");
       setExpanded(false);
     });
@@ -106,23 +118,20 @@ function wireMobileMenu() {
 }
 
 // ======================================================
-// Prefill caregiver form when applying from a job post
-// Reads parameters from the URL and fills fields
+// Prefill caregiver form from job query params
 // ======================================================
 function prefillFromQuery() {
   const params = new URLSearchParams(window.location.search);
   const applyJob = params.get("apply_job");
   const careType = (params.get("care_type") || "").trim();
   const location = (params.get("location") || "").trim();
+
   const exp = document.getElementById("cg_experience");
-  // If not on caregiver page, stop
   if (!exp) return;
 
-  // Prefill location
   const loc = document.getElementById("cg_location");
   if (loc && location) loc.value = location;
 
-  // Prefill care type
   const sel = document.getElementById("cg_care_type");
   if (sel && careType) {
     const match = Array.from(sel.options).find((o) => {
@@ -132,7 +141,6 @@ function prefillFromQuery() {
     if (match) sel.value = match.value || match.textContent;
   }
 
-  // Prefill experience field
   if (applyJob) {
     exp.value =
       `Applying for job: ${applyJob}\n` +
@@ -145,13 +153,14 @@ function prefillFromQuery() {
 
 // ======================================================
 // Find Care form
-// Submits family care requests to Supabase
 // ======================================================
 function wireFindCareForm() {
   const careForm = document.getElementById("careForm");
   if (!careForm) return;
+
   careForm.addEventListener("submit", async (e) => {
     e.preventDefault();
+
     const payload = {
       name: document.getElementById("name")?.value || "",
       email: document.getElementById("email")?.value || "",
@@ -160,15 +169,21 @@ function wireFindCareForm() {
       schedule: document.getElementById("schedule")?.value || "Not specified",
       details: document.getElementById("details")?.value || ""
     };
-    const { error } =
-      await window.db.from("care_requests").insert([payload]);
+
+    const { error } = await window.db.from("care_requests").insert([payload]);
+
     if (error) {
       handleError(error, "Request failed");
       return;
     }
+
     showSuccess("careSuccess", careForm);
   });
 }
+
+// ======================================================
+// Phone formatting helper
+// ======================================================
 function formatPhoneNumber(value) {
   const digits = value.replace(/\D/g, "").slice(0, 10);
 
@@ -177,19 +192,25 @@ function formatPhoneNumber(value) {
   return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
 }
 
-const phoneInput = document.getElementById("cg_phone");
-phoneInput?.addEventListener("input", (e) => {
-  e.target.value = formatPhoneNumber(e.target.value);
-});
+function wirePhoneFormatting() {
+  const phoneInput = document.getElementById("cg_phone");
+  if (!phoneInput) return;
+
+  phoneInput.addEventListener("input", (e) => {
+    e.target.value = formatPhoneNumber(e.target.value);
+  });
+}
+
 // ======================================================
 // Caregiver form
-// Submits caregiver applications to Supabase
 // ======================================================
 function wireCaregiverForm() {
   const caregiverForm = document.getElementById("caregiverForm");
   if (!caregiverForm) return;
+
   caregiverForm.addEventListener("submit", async (e) => {
     e.preventDefault();
+
     const payload = {
       name: document.getElementById("cg_name")?.value || "",
       phone: document.getElementById("cg_phone")?.value || "",
@@ -199,173 +220,20 @@ function wireCaregiverForm() {
       experience: document.getElementById("cg_experience")?.value || ""
     };
 
-    const { error } =
-      await window.db.from("caregiver_applications").insert([payload]);
+    const { error } = await window.db.from("caregiver_applications").insert([payload]);
+
     if (error) {
       handleError(error, "Application failed");
       return;
     }
+
     showSuccess("caregiverSuccess", caregiverForm);
   });
 }
 
 // ======================================================
-// Page initialization
-// Runs when the page loads
+// Admin helpers
 // ======================================================
-window.addEventListener("DOMContentLoaded", () => {
-
-  // Load shared header and footer
-  loadPart("header-placeholder", "./header.html");
-  loadPart("footer-placeholder", "./footer.html");
-
-  // Prefill caregiver form if arriving from job link
-  prefillFromQuery();
-
-  // Enable forms if they exist on the page
-  wireFindCareForm();
-  wireCaregiverForm();
-});
-
-
-
-// ======================================================
-// Admin Page
-// ======================================================
-async function loadAdminDashboard() {
-  const pendingList = document.getElementById("pending-list");
-  const approvedList = document.getElementById("approved-list");
-  const deniedList = document.getElementById("denied-list");
-
-  if (!pendingList || !approvedList || !deniedList) {
-    console.error("Admin containers not found.");
-    return;
-  }
-
-  pendingList.innerHTML = `<div class="admin-empty">Loading...</div>`;
-  approvedList.innerHTML = `<div class="admin-empty">Loading...</div>`;
-  deniedList.innerHTML = `<div class="admin-empty">Loading...</div>`;
-
-  try {
-    const [
-      { data: caregiverData, error: caregiverError },
-      { data: familyData, error: familyError }
-    ] = await Promise.all([
-      supabase
-        .from("caregiver_profiles")
-        .select("*")
-        .order("created_at", { ascending: false }),
-      supabase
-        .from("family_profiles")
-        .select("*")
-        .order("created_at", { ascending: false })
-    ]);
-
-    if (caregiverError || familyError) {
-      const errorMessage = caregiverError?.message || familyError?.message || "Unknown error loading profiles.";
-      console.error("Admin dashboard load error:", caregiverError || familyError);
-
-      pendingList.innerHTML = `<div class="admin-empty">Error: ${escapeHtml(errorMessage)}</div>`;
-      approvedList.innerHTML = `<div class="admin-empty">Error loading profiles.</div>`;
-      deniedList.innerHTML = `<div class="admin-empty">Error loading profiles.</div>`;
-      return;
-    }
-
-    const caregivers = (caregiverData || []).map(profile => ({
-      ...profile,
-      profile_type: "caregiver",
-      table_name: "caregiver_profiles"
-    }));
-
-    const families = (familyData || []).map(profile => ({
-      ...profile,
-      profile_type: "family",
-      table_name: "family_profiles"
-    }));
-
-    const allProfiles = [...caregivers, ...families].sort(
-      (a, b) => new Date(b.created_at) - new Date(a.created_at)
-    );
-
-    const pending = allProfiles.filter(profile => profile.approval_status === "pending");
-    const approved = allProfiles.filter(profile => profile.approval_status === "approved");
-    const denied = allProfiles.filter(profile => profile.approval_status === "denied");
-
-    renderAdminSection(pendingList, pending, "pending");
-    renderAdminSection(approvedList, approved, "approved");
-    renderAdminSection(deniedList, denied, "denied");
-  } catch (err) {
-    console.error("Unexpected admin dashboard error:", err);
-    pendingList.innerHTML = `<div class="admin-empty">Unexpected error: ${escapeHtml(err.message || "Unknown error")}</div>`;
-    approvedList.innerHTML = `<div class="admin-empty">Unexpected error.</div>`;
-    deniedList.innerHTML = `<div class="admin-empty">Unexpected error.</div>`;
-  }
-}
-
-function renderAdminSection(container, profiles, sectionType) {
-  if (!profiles.length) {
-    container.innerHTML = `<div class="admin-empty">No profiles in this section.</div>`;
-    return;
-  }
-
-  container.innerHTML = profiles.map(profile => {
-    const roleLabel = profile.profile_type === "family" ? "Family" : "Caregiver";
-
-    const details =
-      profile.profile_type === "caregiver"
-        ? [
-            profile.location,
-            Array.isArray(profile.care_types) ? profile.care_types.join(", ") : "",
-            profile.years_experience ? `${profile.years_experience} experience` : ""
-          ].filter(Boolean).join(" • ")
-        : [
-            profile.location,
-            Array.isArray(profile.care_types_needed) ? profile.care_types_needed.join(", ") : ""
-          ].filter(Boolean).join(" • ");
-
-    const badges = getAdminBadges(profile);
-
-    return `
-      <div class="admin-card">
-        <div class="admin-card-top">
-          <div>
-            <h3>${escapeHtml(profile.name_display || "Unnamed Profile")}</h3>
-            <div class="admin-meta">${roleLabel}</div>
-            ${details ? `<div class="admin-meta">${escapeHtml(details)}</div>` : ""}
-            ${profile.bio ? `<div>${escapeHtml(profile.bio)}</div>` : ""}
-            ${
-              badges.length
-                ? `<div class="admin-badges">
-                    ${badges.map(badge => `<span class="admin-badge">${escapeHtml(badge)}</span>`).join("")}
-                  </div>`
-                : ""
-            }
-          </div>
-
-          <div class="admin-actions">
-            ${
-              sectionType !== "approved"
-                ? `<button class="button-admin button-approve" onclick="updateApprovalStatus('${profile.table_name}', '${profile.id}', 'approved')">Approve</button>`
-                : ""
-            }
-            ${
-              sectionType !== "denied"
-                ? `<button class="button-admin button-deny" onclick="updateApprovalStatus('${profile.table_name}', '${profile.id}', 'denied')">Deny</button>`
-                : ""
-            }
-            ${
-              sectionType !== "pending"
-                ? `<button class="button-admin" onclick="updateApprovalStatus('${profile.table_name}', '${profile.id}', 'pending')">Move to Pending</button>`
-                : ""
-            }
-            <button class="button-admin button-delete" onclick="deleteProfile('${profile.table_name}', '${profile.id}')">Delete</button>
-          </div>
-        </div>
-      </div>
-    `;
-  }).join("");
-}
-
 function getAdminBadges(profile) {
   const badges = [];
 
@@ -388,13 +256,162 @@ function getAdminBadges(profile) {
   return badges;
 }
 
+function renderAdminSection(container, profiles, sectionType) {
+  if (!container) return;
+
+  if (!profiles.length) {
+    container.innerHTML = `<div class="admin-empty">No profiles in this section.</div>`;
+    return;
+  }
+
+  container.innerHTML = profiles
+    .map((profile) => {
+      const roleLabel = profile.profile_type === "family" ? "Family" : "Caregiver";
+
+      const details =
+        profile.profile_type === "caregiver"
+          ? [
+              profile.location,
+              Array.isArray(profile.care_types) ? profile.care_types.join(", ") : "",
+              profile.years_experience ? `${profile.years_experience} experience` : ""
+            ]
+              .filter(Boolean)
+              .join(" • ")
+          : [
+              profile.location,
+              Array.isArray(profile.care_types_needed) ? profile.care_types_needed.join(", ") : ""
+            ]
+              .filter(Boolean)
+              .join(" • ");
+
+      const badges = getAdminBadges(profile);
+
+      return `
+        <div class="admin-card">
+          <div class="admin-card-top">
+            <div>
+              <h3>${escapeHtml(profile.name_display || "Unnamed Profile")}</h3>
+              <div class="admin-meta">${roleLabel}</div>
+              ${details ? `<div class="admin-meta">${escapeHtml(details)}</div>` : ""}
+              ${profile.bio ? `<div>${escapeHtml(profile.bio)}</div>` : ""}
+              ${
+                badges.length
+                  ? `<div class="admin-badges">
+                      ${badges.map((badge) => `<span class="admin-badge">${escapeHtml(badge)}</span>`).join("")}
+                    </div>`
+                  : ""
+              }
+            </div>
+
+            <div class="admin-actions">
+              ${
+                sectionType !== "approved"
+                  ? `<button class="button-admin button-approve" onclick="updateApprovalStatus('${profile.table_name}', '${profile.id}', 'approved')">Approve</button>`
+                  : ""
+              }
+              ${
+                sectionType !== "denied"
+                  ? `<button class="button-admin button-deny" onclick="updateApprovalStatus('${profile.table_name}', '${profile.id}', 'denied')">Deny</button>`
+                  : ""
+              }
+              ${
+                sectionType !== "pending"
+                  ? `<button class="button-admin" onclick="updateApprovalStatus('${profile.table_name}', '${profile.id}', 'pending')">Move to Pending</button>`
+                  : ""
+              }
+              <button class="button-admin button-delete" onclick="deleteProfile('${profile.table_name}', '${profile.id}')">Delete</button>
+            </div>
+          </div>
+        </div>
+      `;
+    })
+    .join("");
+}
+
+// ======================================================
+// Admin page load
+// ======================================================
+async function loadAdminDashboard() {
+  const pendingList = document.getElementById("pending-list");
+  const approvedList = document.getElementById("approved-list");
+  const deniedList = document.getElementById("denied-list");
+
+  if (!pendingList || !approvedList || !deniedList) return;
+
+  pendingList.innerHTML = `<div class="admin-empty">Loading...</div>`;
+  approvedList.innerHTML = `<div class="admin-empty">Loading...</div>`;
+  deniedList.innerHTML = `<div class="admin-empty">Loading...</div>`;
+
+  try {
+    const [
+      { data: caregiverData, error: caregiverError },
+      { data: familyData, error: familyError }
+    ] = await Promise.all([
+      window.db
+        .from("caregiver_profiles")
+        .select("*")
+        .order("created_at", { ascending: false }),
+      window.db
+        .from("family_profiles")
+        .select("*")
+        .order("created_at", { ascending: false })
+    ]);
+
+    if (caregiverError || familyError) {
+      const errorMessage =
+        caregiverError?.message ||
+        familyError?.message ||
+        "Unknown error loading profiles.";
+
+      console.error("Admin dashboard load error:", caregiverError || familyError);
+
+      pendingList.innerHTML = `<div class="admin-empty">Error: ${escapeHtml(errorMessage)}</div>`;
+      approvedList.innerHTML = `<div class="admin-empty">Error loading profiles.</div>`;
+      deniedList.innerHTML = `<div class="admin-empty">Error loading profiles.</div>`;
+      return;
+    }
+
+    const caregivers = (caregiverData || []).map((profile) => ({
+      ...profile,
+      profile_type: "caregiver",
+      table_name: "caregiver_profiles"
+    }));
+
+    const families = (familyData || []).map((profile) => ({
+      ...profile,
+      profile_type: "family",
+      table_name: "family_profiles"
+    }));
+
+    const allProfiles = [...caregivers, ...families].sort(
+      (a, b) => new Date(b.created_at) - new Date(a.created_at)
+    );
+
+    const pending = allProfiles.filter((profile) => profile.approval_status === "pending");
+    const approved = allProfiles.filter((profile) => profile.approval_status === "approved");
+    const denied = allProfiles.filter((profile) => profile.approval_status === "denied");
+
+    renderAdminSection(pendingList, pending, "pending");
+    renderAdminSection(approvedList, approved, "approved");
+    renderAdminSection(deniedList, denied, "denied");
+  } catch (err) {
+    console.error("Unexpected admin dashboard error:", err);
+    pendingList.innerHTML = `<div class="admin-empty">Unexpected error: ${escapeHtml(err.message || "Unknown error")}</div>`;
+    approvedList.innerHTML = `<div class="admin-empty">Unexpected error.</div>`;
+    deniedList.innerHTML = `<div class="admin-empty">Unexpected error.</div>`;
+  }
+}
+
+// ======================================================
+// Admin actions
+// ======================================================
 async function updateApprovalStatus(tableName, profileId, newStatus) {
   const updates = {
     approval_status: newStatus,
     is_active: newStatus === "approved"
   };
 
-  const { error } = await supabase
+  const { error } = await window.db
     .from(tableName)
     .update(updates)
     .eq("id", profileId);
@@ -412,7 +429,7 @@ async function deleteProfile(tableName, profileId) {
   const confirmed = confirm("Are you sure you want to permanently delete this profile?");
   if (!confirmed) return;
 
-  const { error } = await supabase
+  const { error } = await window.db
     .from(tableName)
     .delete()
     .eq("id", profileId);
@@ -426,17 +443,19 @@ async function deleteProfile(tableName, profileId) {
   loadAdminDashboard();
 }
 
-function escapeHtml(value) {
-  if (value === null || value === undefined) return "";
-  return String(value)
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#39;");
-}
+// ======================================================
+// Page initialization
+// ======================================================
+window.addEventListener("DOMContentLoaded", () => {
+  loadPart("header-placeholder", "./header.html");
+  loadPart("footer-placeholder", "./footer.html");
 
-document.addEventListener("DOMContentLoaded", () => {
-  console.log("Admin page loaded");
+  highlightCurrentNav();
+  wireMobileMenu();
+
+  prefillFromQuery();
+  wireFindCareForm();
+  wireCaregiverForm();
+  wirePhoneFormatting();
   loadAdminDashboard();
 });
