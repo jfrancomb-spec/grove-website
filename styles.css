@@ -7,12 +7,12 @@
   --link: #306080;
   --card-border: #E5E7E6;
   --muted: #777;
---family: #4f7fa8;
---family-light: #eaf3fb;
 
---caregiver: #409088;
---caregiver-light: #eaf7f4;
-  
+  --family: #4f7fa8;
+  --family-light: #eaf3fb;
+
+  --caregiver: #409088;
+  --caregiver-light: #eaf7f4;
 }
 
 /* =====================================================
@@ -68,19 +68,18 @@ section {
    Shared header / nav
 ===================================================== */
 header,
-.site-header{
-  background:white;
-  border-bottom:1px solid var(--card-border);
+.site-header {
+  background: white;
+  border-bottom: 1px solid var(--card-border);
 }
 
-.header-inner{
-  max-width:1100px;
-  margin:0 auto;
-  padding:14px 20px;
-
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
+.header-inner {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 14px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
 .site-header {
@@ -100,52 +99,68 @@ header,
   max-width: 240px;
   object-fit: contain;
 }
-.logo-wrap{
-  display:flex;
-  align-items:center;
+
+.logo-wrap {
+  display: flex;
+  align-items: center;
 }
 
-.logo-link{
-  display:flex;
-  align-items:center;
-  text-decoration:none;
+.logo-link {
+  display: flex;
+  align-items: center;
+  text-decoration: none;
 }
 
-.logo-icon{
-  height:34px;
-  margin-right:10px;
+.logo-icon {
+  height: 34px;
+  margin-right: 10px;
 }
 
-.logo-text{
-  font-size:20px;
-  font-weight:700;
-  color:var(--text);
-}
-.nav{
-  display:flex;
-  align-items:center;
-  gap:18px;
+.logo-text {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text);
 }
 
-.nav a{
-  text-decoration:none;
-  color:var(--text);
-  font-weight:500;
+.nav {
+  display: flex;
+  align-items: center;
+  gap: 18px;
 }
 
-.nav a:hover{
-  color:var(--primary);
+.nav a {
+  text-decoration: none;
+  color: var(--text);
+  font-weight: 500;
 }
 
-.nav-button{
-  padding:8px 14px;
-  border-radius:8px;
+.nav a:hover {
+  color: var(--primary);
+}
+
+.nav-button {
+  padding: 8px 14px;
+  border-radius: 8px;
 }
 
 .nav a.active {
   font-weight: 700;
   border-bottom: 2px solid var(--primary);
   padding-bottom: 2px;
+}
+
+.nav-cta {
+  background: var(--primary);
+  color: white !important;
+  padding: 8px 14px;
+  border-radius: 6px;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+}
+
+.nav-cta:hover {
+  background: var(--primary-dark);
 }
 
 .menu-toggle {
@@ -172,6 +187,140 @@ header,
 }
 
 /* =====================================================
+   Homepage / landing page
+===================================================== */
+.eyebrow {
+  margin: 0 0 10px 0;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--primary);
+}
+
+.hero-home {
+  padding: 90px 20px 70px;
+}
+
+.hero-home-inner {
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.hero-home h1 {
+  max-width: 780px;
+  margin: 0 auto 16px;
+}
+
+.hero-subtitle {
+  max-width: 760px;
+  margin: 0 auto 28px;
+}
+
+.hero-actions {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.section-heading {
+  margin-bottom: 18px;
+}
+
+.section-heading p {
+  margin-top: 0;
+}
+
+.two-paths-section {
+  margin-top: 10px;
+}
+
+.two-paths-grid {
+  align-items: stretch;
+}
+
+.path-card {
+  text-align: center;
+  padding: 28px;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.path-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
+}
+
+.path-card-family {
+  border-top: 4px solid var(--family);
+}
+
+.path-card-caregiver {
+  border-top: 4px solid var(--caregiver);
+}
+
+.path-label {
+  display: inline-block;
+  padding: 5px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  margin-bottom: 14px;
+}
+
+.path-label-family {
+  background: var(--family-light);
+  color: var(--family);
+}
+
+.path-label-caregiver {
+  background: var(--caregiver-light);
+  color: var(--caregiver);
+}
+
+.path-actions {
+  margin-top: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.path-actions .button {
+  width: 100%;
+  text-align: center;
+}
+
+/* Older homepage section styles kept for compatibility */
+.two-paths {
+  background: #f6faf9;
+  padding: 50px 20px;
+  margin-top: 20px;
+}
+
+.two-paths-inner {
+  max-width: 900px;
+  margin: auto;
+}
+
+.two-paths .button {
+  width: 240px;
+  text-align: center;
+  display: block;
+  margin: 10px auto;
+}
+
+.two-paths .card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.path-icon {
+  font-size: 38px;
+  margin-bottom: 10px;
+}
+
+/* =====================================================
    Buttons
 ===================================================== */
 .button {
@@ -195,33 +344,25 @@ header,
 button.button {
   width: 100%;
 }
-.two-paths .button{
-  width:240px;
-  text-align:center;
-  display:block;
-  margin:10px auto;
-}
-.two-paths .card{
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-}
-.button-family{
-  background:var(--family);
-  color:white;
+
+.button-family {
+  background: var(--family);
+  color: white;
 }
 
-.button-family:hover{
-  background:#3f6d93;
-}
-.button-caregiver{
-  background:var(--caregiver);
-  color:white;
+.button-family:hover {
+  background: #3f6d93;
 }
 
-.button-caregiver:hover{
-  background:#32756e;
+.button-caregiver {
+  background: var(--caregiver);
+  color: white;
 }
+
+.button-caregiver:hover {
+  background: #32756e;
+}
+
 /* =====================================================
    Forms
 ===================================================== */
@@ -257,6 +398,22 @@ textarea:focus {
   box-shadow: 0 0 0 2px rgba(64, 144, 136, 0.18);
 }
 
+.checkbox-group {
+  display: grid;
+  gap: 8px;
+}
+
+.checkbox-group label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 500;
+}
+
+.checkbox-group input[type="checkbox"] {
+  width: auto;
+}
+
 /* =====================================================
    Cards
 ===================================================== */
@@ -272,6 +429,11 @@ textarea:focus {
   border: 1px solid var(--card-border);
   border-radius: 10px;
   padding: 16px;
+  text-align: center;
+}
+
+.caregiver-card {
+  text-align: center;
 }
 
 .form-card {
@@ -286,7 +448,193 @@ textarea:focus {
 }
 
 /* =====================================================
-   Messages
+   Dashboard
+===================================================== */
+.dashboard-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 12px;
+  margin: 20px 0 24px 0;
+}
+
+.dashboard-stat {
+  background: #f6faf9;
+  border: 1px solid var(--card-border);
+  border-radius: 10px;
+  padding: 14px;
+  text-align: center;
+}
+
+.dashboard-label {
+  font-size: 13px;
+  color: var(--muted);
+  margin-bottom: 6px;
+  font-weight: 600;
+}
+
+.dashboard-value {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+/* =====================================================
+   Status badges
+===================================================== */
+.badge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.badge-pending {
+  background: #fff4cc;
+  color: #8a6d00;
+}
+
+.badge-approved {
+  background: #e6f6ed;
+  color: #1f7a4d;
+}
+
+.badge-denied {
+  background: #fdeaea;
+  color: #a11a1a;
+}
+
+/* =====================================================
+   Profile badges / trust chips
+===================================================== */
+.profile-badges {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  margin: 12px 0;
+}
+
+.profile-badge {
+  display: inline-block;
+  padding: 5px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  background: #eef6f4;
+  color: var(--text);
+  border: 1px solid var(--card-border);
+}
+
+/* =====================================================
+   Profile photos / galleries
+===================================================== */
+.admin-photo {
+  width: 120px;
+  height: 120px;
+  object-fit: cover;
+  border-radius: 8px;
+  margin-bottom: 10px;
+  display: block;
+}
+
+.profile-photo {
+  width: 180px;
+  height: 180px;
+  object-fit: cover;
+  border-radius: 50%;
+  display: block;
+  margin: 0 auto 12px auto;
+}
+
+.profile-main-photo {
+  width: 180px;
+  height: 180px;
+  object-fit: cover;
+  border-radius: 12px;
+  display: block;
+  margin: 0 auto 10px auto;
+}
+
+.profile-gallery {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: center;
+  margin-bottom: 10px;
+}
+
+.profile-gallery img {
+  width: 70px;
+  height: 70px;
+  object-fit: cover;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.photo-preview-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.preview-photo {
+  width: 90px;
+  height: 90px;
+  object-fit: cover;
+  border-radius: 8px;
+}
+
+.profile-detail {
+  max-width: 700px;
+  margin: 0 auto;
+}
+
+.profile-detail-main-photo {
+  width: 220px;
+  height: 220px;
+  object-fit: cover;
+  border-radius: 12px;
+  display: block;
+  margin: 0 auto 12px auto;
+}
+
+.active-thumb {
+  outline: 2px solid var(--primary);
+}
+
+/* =====================================================
+   Reviews
+===================================================== */
+.review-list {
+  display: grid;
+  gap: 12px;
+}
+
+.review-card {
+  background: #f6faf9;
+  border: 1px solid var(--card-border);
+  border-radius: 10px;
+  padding: 14px;
+}
+
+/* =====================================================
+   Card action buttons
+===================================================== */
+.caregiver-actions {
+  margin-top: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.caregiver-actions .button {
+  width: 100%;
+  text-align: center;
+}
+
+/* =====================================================
+   Messages / inbox
 ===================================================== */
 .success {
   display: none;
@@ -294,6 +642,118 @@ textarea:focus {
   font-weight: 700;
   text-align: center;
   margin-top: 14px;
+}
+
+.messages-layout {
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  gap: 16px;
+}
+
+.conversation-item {
+  width: 100%;
+  text-align: left;
+  background: white;
+  border: 1px solid var(--card-border);
+  border-radius: 10px;
+  padding: 12px;
+  cursor: pointer;
+  margin-bottom: 10px;
+}
+
+.conversation-item.active {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px rgba(64, 144, 136, 0.12);
+}
+
+.conversation-row {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+
+.conversation-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.conversation-top {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+
+.conversation-preview {
+  font-size: 14px;
+  margin-bottom: 4px;
+  color: var(--text);
+}
+
+.conversation-time {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.conversation-avatar {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.conversation-avatar-fallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #eef6f4;
+  border: 1px solid var(--card-border);
+  font-weight: 700;
+  color: var(--text);
+}
+
+.unread-pill {
+  background: var(--primary);
+  color: white;
+  border-radius: 999px;
+  padding: 2px 8px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.message-thread {
+  min-height: 300px;
+  max-height: 500px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.message-bubble {
+  max-width: 75%;
+  padding: 10px 12px;
+  border-radius: 12px;
+}
+
+.message-bubble.sent {
+  align-self: flex-end;
+  background: var(--primary);
+  color: white;
+}
+
+.message-bubble.received {
+  align-self: flex-start;
+  background: #f3f7f6;
+  border: 1px solid var(--card-border);
+}
+
+.message-time {
+  font-size: 11px;
+  margin-top: 6px;
+  opacity: 0.8;
 }
 
 /* =====================================================
@@ -323,7 +783,6 @@ textarea:focus {
 
 /* =====================================================
    Utility classes
-   These help remove inline styles from pages
 ===================================================== */
 .mt-0 {
   margin-top: 0;
@@ -376,6 +835,12 @@ textarea:focus {
 /* =====================================================
    Mobile
 ===================================================== */
+@media (max-width: 900px) {
+  .messages-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
 @media (max-width: 700px) {
   .site-header {
     position: relative;
@@ -415,6 +880,10 @@ textarea:focus {
     padding: 56px 20px;
   }
 
+  .hero-home {
+    padding: 70px 20px 50px;
+  }
+
   h1 {
     font-size: 34px;
   }
@@ -422,450 +891,4 @@ textarea:focus {
   .subtitle {
     font-size: 18px;
   }
-}
-.two-paths{
-  background:#f6faf9;
-  padding:50px 20px;
-  margin-top:20px;
-}
-
-.two-paths-inner{
-  max-width:900px;
-  margin:auto;
-}
-
-.path-card{
-  text-align:center;
-  padding:28px;
-  transition:transform .15s ease, box-shadow .15s ease;
-}
-
-.path-card:hover{
-  transform:translateY(-4px);
-  box-shadow:0 6px 18px rgba(0,0,0,0.08);
-}
-
-.two-paths .button{
-  width:240px;
-  display:block;
-  margin:10px auto;
-}
-.path-icon{
-  font-size:38px;
-  margin-bottom:10px;
-}
-.nav-cta{
-  background:var(--primary);
-  color:white !important;
-  padding:8px 14px;
-  border-radius:6px;
-  text-decoration:none;
-  display:inline-flex;
-  align-items:center;
-}
-
-.nav-cta:hover{
-  background:var(--primary-dark);
-}
-.admin-photo{
-  width:120px;
-  height:120px;
-  object-fit:cover;
-  border-radius:8px;
-  margin-bottom:10px;
-  display:block;
-}
-.profile-photo{
-  width:180px;
-  height:180px;
-  object-fit:cover;
-  border-radius:50%;
-  display:block;
-  margin:0 auto 12px auto;
-}
-.card{
-  text-align:center;
-}
-.checkbox-group {
-  display: grid;
-  gap: 8px;
-}
-
-.checkbox-group label {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-weight: 500;
-}
-
-.checkbox-group input[type="checkbox"] {
-  width: auto;
-}
-.caregiver-card {
-  text-align: center;
-}
-
-.profile-badges {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  justify-content: center;
-  margin: 12px 0;
-}
-
-.profile-badge {
-  background: #eef6f4;
-  border: 1px solid var(--card-border);
-  border-radius: 999px;
-  padding: 4px 10px;
-  font-size: 13px;
-  font-weight: 600;
-}
-.caregiver-card {
-  text-align: center;
-}
-
-.profile-badges {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  justify-content: center;
-  margin: 12px 0;
-}
-
-.profile-badge {
-  background: #eef6f4;
-  border: 1px solid var(--card-border);
-  border-radius: 999px;
-  padding: 4px 10px;
-  font-size: 13px;
-  font-weight: 600;
-}
-.photo-preview-list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-}
-
-.preview-photo {
-  width: 90px;
-  height: 90px;
-  object-fit: cover;
-  border-radius: 8px;
-}
-.dashboard-stats {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
-  gap: 12px;
-  margin: 20px 0 24px 0;
-}
-
-.dashboard-stat {
-  background: #f6faf9;
-  border: 1px solid var(--card-border);
-  border-radius: 10px;
-  padding: 14px;
-  text-align: center;
-}
-
-.dashboard-label {
-  font-size: 13px;
-  color: var(--muted);
-  margin-bottom: 6px;
-  font-weight: 600;
-}
-
-.dashboard-value {
-  font-size: 20px;
-  font-weight: 700;
-  color: var(--text);
-}
-.badge {
-  display: inline-block;
-  padding: 4px 10px;
-  border-radius: 20px;
-  font-size: 13px;
-  font-weight: 600;
-}
-
-.badge-pending {
-  background: #fff4cc;
-  color: #8a6d00;
-}
-
-.badge-approved {
-  background: #e6f6ed;
-  color: #1f7a4d;
-}
-
-.badge-denied {
-  background: #fdeaea;
-  color: #a11a1a;
-}
-.profile-badges {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 8px;
-  margin: 12px 0;
-}
-
-.profile-badge {
-  display: inline-block;
-  padding: 5px 10px;
-  border-radius: 999px;
-  font-size: 12px;
-  font-weight: 600;
-  background: #eef6f4;
-  color: var(--text);
-  border: 1px solid var(--card-border);
-}
-
-.profile-gallery {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  justify-content: center;
-  margin-bottom: 10px;
-}
-
-.profile-gallery img {
-  width: 70px;
-  height: 70px;
-  object-fit: cover;
-  border-radius: 6px;
-  cursor: pointer;
-}
-
-.profile-main-photo {
-  width: 180px;
-  height: 180px;
-  object-fit: cover;
-  border-radius: 12px;
-  display: block;
-  margin: 0 auto 10px auto;
-}
-.profile-detail-main-photo {
-  width: 220px;
-  height: 220px;
-  object-fit: cover;
-  border-radius: 12px;
-  display: block;
-  margin: 0 auto 12px auto;
-}
-
-.active-thumb {
-  outline: 2px solid var(--primary);
-}
-
-.review-list {
-  display: grid;
-  gap: 12px;
-}
-
-.review-card {
-  background: #f6faf9;
-  border: 1px solid var(--card-border);
-  border-radius: 10px;
-  padding: 14px;
-}
-
-.profile-detail {
-  max-width: 700px;
-  margin: 0 auto;
-}
-.checkbox-group {
-  display: grid;
-  gap: 8px;
-}
-
-.checkbox-group label {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-weight: 500;
-}
-
-.checkbox-group input[type="checkbox"] {
-  width: auto;
-}
-
-.badge {
-  display: inline-block;
-  padding: 4px 10px;
-  border-radius: 20px;
-  font-size: 13px;
-  font-weight: 600;
-}
-
-.badge-pending {
-  background: #fff4cc;
-  color: #8a6d00;
-}
-
-.badge-approved {
-  background: #e6f6ed;
-  color: #1f7a4d;
-}
-
-.badge-denied {
-  background: #fdeaea;
-  color: #a11a1a;
-}
-/* caregiver card actions */
-.caregiver-actions{
-  margin-top:14px;
-  display:flex;
-  flex-direction:column;
-  gap:8px;
-}
-
-.caregiver-actions .button{
-  width:100%;
-  text-align:center;
-}
-.messages-layout {
-  display: grid;
-  grid-template-columns: 320px 1fr;
-  gap: 16px;
-}
-
-.conversation-item {
-  width: 100%;
-  text-align: left;
-  background: white;
-  border: 1px solid var(--card-border);
-  border-radius: 10px;
-  padding: 12px;
-  cursor: pointer;
-  margin-bottom: 10px;
-}
-
-.conversation-item.active {
-  border-color: var(--primary);
-  box-shadow: 0 0 0 2px rgba(64, 144, 136, 0.12);
-}
-
-.conversation-top {
-  display: flex;
-  justify-content: space-between;
-  gap: 10px;
-  margin-bottom: 6px;
-}
-
-.conversation-preview {
-  font-size: 14px;
-  margin-bottom: 4px;
-  color: var(--text);
-}
-
-.conversation-time {
-  font-size: 12px;
-  color: var(--muted);
-}
-
-.unread-pill {
-  background: var(--primary);
-  color: white;
-  border-radius: 999px;
-  padding: 2px 8px;
-  font-size: 12px;
-  font-weight: 700;
-}
-
-.message-thread {
-  min-height: 300px;
-  max-height: 500px;
-  overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  margin-bottom: 16px;
-}
-
-.message-bubble {
-  max-width: 75%;
-  padding: 10px 12px;
-  border-radius: 12px;
-}
-
-.message-bubble.sent {
-  align-self: flex-end;
-  background: var(--primary);
-  color: white;
-}
-
-.message-bubble.received {
-  align-self: flex-start;
-  background: #f3f7f6;
-  border: 1px solid var(--card-border);
-}
-
-.message-time {
-  font-size: 11px;
-  margin-top: 6px;
-  opacity: 0.8;
-}
-
-@media (max-width: 900px) {
-  .messages-layout {
-    grid-template-columns: 1fr;
-  }
-}
-.conversation-row {
-  display: flex;
-  gap: 10px;
-  align-items: flex-start;
-}
-
-.conversation-main {
-  flex: 1;
-  min-width: 0;
-}
-
-.conversation-avatar {
-  width: 42px;
-  height: 42px;
-  border-radius: 50%;
-  object-fit: cover;
-  flex-shrink: 0;
-}
-
-.conversation-avatar-fallback {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: #eef6f4;
-  border: 1px solid var(--card-border);
-  font-weight: 700;
-  color: var(--text);
-}
-.profile-detail {
-  max-width: 700px;
-  margin: 0 auto;
-}
-
-.profile-detail-main-photo {
-  width: 220px;
-  height: 220px;
-  object-fit: cover;
-  border-radius: 12px;
-  display: block;
-  margin: 0 auto 12px auto;
-}
-
-.active-thumb {
-  outline: 2px solid var(--primary);
-}
-
-.review-list {
-  display: grid;
-  gap: 12px;
-}
-
-.review-card {
-  background: #f6faf9;
-  border: 1px solid var(--card-border);
-  border-radius: 10px;
-  padding: 14px;
 }
