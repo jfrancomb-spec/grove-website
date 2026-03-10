@@ -226,3 +226,129 @@ window.addEventListener("DOMContentLoaded", () => {
   wireFindCareForm();
   wireCaregiverForm();
 });
+async function loadAdminDashboard() {
+  const pendingList = document.getElementById("pending-list");
+  const approvedList = document.getElementById("approved-list");
+  const deniedList = document.getElementById("denied-list");
+
+  if (!pendingList || !approvedList || !deniedList) return;
+
+  pendingList.innerHTML = `<div class="admin-empty">Loading...</div>`;
+  approvedList.innerHTML = `<div class="admin-empty">Loading...</div>`;
+  deniedList.innerHTML = `<div class="admin-empty">Loading...</div>`;
+
+  const { data, error } = await supabase
+    .from("profiles")
+    .select("*")
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    pendingList.innerHTML = `<div class="admin-empty">Error loading profiles.</div>`;
+    approvedList.innerHTML = "";
+    deniedList.innerHTML = "";
+    console.error(error);
+    return;
+  }
+
+  const pending = data.filter(profile => profile.approval_status === "pending");
+  const approved = data.filter(profile => profile.approval_status === "approved");
+  const denied = data.filter(profile => profile.approval_status === "denied");
+
+  renderAdminSection(pendingList, pending, "pending");
+  renderAdminSection(approvedList, approved, "approved");
+  renderAdminSection(deniedList, denied, "denied");
+}
+
+function renderAdminSection(container, profiles, sectionType) {
+  if (!profiles.length) {
+    container.innerHTML = `<div class="admin-empty">No profiles in this section.</div>`;
+    return;
+  }
+
+  container.innerHTML = profiles.map(profile => {
+    const badges = Array.isArray(profile.badges) ? profile.badges : [];
+    const roleLabel = profile.role === "family" ? "Family" : "Caregiver";
+
+    return `
+      <div class="admin-card">
+        <div class="admin-card-top">
+          <div>
+            <h3>${escapeHtml(profile.display_name || "Unnamed Profile")}</h3>
+            <div class="admin-meta">
+              ${roleLabel} • ${escapeHtml(profile.city || "")}${profile.city && profile.state ? ", " : ""}${escapeHtml(profile.state || "")}
+            </div>
+            <div>${escapeHtml(profile.headline || "")}</div>
+            ${
+              badges.length
+                ? `<div class="admin-badges">
+                    ${badges.map(badge => `<span class="admin-badge">${escapeHtml(badge)}</span>`).join("")}
+                  </div>`
+                : ""
+            }
+          </div>
+
+          <div class="admin-actions">
+            ${
+              sectionType !== "approved"
+                ? `<button class="button-admin button-approve" onclick="updateApprovalStatus('${profile.id}', 'approved')">Approve</button>`
+                : ""
+            }
+            ${
+              sectionType !== "denied"
+                ? `<button class="button-admin button-deny" onclick="updateApprovalStatus('${profile.id}', 'denied')">Deny</button>`
+                : ""
+            }
+            <button class="button-admin button-delete" onclick="deleteProfile('${profile.id}')">Delete</button>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join("");
+}
+
+async function updateApprovalStatus(profileId, newStatus) {
+  const { error } = await supabase
+    .from("profiles")
+    .update({ approval_status: newStatus })
+    .eq("id", profileId);
+
+  if (error) {
+    console.error("Error updating approval status:", error);
+    alert("Could not update approval status.");
+    return;
+  }
+
+  loadAdminDashboard();
+}
+
+async function deleteProfile(profileId) {
+  const confirmed = confirm("Are you sure you want to permanently delete this profile?");
+  if (!confirmed) return;
+
+  const { error } = await supabase
+    .from("profiles")
+    .delete()
+    .eq("id", profileId);
+
+  if (error) {
+    console.error("Error deleting profile:", error);
+    alert("Could not delete profile.");
+    return;
+  }
+
+  loadAdminDashboard();
+}
+
+function escapeHtml(value) {
+  if (value === null || value === undefined) return "";
+  return String(value)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  loadAdminDashboard();
+});
