@@ -1,27 +1,31 @@
 <header class="site-header">
-
   <div class="header-inner">
-
-    <!-- Logo -->
+    <!-- Brand / Logo -->
     <div class="logo-wrap">
-      <a href="./index.html" class="logo-link">
+      <a href="./index.html" class="logo-link" aria-label="Grove Home">
         <img src="./MainIcon.png" alt="Grove" class="logo-icon">
         <span class="logo-text">Grove</span>
       </a>
     </div>
 
-    <!-- Navigation -->
-    <nav class="nav" id="mainNav" aria-label="Primary navigation">
+    <!-- Mobile menu button -->
+    <button
+      class="menu-toggle"
+      id="menuToggle"
+      type="button"
+      aria-label="Open menu"
+      aria-expanded="false"
+    >
+      <span aria-hidden="true">☰</span>
+    </button>
 
-      <!-- Marketplace -->
+    <!-- Main navigation -->
+    <nav class="nav" id="mainNav" aria-label="Primary navigation">
       <a href="./caregivers.html">Browse Caregivers</a>
       <a href="./families.html">Browse Families</a>
       <a href="./jobs.html">Care Opportunities</a>
-
-      <!-- Messaging -->
       <a href="./messages.html">Messages</a>
 
-      <!-- Profile paths -->
       <a href="./family.html" class="button button-family nav-button">
         Family Dashboard
       </a>
@@ -29,9 +33,6 @@
       <a href="./caregiver.html" class="button button-caregiver nav-button">
         Caregiver Dashboard
       </a>
-
     </nav>
-
   </div>
-
 </header>
