@@ -121,6 +121,105 @@ async function setCaregiverPostStatus(id, approve) {
     // =====================================================
     // Load all admin data
     // =====================================================
+
+    function renderAdminSection(container, profiles, sectionType) {
+  if (!container) return;
+
+  if (!profiles.length) {
+    container.innerHTML = `<div class="admin-empty">No profiles in this section.</div>`;
+    return;
+  }
+
+  container.innerHTML = profiles
+    .map((profile) => {
+      const roleLabel = profile.profile_type === "family" ? "Family" : "Caregiver";
+      const badges = getAdminBadges(profile);
+
+      const caregiverDetails = `
+        ${profile.location ? `<div class="admin-meta">${escapeHtml(profile.location)}</div>` : ""}
+        ${
+          Array.isArray(profile.care_types) && profile.care_types.length
+            ? `<div class="admin-meta"><strong>Care Types:</strong> ${escapeHtml(profile.care_types.join(", "))}</div>`
+            : ""
+        }
+        ${
+          profile.years_experience
+            ? `<div class="admin-meta"><strong>Experience:</strong> ${escapeHtml(profile.years_experience)}</div>`
+            : ""
+        }
+        ${profile.bio ? `<div><strong>Bio:</strong> ${escapeHtml(profile.bio)}</div>` : ""}
+      `;
+
+      const familyDetails = `
+        ${profile.location ? `<div class="admin-meta">${escapeHtml(profile.location)}</div>` : ""}
+        ${
+          Array.isArray(profile.care_types_needed) && profile.care_types_needed.length
+            ? `<div class="admin-meta"><strong>Care Needed:</strong> ${escapeHtml(profile.care_types_needed.join(", "))}</div>`
+            : ""
+        }
+        ${
+          profile.household_description
+            ? `<div><strong>Household:</strong> ${escapeHtml(profile.household_description)}</div>`
+            : ""
+        }
+        ${
+          profile.children_description
+            ? `<div><strong>Children:</strong> ${escapeHtml(profile.children_description)}</div>`
+            : ""
+        }
+        ${
+          profile.pets_description
+            ? `<div><strong>Pets:</strong> ${escapeHtml(profile.pets_description)}</div>`
+            : ""
+        }
+        ${profile.bio ? `<div><strong>Bio:</strong> ${escapeHtml(profile.bio)}</div>` : ""}
+        ${profile.email ? `<div class="admin-meta"><strong>Email:</strong> ${escapeHtml(profile.email)}</div>` : ""}
+        ${profile.phone ? `<div class="admin-meta"><strong>Phone:</strong> ${escapeHtml(profile.phone)}</div>` : ""}
+      `;
+
+      return `
+        <div class="admin-card">
+          <div class="admin-card-top">
+            <div>
+              <h3>${escapeHtml(profile.name_display || "Unnamed Profile")}</h3>
+              <div class="admin-meta">${roleLabel}</div>
+
+              ${profile.profile_type === "family" ? familyDetails : caregiverDetails}
+
+              ${
+                badges.length
+                  ? `<div class="admin-badges">
+                      ${badges.map((badge) => `<span class="admin-badge">${escapeHtml(badge)}</span>`).join("")}
+                    </div>`
+                  : ""
+              }
+            </div>
+
+            <div class="admin-actions">
+              ${
+                sectionType !== "approved"
+                  ? `<button class="button-admin button-approve" onclick="updateApprovalStatus('${profile.table_name}', '${profile.id}', 'approved')">Approve</button>`
+                  : ""
+              }
+              ${
+                sectionType !== "denied"
+                  ? `<button class="button-admin button-deny" onclick="updateApprovalStatus('${profile.table_name}', '${profile.id}', 'denied')">Deny</button>`
+                  : ""
+              }
+              ${
+                sectionType !== "pending"
+                  ? `<button class="button-admin" onclick="updateApprovalStatus('${profile.table_name}', '${profile.id}', 'pending')">Move to Pending</button>`
+                  : ""
+              }
+              <button class="button-admin button-delete" onclick="deleteProfile('${profile.table_name}', '${profile.id}')">Delete</button>
+            </div>
+          </div>
+        </div>
+      `;
+    })
+    .join("");
+}
+    
     async function loadAdminData() {
       // ---------------------------------
       // Care Requests
