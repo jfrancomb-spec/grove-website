@@ -226,6 +226,7 @@ window.addEventListener("DOMContentLoaded", () => {
   wireFindCareForm();
   wireCaregiverForm();
 });
+
 async function loadAdminDashboard() {
   const pendingList = document.getElementById("pending-list");
   const approvedList = document.getElementById("approved-list");
@@ -237,22 +238,47 @@ async function loadAdminDashboard() {
   approvedList.innerHTML = `<div class="admin-empty">Loading...</div>`;
   deniedList.innerHTML = `<div class="admin-empty">Loading...</div>`;
 
-  const { data, error } = await supabase
-    .from("profiles")
-    .select("*")
-    .order("created_at", { ascending: false });
+  const [
+    { data: caregiverData, error: caregiverError },
+    { data: familyData, error: familyError }
+  ] = await Promise.all([
+    supabase
+      .from("caregiver_profiles")
+      .select("*")
+      .order("created_at", { ascending: false }),
+    supabase
+      .from("family_profiles")
+      .select("*")
+      .order("created_at", { ascending: false })
+  ]);
 
-  if (error) {
+  if (caregiverError || familyError) {
+    console.error("Error loading admin dashboard:", caregiverError || familyError);
     pendingList.innerHTML = `<div class="admin-empty">Error loading profiles.</div>`;
-    approvedList.innerHTML = "";
-    deniedList.innerHTML = "";
-    console.error(error);
+    approvedList.innerHTML = `<div class="admin-empty">Error loading profiles.</div>`;
+    deniedList.innerHTML = `<div class="admin-empty">Error loading profiles.</div>`;
     return;
   }
 
-  const pending = data.filter(profile => profile.approval_status === "pending");
-  const approved = data.filter(profile => profile.approval_status === "approved");
-  const denied = data.filter(profile => profile.approval_status === "denied");
+  const caregivers = (caregiverData || []).map(profile => ({
+    ...profile,
+    profile_type: "caregiver",
+    table_name: "caregiver_profiles"
+  }));
+
+  const families = (familyData || []).map(profile => ({
+    ...profile,
+    profile_type: "family",
+    table_name: "family_profiles"
+  }));
+
+  const allProfiles = [...caregivers, ...families].sort(
+    (a, b) => new Date(b.created_at) - new Date(a.created_at)
+  );
+
+  const pending = allProfiles.filter(profile => profile.approval_status === "pending");
+  const approved = allProfiles.filter(profile => profile.approval_status === "approved");
+  const denied = allProfiles.filter(profile => profile.approval_status === "denied");
 
   renderAdminSection(pendingList, pending, "pending");
   renderAdminSection(approvedList, approved, "approved");
@@ -266,18 +292,30 @@ function renderAdminSection(container, profiles, sectionType) {
   }
 
   container.innerHTML = profiles.map(profile => {
-    const badges = Array.isArray(profile.badges) ? profile.badges : [];
-    const roleLabel = profile.role === "family" ? "Family" : "Caregiver";
+    const roleLabel = profile.profile_type === "family" ? "Family" : "Caregiver";
+
+    const details =
+      profile.profile_type === "caregiver"
+        ? [
+            profile.location,
+            Array.isArray(profile.care_types) ? profile.care_types.join(", ") : "",
+            profile.years_experience ? `${profile.years_experience} experience` : ""
+          ].filter(Boolean).join(" • ")
+        : [
+            profile.location,
+            Array.isArray(profile.care_types_needed) ? profile.care_types_needed.join(", ") : ""
+          ].filter(Boolean).join(" • ");
+
+    const badges = getAdminBadges(profile);
 
     return `
       <div class="admin-card">
         <div class="admin-card-top">
           <div>
-            <h3>${escapeHtml(profile.display_name || "Unnamed Profile")}</h3>
-            <div class="admin-meta">
-              ${roleLabel} • ${escapeHtml(profile.city || "")}${profile.city && profile.state ? ", " : ""}${escapeHtml(profile.state || "")}
-            </div>
-            <div>${escapeHtml(profile.headline || "")}</div>
+            <h3>${escapeHtml(profile.name_display || "Unnamed Profile")}</h3>
+            <div class="admin-meta">${roleLabel}</div>
+            ${details ? `<div class="admin-meta">${escapeHtml(details)}</div>` : ""}
+            ${profile.bio ? `<div>${escapeHtml(profile.bio)}</div>` : ""}
             ${
               badges.length
                 ? `<div class="admin-badges">
@@ -290,15 +328,20 @@ function renderAdminSection(container, profiles, sectionType) {
           <div class="admin-actions">
             ${
               sectionType !== "approved"
-                ? `<button class="button-admin button-approve" onclick="updateApprovalStatus('${profile.id}', 'approved')">Approve</button>`
+                ? `<button class="button-admin button-approve" onclick="updateApprovalStatus('${profile.table_name}', '${profile.id}', 'approved')">Approve</button>`
                 : ""
             }
             ${
               sectionType !== "denied"
-                ? `<button class="button-admin button-deny" onclick="updateApprovalStatus('${profile.id}', 'denied')">Deny</button>`
+                ? `<button class="button-admin button-deny" onclick="updateApprovalStatus('${profile.table_name}', '${profile.id}', 'denied')">Deny</button>`
                 : ""
             }
-            <button class="button-admin button-delete" onclick="deleteProfile('${profile.id}')">Delete</button>
+            ${
+              sectionType !== "pending"
+                ? `<button class="button-admin" onclick="updateApprovalStatus('${profile.table_name}', '${profile.id}', 'pending')">Move to Pending</button>`
+                : ""
+            }
+            <button class="button-admin button-delete" onclick="deleteProfile('${profile.table_name}', '${profile.id}')">Delete</button>
           </div>
         </div>
       </div>
@@ -306,10 +349,37 @@ function renderAdminSection(container, profiles, sectionType) {
   }).join("");
 }
 
-async function updateApprovalStatus(profileId, newStatus) {
+function getAdminBadges(profile) {
+  const badges = [];
+
+  if (profile.profile_type === "caregiver") {
+    if (profile.cpr_certified) badges.push("CPR");
+    if (profile.non_smoker) badges.push("Non-smoker");
+    if (profile.non_vaper) badges.push("Non-vaper");
+    if (profile.has_drivers_license) badges.push("Driver’s License");
+    if (profile.comfortable_with_cats) badges.push("Comfortable with Cats");
+    if (profile.comfortable_with_dogs) badges.push("Comfortable with Dogs");
+  }
+
+  if (profile.profile_type === "family") {
+    if (profile.has_cats) badges.push("Has Cats");
+    if (profile.has_dogs) badges.push("Has Dogs");
+    if (profile.smoking_in_home) badges.push("Smoking in Home");
+    if (profile.driving_needed) badges.push("Driving Needed");
+  }
+
+  return badges;
+}
+
+async function updateApprovalStatus(tableName, profileId, newStatus) {
+  const updates = {
+    approval_status: newStatus,
+    is_active: newStatus === "approved"
+  };
+
   const { error } = await supabase
-    .from("profiles")
-    .update({ approval_status: newStatus })
+    .from(tableName)
+    .update(updates)
     .eq("id", profileId);
 
   if (error) {
@@ -320,6 +390,38 @@ async function updateApprovalStatus(profileId, newStatus) {
 
   loadAdminDashboard();
 }
+
+async function deleteProfile(tableName, profileId) {
+  const confirmed = confirm("Are you sure you want to permanently delete this profile?");
+  if (!confirmed) return;
+
+  const { error } = await supabase
+    .from(tableName)
+    .delete()
+    .eq("id", profileId);
+
+  if (error) {
+    console.error("Error deleting profile:", error);
+    alert("Could not delete profile.");
+    return;
+  }
+
+  loadAdminDashboard();
+}
+
+function escapeHtml(value) {
+  if (value === null || value === undefined) return "";
+  return String(value)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  loadAdminDashboard();
+});
 
 async function deleteProfile(profileId) {
   const confirmed = confirm("Are you sure you want to permanently delete this profile?");
