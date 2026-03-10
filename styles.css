@@ -186,6 +186,14 @@ button.button {
 .button-family:hover{
   background:#3f6d93;
 }
+.button-caregiver{
+  background:var(--caregiver);
+  color:white;
+}
+
+.button-caregiver:hover{
+  background:#32756e;
+}
 /* =====================================================
    Forms
 ===================================================== */
