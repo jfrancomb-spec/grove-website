@@ -12,7 +12,6 @@
   <div id="header-placeholder"></div>
 
   <main>
-    <!-- Hero -->
     <div class="hero">
       <h1>Family Profile</h1>
       <div class="subtitle">
@@ -21,7 +20,6 @@
     </div>
 
     <section>
-      <!-- Sign-in card -->
       <div class="form-card" id="authCard">
         <h2 class="mt-0">Sign In</h2>
         <p class="mt-0">Enter your email and we’ll send you a secure sign-in link.</p>
@@ -34,7 +32,6 @@
         <p id="authMessage" class="success"></p>
       </div>
 
-      <!-- Profile card -->
       <div class="form-card" id="profileCard" style="display:none;">
         <div class="flex-between">
           <h2 class="mb-0">Your Family Dashboard</h2>
@@ -43,7 +40,6 @@
 
         <p class="mt-10" id="signedInText"></p>
 
-        <!-- Dashboard stats -->
         <div class="dashboard-stats">
           <div class="dashboard-stat">
             <div class="dashboard-label">Profile Status</div>
@@ -69,7 +65,6 @@
         <h3 class="mt-22">Your Profile</h3>
 
         <form id="familyProfileForm">
-          <!-- Basic identity -->
           <div class="row">
             <input id="fam_first_name" type="text" placeholder="First Name" required />
           </div>
@@ -90,7 +85,6 @@
             <input id="fam_location" type="text" placeholder="City or Neighborhood" required />
           </div>
 
-          <!-- Care types needed -->
           <div class="row">
             <label class="mb-6"><strong>Types of Care Needed</strong></label>
             <div class="checkbox-group">
@@ -102,7 +96,6 @@
             </div>
           </div>
 
-          <!-- Household details -->
           <div class="row">
             <label class="mb-6"><strong>Home Details</strong></label>
             <div class="checkbox-group">
@@ -113,7 +106,6 @@
             </div>
           </div>
 
-          <!-- Descriptions -->
           <div class="row">
             <label for="fam_household_description"><strong>Household Description</strong></label>
             <textarea id="fam_household_description" placeholder="Tell caregivers a little about your household"></textarea>
@@ -129,22 +121,22 @@
             <textarea id="fam_pets_description" placeholder="Tell caregivers about any pets in the home"></textarea>
           </div>
 
-          <!-- Photos -->
           <div class="row">
             <label for="fam_photos"><strong>Profile Photos (up to 5)</strong></label>
             <input id="fam_photos" type="file" accept="image/*" multiple />
           </div>
 
           <div class="row" id="photoPreviewWrap" style="display:none;">
-            <div id="photoPreviewList" class="photo-preview-list"></div>
+            <div class="family-photo-gallery">
+              <img id="family-main-photo" class="family-main-photo" src="" alt="Family photo" />
+              <div id="photoPreviewList" class="family-thumbnails"></div>
+            </div>
           </div>
 
           <button class="button" type="submit">Save Profile</button>
         </form>
 
-        <p id="familyProfileSuccess" class="success">
-          ✅ Profile saved successfully.
-        </p>
+        <p id="familyProfileSuccess" class="success">✅ Profile saved successfully.</p>
       </div>
     </section>
   </main>
@@ -155,15 +147,9 @@
   <script src="./app.js"></script>
 
   <script>
-    // -----------------------------------
-    // Page state
-    // -----------------------------------
     let currentUser = null;
     let existingProfile = null;
 
-    // -----------------------------------
-    // Formatting helpers
-    // -----------------------------------
     function formatPhoneNumber(value) {
       const digits = value.replace(/\D/g, "").slice(0, 10);
       if (digits.length === 0) return "";
@@ -187,28 +173,53 @@
     function renderPhotoPreview(urls) {
       const wrap = document.getElementById("photoPreviewWrap");
       const list = document.getElementById("photoPreviewList");
-      if (!wrap || !list) return;
+      const mainImage = document.getElementById("family-main-photo");
 
-      list.innerHTML = "";
-      if (!Array.isArray(urls) || !urls.length) {
+      if (!wrap || !list || !mainImage) return;
+
+      const photos = Array.isArray(urls) ? urls.filter(Boolean) : [];
+
+      if (!photos.length) {
         wrap.style.display = "none";
+        list.innerHTML = "";
+        mainImage.removeAttribute("src");
         return;
       }
 
-      urls.forEach((url) => {
-        const img = document.createElement("img");
-        img.src = url;
-        img.alt = "Family photo";
-        img.className = "preview-photo";
-        list.appendChild(img);
-      });
+      let activeIndex = 0;
+
+      function drawGallery() {
+        mainImage.src = photos[activeIndex];
+        mainImage.alt = `Family photo ${activeIndex + 1}`;
+
+        list.innerHTML = photos
+          .map((url, index) => {
+            const activeClass = index === activeIndex ? " active" : "";
+            return `
+              <button
+                type="button"
+                class="gallery-thumb${activeClass}"
+                data-index="${index}"
+                aria-label="View photo ${index + 1}"
+              >
+                <img src="${url}" alt="Family photo ${index + 1}" />
+              </button>
+            `;
+          })
+          .join("");
+
+        list.querySelectorAll(".gallery-thumb").forEach((button) => {
+          button.addEventListener("click", () => {
+            activeIndex = Number(button.dataset.index);
+            drawGallery();
+          });
+        });
+      }
 
       wrap.style.display = "block";
+      drawGallery();
     }
 
-    // -----------------------------------
-    // Auth
-    // -----------------------------------
     async function sendMagicLink() {
       const email = document.getElementById("fam_auth_email").value.trim();
       const msg = document.getElementById("authMessage");
@@ -245,9 +256,6 @@
       window.location.href = "./family.html";
     }
 
-    // -----------------------------------
-    // Data loading
-    // -----------------------------------
     async function loadOwnProfile() {
       if (!currentUser) return null;
 
@@ -265,9 +273,6 @@
       return data || null;
     }
 
-    // -----------------------------------
-    // Fill form from saved profile
-    // -----------------------------------
     function fillProfileForm(profile) {
       existingProfile = profile;
 
@@ -287,7 +292,7 @@
 
       setSelectedCareTypesNeeded(profile?.care_types_needed || []);
 
-      const status = profile?.status || "pending";
+      const status = profile?.approval_status || "pending";
       const statusEl = document.getElementById("dashProfileStatus");
 
       let label = "Pending Review";
@@ -296,16 +301,9 @@
       if (status === "approved") {
         label = "Approved";
         badgeClass = "badge-approved";
-      }
-
-      if (status === "denied") {
+      } else if (status === "denied") {
         label = "Needs Update";
         badgeClass = "badge-denied";
-      }
-
-      if (status === "pending") {
-        label = "Pending Review";
-        badgeClass = "badge-pending";
       }
 
       statusEl.innerHTML = `<span class="badge ${badgeClass}">${label}</span>`;
@@ -321,9 +319,6 @@
       renderPhotoPreview(profile?.photo_urls || (profile?.photo_url ? [profile.photo_url] : []));
     }
 
-    // -----------------------------------
-    // Photo upload
-    // -----------------------------------
     async function uploadFamilyPhotos(userId) {
       const photoInput = document.getElementById("fam_photos");
       const files = Array.from(photoInput?.files || []).slice(0, 5);
@@ -361,9 +356,6 @@
       return photoUrls;
     }
 
-    // -----------------------------------
-    // Save profile
-    // -----------------------------------
     async function saveProfile(e) {
       e.preventDefault();
 
@@ -395,7 +387,8 @@
         children_description: document.getElementById("fam_children_description").value.trim(),
         pets_description: document.getElementById("fam_pets_description").value.trim(),
         photo_urls: photoUrls,
-        photo_url: photoUrls[0] || null
+        photo_url: photoUrls[0] || null,
+        approval_status: existingProfile?.approval_status || "pending"
       };
 
       const { error } = await window.db
@@ -412,9 +405,6 @@
       fillProfileForm(existingProfile);
     }
 
-    // -----------------------------------
-    // Session setup
-    // -----------------------------------
     async function checkSessionAndSetup() {
       const { data } = await window.db.auth.getSession();
       currentUser = data?.session?.user || null;
@@ -444,9 +434,6 @@
       fillProfileForm(existingProfile);
     }
 
-    // -----------------------------------
-    // Init
-    // -----------------------------------
     window.addEventListener("DOMContentLoaded", () => {
       document.getElementById("sendLinkBtn")?.addEventListener("click", sendMagicLink);
       document.getElementById("signOutBtn")?.addEventListener("click", signOut);
