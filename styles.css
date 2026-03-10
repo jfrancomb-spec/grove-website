@@ -892,3 +892,101 @@ textarea:focus {
     font-size: 18px;
   }
 }
+.admin-page {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 2rem 1rem 4rem;
+}
+
+.admin-section {
+  margin-bottom: 2rem;
+}
+
+.admin-subtext {
+  color: var(--muted);
+  margin-top: 0.25rem;
+}
+
+.admin-list {
+  display: grid;
+  gap: 1rem;
+}
+
+.admin-card {
+  background: #fff;
+  border: 1px solid var(--card-border);
+  border-radius: 14px;
+  padding: 1rem;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.04);
+}
+
+.admin-card-top {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+
+.admin-card h3 {
+  margin: 0 0 0.25rem;
+  font-size: 1.05rem;
+}
+
+.admin-meta {
+  color: var(--muted);
+  font-size: 0.95rem;
+  margin-bottom: 0.5rem;
+}
+
+.admin-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.5rem;
+}
+
+.admin-badge {
+  display: inline-block;
+  background: #f4f4f4;
+  border-radius: 999px;
+  padding: 0.25rem 0.6rem;
+  font-size: 0.8rem;
+}
+
+.admin-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.button-admin {
+  border: none;
+  border-radius: 10px;
+  padding: 0.55rem 0.9rem;
+  font: inherit;
+  cursor: pointer;
+}
+
+.button-approve {
+  background: var(--caregiver);
+  color: #fff;
+}
+
+.button-deny {
+  background: #b45353;
+  color: #fff;
+}
+
+.button-delete {
+  background: #333;
+  color: #fff;
+}
+
+.admin-empty {
+  background: #fff;
+  border: 1px dashed var(--card-border);
+  border-radius: 14px;
+  padding: 1rem;
+  color: var(--muted);
+}
