@@ -227,62 +227,79 @@ window.addEventListener("DOMContentLoaded", () => {
   wireCaregiverForm();
 });
 
+
+
+// ======================================================
+// Admin Page
+// ======================================================
 async function loadAdminDashboard() {
   const pendingList = document.getElementById("pending-list");
   const approvedList = document.getElementById("approved-list");
   const deniedList = document.getElementById("denied-list");
 
-  if (!pendingList || !approvedList || !deniedList) return;
+  if (!pendingList || !approvedList || !deniedList) {
+    console.error("Admin containers not found.");
+    return;
+  }
 
   pendingList.innerHTML = `<div class="admin-empty">Loading...</div>`;
   approvedList.innerHTML = `<div class="admin-empty">Loading...</div>`;
   deniedList.innerHTML = `<div class="admin-empty">Loading...</div>`;
 
-  const [
-    { data: caregiverData, error: caregiverError },
-    { data: familyData, error: familyError }
-  ] = await Promise.all([
-    supabase
-      .from("caregiver_profiles")
-      .select("*")
-      .order("created_at", { ascending: false }),
-    supabase
-      .from("family_profiles")
-      .select("*")
-      .order("created_at", { ascending: false })
-  ]);
+  try {
+    const [
+      { data: caregiverData, error: caregiverError },
+      { data: familyData, error: familyError }
+    ] = await Promise.all([
+      supabase
+        .from("caregiver_profiles")
+        .select("*")
+        .order("created_at", { ascending: false }),
+      supabase
+        .from("family_profiles")
+        .select("*")
+        .order("created_at", { ascending: false })
+    ]);
 
-  if (caregiverError || familyError) {
-    console.error("Error loading admin dashboard:", caregiverError || familyError);
-    pendingList.innerHTML = `<div class="admin-empty">Error loading profiles.</div>`;
-    approvedList.innerHTML = `<div class="admin-empty">Error loading profiles.</div>`;
-    deniedList.innerHTML = `<div class="admin-empty">Error loading profiles.</div>`;
-    return;
+    if (caregiverError || familyError) {
+      const errorMessage = caregiverError?.message || familyError?.message || "Unknown error loading profiles.";
+      console.error("Admin dashboard load error:", caregiverError || familyError);
+
+      pendingList.innerHTML = `<div class="admin-empty">Error: ${escapeHtml(errorMessage)}</div>`;
+      approvedList.innerHTML = `<div class="admin-empty">Error loading profiles.</div>`;
+      deniedList.innerHTML = `<div class="admin-empty">Error loading profiles.</div>`;
+      return;
+    }
+
+    const caregivers = (caregiverData || []).map(profile => ({
+      ...profile,
+      profile_type: "caregiver",
+      table_name: "caregiver_profiles"
+    }));
+
+    const families = (familyData || []).map(profile => ({
+      ...profile,
+      profile_type: "family",
+      table_name: "family_profiles"
+    }));
+
+    const allProfiles = [...caregivers, ...families].sort(
+      (a, b) => new Date(b.created_at) - new Date(a.created_at)
+    );
+
+    const pending = allProfiles.filter(profile => profile.approval_status === "pending");
+    const approved = allProfiles.filter(profile => profile.approval_status === "approved");
+    const denied = allProfiles.filter(profile => profile.approval_status === "denied");
+
+    renderAdminSection(pendingList, pending, "pending");
+    renderAdminSection(approvedList, approved, "approved");
+    renderAdminSection(deniedList, denied, "denied");
+  } catch (err) {
+    console.error("Unexpected admin dashboard error:", err);
+    pendingList.innerHTML = `<div class="admin-empty">Unexpected error: ${escapeHtml(err.message || "Unknown error")}</div>`;
+    approvedList.innerHTML = `<div class="admin-empty">Unexpected error.</div>`;
+    deniedList.innerHTML = `<div class="admin-empty">Unexpected error.</div>`;
   }
-
-  const caregivers = (caregiverData || []).map(profile => ({
-    ...profile,
-    profile_type: "caregiver",
-    table_name: "caregiver_profiles"
-  }));
-
-  const families = (familyData || []).map(profile => ({
-    ...profile,
-    profile_type: "family",
-    table_name: "family_profiles"
-  }));
-
-  const allProfiles = [...caregivers, ...families].sort(
-    (a, b) => new Date(b.created_at) - new Date(a.created_at)
-  );
-
-  const pending = allProfiles.filter(profile => profile.approval_status === "pending");
-  const approved = allProfiles.filter(profile => profile.approval_status === "approved");
-  const denied = allProfiles.filter(profile => profile.approval_status === "denied");
-
-  renderAdminSection(pendingList, pending, "pending");
-  renderAdminSection(approvedList, approved, "approved");
-  renderAdminSection(deniedList, denied, "denied");
 }
 
 function renderAdminSection(container, profiles, sectionType) {
@@ -384,7 +401,7 @@ async function updateApprovalStatus(tableName, profileId, newStatus) {
 
   if (error) {
     console.error("Error updating approval status:", error);
-    alert("Could not update approval status.");
+    alert(error.message || "Could not update approval status.");
     return;
   }
 
@@ -402,7 +419,7 @@ async function deleteProfile(tableName, profileId) {
 
   if (error) {
     console.error("Error deleting profile:", error);
-    alert("Could not delete profile.");
+    alert(error.message || "Could not delete profile.");
     return;
   }
 
@@ -420,37 +437,6 @@ function escapeHtml(value) {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
-  loadAdminDashboard();
-});
-
-async function deleteProfile(profileId) {
-  const confirmed = confirm("Are you sure you want to permanently delete this profile?");
-  if (!confirmed) return;
-
-  const { error } = await supabase
-    .from("profiles")
-    .delete()
-    .eq("id", profileId);
-
-  if (error) {
-    console.error("Error deleting profile:", error);
-    alert("Could not delete profile.");
-    return;
-  }
-
-  loadAdminDashboard();
-}
-
-function escapeHtml(value) {
-  if (value === null || value === undefined) return "";
-  return String(value)
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#39;");
-}
-
-document.addEventListener("DOMContentLoaded", () => {
+  console.log("Admin page loaded");
   loadAdminDashboard();
 });
