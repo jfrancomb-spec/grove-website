@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Grove | Families</title>
+
+  <link rel="stylesheet" href="./styles.css" />
+  <link rel="icon" type="image/png" href="./MainIcon.png" />
+</head>
+
+<body>
+  <!-- Shared header -->
+  <div id="header-placeholder"></div>
+
+  <main>
+    <!-- Hero -->
+    <div class="hero">
+      <h1>Families</h1>
+      <div class="subtitle">
+        Browse local families in the Grove network and learn more before deciding whether a care opportunity is a fit.
+      </div>
+
+      <a class="button" href="./jobs.html">Browse Care Opportunities</a>
+      <a class="button" href="./caregiver.html">Create Caregiver Profile</a>
+    </div>
+
+    <!-- Filters + results -->
+    <section>
+      <div class="form-card mb-16">
+        <h2 class="mt-0">Filter Families</h2>
+
+        <div class="row">
+          <select id="famFilterType">
+            <option value="">All care types needed</option>
+            <option>Childcare</option>
+            <option>Senior Care</option>
+            <option>Pet Care</option>
+            <option>Household Help</option>
+            <option>Other</option>
+          </select>
+        </div>
+
+        <div class="row">
+          <input
+            id="famFilterLocation"
+            type="text"
+            placeholder="Filter by city/neighborhood (optional)"
+          />
+        </div>
+
+        <div class="row">
+          <input
+            id="famFilterKeyword"
+            type="text"
+            placeholder="Keyword (children, pets, household, etc.)"
+          />
+        </div>
+
+        <p id="famCount" class="mt-10"><strong></strong></p>
+
+        <button class="button" type="button" id="famApplyBtn">Apply Filters</button>
+        <button class="button" type="button" id="famClearBtn">Clear Filters</button>
+      </div>
+
+      <p class="mb-16">
+        Family profiles are visible within the Grove network so caregivers can better understand the home, care needs, and expectations before reaching out.
+      </p>
+
+      <div id="familiesContainer" class="cards"></div>
+    </section>
+  </main>
+
+  <!-- Shared footer -->
+  <div id="footer-placeholder"></div>
+
+  <!-- Scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script src="./app.js"></script>
+
+  <!-- Page script -->
+  <script>
+    (function () {
+      // -----------------------------------
+      // Page state
+      // -----------------------------------
+      let allFamilies = [];
+      let reviewMap = {};
+
+      // -----------------------------------
+      // Display helpers
+      // -----------------------------------
+      function formatDisplayName(profile) {
+        const first = profile.first_name || "";
+        const lastInitial = profile.last_name ? `${profile.last_name.charAt(0)}.` : "";
+        return `${first} ${lastInitial}`.trim();
+      }
+
+      function careTypesNeededText(profile) {
+        if (Array.isArray(profile.care_types_needed) && profile.care_types_needed.length) {
+          return profile.care_types_needed.join(", ");
+        }
+        return "";
+      }
+
+      function buildStars(avg) {
+        if (!avg) return "";
+        const rounded = Math.round(avg * 10) / 10;
+        return `⭐ ${rounded}`;
+      }
+
+      // -----------------------------------
+      // Review helpers
+      // -----------------------------------
+      function getReviewSummary(familyId) {
+        const reviews = reviewMap[familyId] || [];
+        if (!reviews.length) return "";
+
+        const avg = reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length;
+
+        return `
+          <p><strong>Rating:</strong> ${buildStars(avg)} (${reviews.length} review${reviews.length === 1 ? "" : "s"})</p>
+        `;
+      }
+
+      function getRecentReview(familyId) {
+        const reviews = reviewMap[familyId] || [];
+        if (!reviews.length) return "";
+
+        const latest = reviews[0];
+        if (!latest.review_text) return "";
+
+        return `
+          <p><strong>Recent Review:</strong> “${latest.review_text}”</p>
+        `;
+      }
+
+      // -----------------------------------
+      // Home detail badges
+      // -----------------------------------
+      function buildHomeBadges(profile) {
+        const badges = [];
+
+        if (profile.has_cats) badges.push("Cats in Home");
+        if (profile.has_dogs) badges.push("Dogs in Home");
+        if (profile.smoking_in_home) badges.push("Smoking in Home");
+        if (profile.driving_needed) badges.push("Driving Needed");
+
+        if (!badges.length) return "";
+
+        return `
+          <div class="profile-badges">
+            ${badges.map((badge) => `<span class="profile-badge">${badge}</span>`).join("")}
+          </div>
+        `;
+      }
+
+      // -----------------------------------
+      // Photo gallery helper
+      // -----------------------------------
+      function buildPhotoGallery(profile) {
+        const photos = Array.isArray(profile.photo_urls) && profile.photo_urls.length
+          ? profile.photo_urls
+          : (profile.photo_url ? [profile.photo_url] : []);
+
+        if (!photos.length) return "";
+
+        const main = photos[0];
+        const thumbs = photos
+          .slice(1)
+          .map((photo) => `
+            <img
+              src="${photo}"
+              alt="Family photo thumbnail"
+              onclick="this.closest('.card').querySelector('.profile-main-photo').src='${photo}'"
+            >
+          `)
+          .join("");
+
+        return `
+          <img class="profile-main-photo" src="${main}" alt="${formatDisplayName(profile)}">
+          ${thumbs ? `<div class="profile-gallery">${thumbs}</div>` : ""}
+        `;
+      }
+
+      // -----------------------------------
+      // Action buttons helper
+      // -----------------------------------
+      function buildActionButtons(profile) {
+        const profileBtn = `
+          <a class="button" href="./family-profile.html?id=${profile.id}">
+            View Profile
+          </a>
+        `;
+
+        const messageBtn = profile.user_id
+          ? `
+            <a class="button" href="./messages.html?user=${profile.user_id}">
+              Message This Family
+            </a>
+          `
+          : "";
+
+        return `
+          <div class="caregiver-actions">
+            ${profileBtn}
+            ${messageBtn}
+          </div>
+        `;
+      }
+
+      // -----------------------------------
+      // Render family cards
+      // -----------------------------------
+      function renderFamilies(list) {
+        const container = document.getElementById("familiesContainer");
+        const countEl = document.getElementById("famCount");
+
+        if (countEl) {
+          countEl.innerHTML = `<strong>${list.length} family profile(s) shown</strong>`;
+        }
+
+        container.innerHTML = "";
+
+        if (!list.length) {
+          container.innerHTML = "<p>No families match those filters yet.</p>";
+          return;
+        }
+
+        list.forEach((profile) => {
+          const card = document.createElement("div");
+          card.className = "card caregiver-card";
+
+          const displayName = formatDisplayName(profile);
+          const careTypesNeeded = careTypesNeededText(profile);
+
+          const responseTime =
+            profile.average_response_minutes != null
+              ? `${profile.average_response_minutes} min average response`
+              : "";
+
+          const encounters =
+            profile.confirmed_encounters != null
+              ? `${profile.confirmed_encounters} confirmed encounter${profile.confirmed_encounters === 1 ? "" : "s"}`
+              : "";
+
+          card.innerHTML = `
+            ${buildPhotoGallery(profile)}
+            <h3>${displayName}</h3>
+            ${profile.location ? `<p><strong>Location:</strong> ${profile.location}</p>` : ``}
+            ${careTypesNeeded ? `<p><strong>Care Needed:</strong> ${careTypesNeeded}</p>` : ``}
+            ${responseTime ? `<p><strong>Response Time:</strong> ${responseTime}</p>` : ``}
+            ${encounters ? `<p><strong>Confirmed Encounters:</strong> ${encounters}</p>` : ``}
+            ${getReviewSummary(profile.id)}
+            ${getRecentReview(profile.id)}
+            ${buildHomeBadges(profile)}
+            ${profile.household_description ? `<p>${profile.household_description}</p>` : ``}
+            ${buildActionButtons(profile)}
+          `;
+
+          container.appendChild(card);
+        });
+      }
+
+      // -----------------------------------
+      // Filter families
+      // -----------------------------------
+      function applyFilters() {
+        const typeVal = (document.getElementById("famFilterType")?.value || "").trim().toLowerCase();
+        const locVal = (document.getElementById("famFilterLocation")?.value || "").trim().toLowerCase();
+        const keyVal = (document.getElementById("famFilterKeyword")?.value || "").trim().toLowerCase();
+
+        const filtered = allFamilies.filter((profile) => {
+          const careTypesNeeded = Array.isArray(profile.care_types_needed)
+            ? profile.care_types_needed.join(" ").toLowerCase()
+            : "";
+
+          const location = (profile.location || "").trim().toLowerCase();
+          const household = (profile.household_description || "").trim().toLowerCase();
+          const children = (profile.children_description || "").trim().toLowerCase();
+          const pets = (profile.pets_description || "").trim().toLowerCase();
+
+          const badgeText = [
+            profile.has_cats ? "cats in home" : "",
+            profile.has_dogs ? "dogs in home" : "",
+            profile.smoking_in_home ? "smoking in home" : "",
+            profile.driving_needed ? "driving needed" : ""
+          ].join(" ").toLowerCase();
+
+          const typeOk = !typeVal || careTypesNeeded.includes(typeVal);
+          const locOk = !locVal || location.includes(locVal);
+          const keyOk =
+            !keyVal ||
+            careTypesNeeded.includes(keyVal) ||
+            household.includes(keyVal) ||
+            children.includes(keyVal) ||
+            pets.includes(keyVal) ||
+            badgeText.includes(keyVal) ||
+            location.includes(keyVal);
+
+          return typeOk && locOk && keyOk;
+        });
+
+        renderFamilies(filtered);
+      }
+
+      // -----------------------------------
+      // Load family reviews
+      // -----------------------------------
+      async function loadReviews() {
+        const { data: reviewData, error: reviewError } = await window.db
+          .from("family_reviews")
+          .select("*")
+          .eq("is_visible", true)
+          .order("created_at", { ascending: false });
+
+        if (reviewError) {
+          console.error(reviewError);
+          reviewMap = {};
+          return;
+        }
+
+        reviewMap = {};
+        (reviewData || []).forEach((review) => {
+          if (!reviewMap[review.family_profile_id]) {
+            reviewMap[review.family_profile_id] = [];
+          }
+          reviewMap[review.family_profile_id].push(review);
+        });
+      }
+
+      // -----------------------------------
+      // Load family profiles
+      // -----------------------------------
+      async function loadFamiliesOnce() {
+        let tries = 0;
+        while (!window.db && tries < 40) {
+          await new Promise((resolve) => setTimeout(resolve, 50));
+          tries++;
+        }
+
+        const container = document.getElementById("familiesContainer");
+
+        if (!window.db) {
+          container.innerHTML = "<p>Database connection not ready. Please refresh.</p>";
+          return;
+        }
+
+        const { data, error } = await window.db
+          .from("family_profiles")
+          .select("*")
+          .eq("is_active", true)
+          .order("created_at", { ascending: false });
+
+        if (error) {
+          container.innerHTML = "<p>Unable to load families right now.</p>";
+          console.error(error);
+          return;
+        }
+
+        allFamilies = data || [];
+        await loadReviews();
+        applyFilters();
+      }
+
+      // -----------------------------------
+      // Wire filter controls
+      // -----------------------------------
+      function wireEvents() {
+        document.getElementById("famApplyBtn")?.addEventListener("click", applyFilters);
+
+        document.getElementById("famClearBtn")?.addEventListener("click", () => {
+          document.getElementById("famFilterType").value = "";
+          document.getElementById("famFilterLocation").value = "";
+          document.getElementById("famFilterKeyword").value = "";
+          applyFilters();
+        });
+
+        document.getElementById("famFilterType")?.addEventListener("change", applyFilters);
+        document.getElementById("famFilterLocation")?.addEventListener("input", applyFilters);
+        document.getElementById("famFilterKeyword")?.addEventListener("input", applyFilters);
+      }
+
+      // -----------------------------------
+      // Initialize page
+      // -----------------------------------
+      window.addEventListener("DOMContentLoaded", () => {
+        wireEvents();
+        loadFamiliesOnce();
+      });
+    })();
+  </script>
+</body>
+</html>
