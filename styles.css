@@ -362,7 +362,15 @@ button.button {
 .button-caregiver:hover {
   background: #32756e;
 }
-
+.button-admin {
+  border: none;
+  border-radius: 10px;
+  padding: 0.55rem 0.9rem;
+  font: inherit;
+  cursor: pointer;
+  background: #e5e7eb;
+  color: #222;
+}
 /* =====================================================
    Forms
 ===================================================== */
