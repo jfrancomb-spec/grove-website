@@ -383,20 +383,33 @@
     }
 
     function wireEvents() {
-      document.getElementById("famApplyBtn")?.addEventListener("click", applyFilters);
-
+      document.getElementById("famApplyBtn")?.addEventListener("click", () => {
+        applyFilters();
+        document.getElementById("familyFilterSidebar")?.classList.remove("open");
+      });
       document.getElementById("famClearBtn")?.addEventListener("click", () => {
         document.getElementById("famFilterType").value = "";
         document.getElementById("famFilterLocation").value = "";
         document.getElementById("famFilterKeyword").value = "";
         applyFilters();
+        document.getElementById("familyFilterSidebar")?.classList.remove("open");
       });
 
       document.getElementById("famFilterType")?.addEventListener("change", applyFilters);
       document.getElementById("famFilterLocation")?.addEventListener("input", applyFilters);
       document.getElementById("famFilterKeyword")?.addEventListener("input", applyFilters);
     }
+      const filterSidebar = document.getElementById("familyFilterSidebar");
+      const filterOpen = document.getElementById("familyFilterOpen");
+      const filterClose = document.getElementById("familyFilterClose");
 
+      filterOpen?.addEventListener("click", () => {
+        filterSidebar?.classList.add("open");
+      });
+
+      filterClose?.addEventListener("click", () => {
+        filterSidebar?.classList.remove("open");
+      });
     window.addEventListener("DOMContentLoaded", () => {
       wireEvents();
       loadFamiliesOnce();
