@@ -1223,3 +1223,6 @@ textarea:focus {
     display: inline-block;
   }
 }
+.filter-count {
+  margin-top: 4px;
+}
