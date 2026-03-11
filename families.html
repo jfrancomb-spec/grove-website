@@ -242,7 +242,7 @@
       if (!container) return;
 
       if (countEl) {
-        countEl.innerHTML = `<strong>${list.length} family profile(s) shown</strong>`;
+countEl.textContent = `${list.length} family profile${list.length === 1 ? "" : "s"} shown`;
       }
 
       container.innerHTML = "";
