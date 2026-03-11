@@ -25,10 +25,14 @@
     <section class="browse-layout">
   <aside class="filter-sidebar" id="familyFilterSidebar">
     <div class="form-card filter-card">
-      <div class="filter-card-header">
-        <h2 class="mt-0 mb-0">Filter Families</h2>
-        <button type="button" class="filter-close" id="familyFilterClose">✕</button>
-      </div>
+<div class="filter-card-header">
+  <div>
+    <h2 class="mt-0 mb-0">Filter Families</h2>
+    <p id="famCount" class="filter-count text-small text-muted"></p>
+  </div>
+
+  <button type="button" class="filter-close" id="familyFilterClose">✕</button>
+</div>
 
       <div class="row">
         <label for="famFilterType"><strong>Care Type Needed</strong></label>
@@ -73,7 +77,6 @@
         Filter Families
       </button>
 
-      <p id="famCount" class="browse-count mb-0"><strong></strong></p>
     </div>
 
     <p class="mb-16">
