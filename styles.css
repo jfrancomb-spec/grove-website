@@ -1,11 +1,11 @@
 :root {
-  --bg: #F0F8F8;
+  --bg: #f0f8f8;
   --text: #382050;
   --primary: #409088;
   --primary-dark: #306080;
-  --accent: #80C090;
+  --accent: #80c090;
   --link: #306080;
-  --card-border: #E5E7E6;
+  --card-border: #e5e7e6;
   --muted: #777;
 
   --family: #4f7fa8;
@@ -23,11 +23,21 @@
 }
 
 body {
-  font-family: system-ui, -apple-system, Arial, sans-serif;
   margin: 0;
+  font-family: system-ui, -apple-system, Arial, sans-serif;
   background: var(--bg);
   color: var(--text);
   line-height: 1.6;
+}
+
+main {
+  min-height: 60vh;
+}
+
+section {
+  max-width: 900px;
+  margin: 40px auto;
+  padding: 0 20px;
 }
 
 h1,
@@ -52,24 +62,11 @@ a {
 }
 
 /* =====================================================
-   Layout
-===================================================== */
-main {
-  min-height: 60vh;
-}
-
-section {
-  max-width: 900px;
-  margin: 40px auto;
-  padding: 0 20px;
-}
-
-/* =====================================================
    Shared header / nav
 ===================================================== */
 header,
 .site-header {
-  background: white;
+  background: #fff;
   border-bottom: 1px solid var(--card-border);
 }
 
@@ -89,26 +86,21 @@ header,
   gap: 20px;
 }
 
-.brand {
-  display: inline-flex;
+.brand,
+.logo-wrap,
+.logo-link {
+  display: flex;
   align-items: center;
+}
+
+.logo-link {
+  text-decoration: none;
 }
 
 .brand-logo {
   height: 48px;
   max-width: 240px;
   object-fit: contain;
-}
-
-.logo-wrap {
-  display: flex;
-  align-items: center;
-}
-
-.logo-link {
-  display: flex;
-  align-items: center;
-  text-decoration: none;
 }
 
 .logo-icon {
@@ -129,18 +121,13 @@ header,
 }
 
 .nav a {
-  text-decoration: none;
   color: var(--text);
+  text-decoration: none;
   font-weight: 500;
 }
 
 .nav a:hover {
   color: var(--primary);
-}
-
-.nav-button {
-  padding: 8px 14px;
-  border-radius: 8px;
 }
 
 .nav a.active {
@@ -149,14 +136,19 @@ header,
   padding-bottom: 2px;
 }
 
-.nav-cta {
-  background: var(--primary);
-  color: white !important;
+.nav-button {
   padding: 8px 14px;
-  border-radius: 6px;
-  text-decoration: none;
+  border-radius: 8px;
+}
+
+.nav-cta {
   display: inline-flex;
   align-items: center;
+  padding: 8px 14px;
+  border-radius: 6px;
+  background: var(--primary);
+  color: #fff !important;
+  text-decoration: none;
 }
 
 .nav-cta:hover {
@@ -165,19 +157,21 @@ header,
 
 .menu-toggle {
   display: none;
-  font-size: 26px;
-  background: none;
+  padding: 4px 8px;
   border: none;
-  cursor: pointer;
+  background: none;
   color: var(--text);
+  font-size: 26px;
+  line-height: 1;
+  cursor: pointer;
 }
 
 /* =====================================================
    Hero
 ===================================================== */
 .hero {
-  text-align: center;
   padding: 80px 20px;
+  text-align: center;
   background: #e9f1ec;
 }
 
@@ -187,10 +181,10 @@ header,
 }
 
 /* =====================================================
-   Homepage / landing page
+   Homepage / landing
 ===================================================== */
 .eyebrow {
-  margin: 0 0 10px 0;
+  margin: 0 0 10px;
   font-size: 14px;
   font-weight: 700;
   letter-spacing: 0.08em;
@@ -241,8 +235,8 @@ header,
 }
 
 .path-card {
-  text-align: center;
   padding: 28px;
+  text-align: center;
   transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
 
@@ -261,11 +255,11 @@ header,
 
 .path-label {
   display: inline-block;
+  margin-bottom: 14px;
   padding: 5px 10px;
   border-radius: 999px;
   font-size: 12px;
   font-weight: 700;
-  margin-bottom: 14px;
 }
 
 .path-label-family {
@@ -290,11 +284,11 @@ header,
   text-align: center;
 }
 
-/* Older homepage section styles kept for compatibility */
+/* Older homepage styles kept for compatibility */
 .two-paths {
-  background: #f6faf9;
-  padding: 50px 20px;
   margin-top: 20px;
+  padding: 50px 20px;
+  background: #f6faf9;
 }
 
 .two-paths-inner {
@@ -303,10 +297,10 @@ header,
 }
 
 .two-paths .button {
-  width: 240px;
-  text-align: center;
   display: block;
+  width: 240px;
   margin: 10px auto;
+  text-align: center;
 }
 
 .two-paths .card {
@@ -324,16 +318,16 @@ header,
    Buttons
 ===================================================== */
 .button {
-  background: var(--primary);
-  color: white;
-  padding: 14px 22px;
-  margin: 8px 4px;
-  text-decoration: none;
-  border-radius: 6px;
   display: inline-block;
+  margin: 8px 4px;
+  padding: 14px 22px;
   border: 0;
-  cursor: pointer;
+  border-radius: 6px;
+  background: var(--primary);
+  color: #fff;
+  text-decoration: none;
   font-weight: 600;
+  cursor: pointer;
   transition: background 0.2s ease;
 }
 
@@ -347,7 +341,6 @@ button.button {
 
 .button-family {
   background: var(--family);
-  color: white;
 }
 
 .button-family:hover {
@@ -356,21 +349,37 @@ button.button {
 
 .button-caregiver {
   background: var(--caregiver);
-  color: white;
 }
 
 .button-caregiver:hover {
   background: #32756e;
 }
+
 .button-admin {
+  padding: 0.55rem 0.9rem;
   border: none;
   border-radius: 10px;
-  padding: 0.55rem 0.9rem;
-  font: inherit;
-  cursor: pointer;
   background: #e5e7eb;
   color: #222;
+  font: inherit;
+  cursor: pointer;
 }
+
+.button-approve {
+  background: var(--caregiver);
+  color: #fff;
+}
+
+.button-deny {
+  background: #b45353;
+  color: #fff;
+}
+
+.button-delete {
+  background: #333;
+  color: #fff;
+}
+
 /* =====================================================
    Forms
 ===================================================== */
@@ -388,8 +397,8 @@ select,
 textarea {
   width: 100%;
   padding: 12px;
-  border-radius: 6px;
   border: 1px solid #cfd6d2;
+  border-radius: 6px;
   font: inherit;
 }
 
@@ -432,11 +441,17 @@ textarea:focus {
   margin: 20px 0;
 }
 
-.card {
-  background: white;
+.card,
+.form-card,
+.admin-card,
+.review-card {
+  background: #fff;
   border: 1px solid var(--card-border);
-  border-radius: 10px;
+}
+
+.card {
   padding: 16px;
+  border-radius: 10px;
   text-align: center;
 }
 
@@ -445,10 +460,8 @@ textarea:focus {
 }
 
 .form-card {
-  background: white;
-  border: 1px solid var(--card-border);
-  border-radius: 12px;
   padding: 24px;
+  border-radius: 12px;
 }
 
 .form-card h3 {
@@ -462,22 +475,22 @@ textarea:focus {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
   gap: 12px;
-  margin: 20px 0 24px 0;
+  margin: 20px 0 24px;
 }
 
 .dashboard-stat {
-  background: #f6faf9;
+  padding: 14px;
   border: 1px solid var(--card-border);
   border-radius: 10px;
-  padding: 14px;
+  background: #f6faf9;
   text-align: center;
 }
 
 .dashboard-label {
-  font-size: 13px;
-  color: var(--muted);
   margin-bottom: 6px;
+  font-size: 13px;
   font-weight: 600;
+  color: var(--muted);
 }
 
 .dashboard-value {
@@ -526,58 +539,82 @@ textarea:focus {
 .profile-badge {
   display: inline-block;
   padding: 5px 10px;
+  border: 1px solid var(--card-border);
   border-radius: 999px;
-  font-size: 12px;
-  font-weight: 600;
   background: #eef6f4;
   color: var(--text);
-  border: 1px solid var(--card-border);
+  font-size: 12px;
+  font-weight: 600;
 }
 
 /* =====================================================
    Profile photos / galleries
 ===================================================== */
 .admin-photo {
+  display: block;
   width: 120px;
   height: 120px;
-  object-fit: cover;
-  border-radius: 8px;
   margin-bottom: 10px;
-  display: block;
+  border-radius: 8px;
+  object-fit: cover;
 }
 
 .profile-photo {
+  display: block;
   width: 180px;
   height: 180px;
-  object-fit: cover;
+  margin: 0 auto 12px;
   border-radius: 50%;
-  display: block;
-  margin: 0 auto 12px auto;
+  object-fit: cover;
 }
 
 .profile-main-photo {
+  display: block;
   width: 180px;
   height: 180px;
-  object-fit: cover;
+  margin: 0 auto 10px;
   border-radius: 12px;
-  display: block;
-  margin: 0 auto 10px auto;
+  object-fit: cover;
 }
 
 .profile-gallery {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
   justify-content: center;
+  gap: 6px;
   margin-bottom: 10px;
 }
 
 .profile-gallery img {
+  display: block;
   width: 70px;
   height: 70px;
-  object-fit: cover;
   border-radius: 6px;
+  object-fit: cover;
+}
+
+.profile-thumb-button,
+.gallery-thumb {
+  padding: 0;
+  border: 2px solid transparent;
+  border-radius: 10px;
+  background: none;
   cursor: pointer;
+}
+
+.profile-thumb-button.active {
+  border-color: var(--family);
+}
+
+.profile-thumb-button img,
+.gallery-thumb img {
+  display: block;
+  width: 72px;
+  height: 72px;
+  border: 1px solid var(--card-border);
+  border-radius: 10px;
+  background: #f5f5f5;
+  object-fit: cover;
 }
 
 .photo-preview-list {
@@ -589,8 +626,8 @@ textarea:focus {
 .preview-photo {
   width: 90px;
   height: 90px;
-  object-fit: cover;
   border-radius: 8px;
+  object-fit: cover;
 }
 
 .profile-detail {
@@ -599,16 +636,44 @@ textarea:focus {
 }
 
 .profile-detail-main-photo {
+  display: block;
   width: 220px;
   height: 220px;
-  object-fit: cover;
+  margin: 0 auto 12px;
   border-radius: 12px;
-  display: block;
-  margin: 0 auto 12px auto;
+  object-fit: cover;
 }
 
 .active-thumb {
   outline: 2px solid var(--primary);
+}
+
+/* Family profile dashboard gallery */
+.family-photo-gallery {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.family-main-photo {
+  display: block;
+  width: 100%;
+  max-width: 420px;
+  height: 300px;
+  border: 1px solid var(--card-border);
+  border-radius: 14px;
+  background: #f5f5f5;
+  object-fit: cover;
+}
+
+.family-thumbnails {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.gallery-thumb.active {
+  border-color: var(--family);
 }
 
 /* =====================================================
@@ -620,20 +685,19 @@ textarea:focus {
 }
 
 .review-card {
-  background: #f6faf9;
-  border: 1px solid var(--card-border);
-  border-radius: 10px;
   padding: 14px;
+  border-radius: 10px;
+  background: #f6faf9;
 }
 
 /* =====================================================
    Card action buttons
 ===================================================== */
 .caregiver-actions {
-  margin-top: 14px;
   display: flex;
   flex-direction: column;
   gap: 8px;
+  margin-top: 14px;
 }
 
 .caregiver-actions .button {
@@ -646,10 +710,10 @@ textarea:focus {
 ===================================================== */
 .success {
   display: none;
+  margin-top: 14px;
   color: var(--primary);
   font-weight: 700;
   text-align: center;
-  margin-top: 14px;
 }
 
 .messages-layout {
@@ -660,13 +724,13 @@ textarea:focus {
 
 .conversation-item {
   width: 100%;
-  text-align: left;
-  background: white;
+  margin-bottom: 10px;
+  padding: 12px;
   border: 1px solid var(--card-border);
   border-radius: 10px;
-  padding: 12px;
+  background: #fff;
+  text-align: left;
   cursor: pointer;
-  margin-bottom: 10px;
 }
 
 .conversation-item.active {
@@ -676,8 +740,8 @@ textarea:focus {
 
 .conversation-row {
   display: flex;
-  gap: 10px;
   align-items: flex-start;
+  gap: 10px;
 }
 
 .conversation-main {
@@ -693,8 +757,8 @@ textarea:focus {
 }
 
 .conversation-preview {
-  font-size: 14px;
   margin-bottom: 4px;
+  font-size: 14px;
   color: var(--text);
 }
 
@@ -715,29 +779,29 @@ textarea:focus {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #eef6f4;
   border: 1px solid var(--card-border);
-  font-weight: 700;
+  background: #eef6f4;
   color: var(--text);
+  font-weight: 700;
 }
 
 .unread-pill {
-  background: var(--primary);
-  color: white;
-  border-radius: 999px;
   padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--primary);
+  color: #fff;
   font-size: 12px;
   font-weight: 700;
 }
 
 .message-thread {
-  min-height: 300px;
-  max-height: 500px;
-  overflow-y: auto;
   display: flex;
   flex-direction: column;
   gap: 10px;
+  min-height: 300px;
+  max-height: 500px;
   margin-bottom: 16px;
+  overflow-y: auto;
 }
 
 .message-bubble {
@@ -749,29 +813,170 @@ textarea:focus {
 .message-bubble.sent {
   align-self: flex-end;
   background: var(--primary);
-  color: white;
+  color: #fff;
 }
 
 .message-bubble.received {
   align-self: flex-start;
-  background: #f3f7f6;
   border: 1px solid var(--card-border);
+  background: #f3f7f6;
 }
 
 .message-time {
-  font-size: 11px;
   margin-top: 6px;
+  font-size: 11px;
   opacity: 0.8;
+}
+
+/* =====================================================
+   Admin
+===================================================== */
+.admin-page {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 2rem 1rem 4rem;
+}
+
+.admin-section {
+  margin-bottom: 2rem;
+}
+
+.admin-subtext {
+  margin-top: 0.25rem;
+  color: var(--muted);
+}
+
+.admin-list {
+  display: grid;
+  gap: 1rem;
+}
+
+.admin-card {
+  padding: 1rem;
+  border-radius: 14px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.04);
+}
+
+.admin-card h3 {
+  margin: 0 0 0.25rem;
+  font-size: 1.05rem;
+}
+
+.admin-card strong {
+  color: var(--text);
+}
+
+.admin-card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.admin-card-top > div:first-child > div {
+  margin-bottom: 0.35rem;
+}
+
+.admin-meta {
+  margin-bottom: 0.5rem;
+  font-size: 0.95rem;
+  color: var(--muted);
+}
+
+.admin-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.5rem;
+}
+
+.admin-badge {
+  display: inline-block;
+  padding: 0.25rem 0.6rem;
+  border-radius: 999px;
+  background: #f4f4f4;
+  font-size: 0.8rem;
+}
+
+.admin-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.admin-empty {
+  padding: 1rem;
+  border: 1px dashed var(--card-border);
+  border-radius: 14px;
+  background: #fff;
+  color: var(--muted);
+}
+
+.admin-card-layout {
+  display: grid;
+  grid-template-columns: 140px 1fr;
+  align-items: start;
+  gap: 1rem;
+}
+
+.admin-photo-column {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.admin-photo-column img {
+  display: block;
+}
+
+.admin-photo-main,
+.admin-photo-placeholder {
+  display: block;
+  width: 140px;
+  min-width: 140px;
+  max-width: 140px;
+  height: 140px;
+  min-height: 140px;
+  max-height: 140px;
+  overflow: hidden;
+  border: 1px solid var(--card-border);
+  border-radius: 12px;
+  background: #f5f5f5;
+  object-fit: cover;
+}
+
+.admin-photo-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.admin-photo-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.admin-photo-thumb {
+  width: 42px;
+  height: 42px;
+  border: 1px solid var(--card-border);
+  border-radius: 8px;
+  background: #f5f5f5;
+  object-fit: cover;
 }
 
 /* =====================================================
    Footer
 ===================================================== */
 .site-footer {
-  background: white;
-  border-top: 1px solid var(--card-border);
-  text-align: center;
   padding: 30px 20px;
+  border-top: 1px solid var(--card-border);
+  background: #fff;
+  text-align: center;
   font-size: 14px;
 }
 
@@ -790,7 +995,7 @@ textarea:focus {
 }
 
 /* =====================================================
-   Utility classes
+   Utilities
 ===================================================== */
 .mt-0 {
   margin-top: 0;
@@ -841,7 +1046,7 @@ textarea:focus {
 }
 
 /* =====================================================
-   Mobile
+   Responsive
 ===================================================== */
 @media (max-width: 900px) {
   .messages-layout {
@@ -857,23 +1062,16 @@ textarea:focus {
 
   .menu-toggle {
     display: block;
-    font-size: 26px;
-    background: none;
-    border: none;
-    cursor: pointer;
-    color: var(--text);
-    padding: 4px 8px;
-    line-height: 1;
   }
 
   .nav {
     display: none;
-    flex-direction: column;
-    gap: 12px;
     width: 100%;
     margin-top: 14px;
     padding-top: 12px;
     border-top: 1px solid var(--card-border);
+    flex-direction: column;
+    gap: 12px;
   }
 
   .nav.open {
@@ -899,170 +1097,7 @@ textarea:focus {
   .subtitle {
     font-size: 18px;
   }
-}
-.admin-page {
-  max-width: 1100px;
-  margin: 0 auto;
-  padding: 2rem 1rem 4rem;
-}
 
-.admin-section {
-  margin-bottom: 2rem;
-}
-
-.admin-subtext {
-  color: var(--muted);
-  margin-top: 0.25rem;
-}
-
-.admin-list {
-  display: grid;
-  gap: 1rem;
-}
-
-.admin-card {
-  background: #fff;
-  border: 1px solid var(--card-border);
-  border-radius: 14px;
-  padding: 1rem;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.04);
-}
-
-.admin-card-top {
-  display: flex;
-  justify-content: space-between;
-  gap: 1rem;
-  align-items: flex-start;
-  flex-wrap: wrap;
-}
-
-.admin-card h3 {
-  margin: 0 0 0.25rem;
-  font-size: 1.05rem;
-}
-
-.admin-meta {
-  color: var(--muted);
-  font-size: 0.95rem;
-  margin-bottom: 0.5rem;
-}
-
-.admin-badges {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.4rem;
-  margin-top: 0.5rem;
-}
-
-.admin-badge {
-  display: inline-block;
-  background: #f4f4f4;
-  border-radius: 999px;
-  padding: 0.25rem 0.6rem;
-  font-size: 0.8rem;
-}
-
-.admin-actions {
-  display: flex;
-  gap: 0.5rem;
-  flex-wrap: wrap;
-}
-
-.button-admin {
-  border: none;
-  border-radius: 10px;
-  padding: 0.55rem 0.9rem;
-  font: inherit;
-  cursor: pointer;
-}
-
-.button-approve {
-  background: var(--caregiver);
-  color: #fff;
-}
-
-.button-deny {
-  background: #b45353;
-  color: #fff;
-}
-
-.button-delete {
-  background: #333;
-  color: #fff;
-}
-
-.admin-empty {
-  background: #fff;
-  border: 1px dashed var(--card-border);
-  border-radius: 14px;
-  padding: 1rem;
-  color: var(--muted);
-}
-.admin-card-layout {
-  display: grid;
-  grid-template-columns: 140px 1fr;
-  gap: 1rem;
-  align-items: start;
-}
-
-.admin-photo-column {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.admin-photo-main,
-.admin-photo-placeholder {
-  display: block;
-  width: 140px;
-  min-width: 140px;
-  max-width: 140px;
-  height: 140px;
-  min-height: 140px;
-  max-height: 140px;
-  border-radius: 12px;
-  border: 1px solid var(--card-border);
-  background: #f5f5f5;
-  object-fit: cover;
-  overflow: hidden;
-}
-
-.admin-photo-column img {
-  display: block;
-}
-
-.admin-photo-placeholder {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--muted);
-  font-size: 0.9rem;
-}
-
-.admin-photo-strip {
-  display: flex;
-  gap: 0.35rem;
-  flex-wrap: wrap;
-}
-
-.admin-photo-thumb {
-  width: 42px;
-  height: 42px;
-  border-radius: 8px;
-  object-fit: cover;
-  border: 1px solid var(--card-border);
-  background: #f5f5f5;
-}
-
-.admin-card strong {
-  color: var(--text);
-}
-
-.admin-card-top > div:first-child > div {
-  margin-bottom: 0.35rem;
-}
-
-@media (max-width: 700px) {
   .admin-card-layout {
     grid-template-columns: 1fr;
   }
@@ -1076,48 +1111,4 @@ textarea:focus {
     min-height: 180px;
     max-height: 180px;
   }
-}
-.family-photo-gallery {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
-
-.family-main-photo {
-  display: block;
-  width: 100%;
-  max-width: 420px;
-  height: 300px;
-  object-fit: cover;
-  border-radius: 14px;
-  border: 1px solid var(--card-border);
-  background: #f5f5f5;
-}
-
-.family-thumbnails {
-  display: flex;
-  gap: 0.5rem;
-  flex-wrap: wrap;
-}
-
-.gallery-thumb {
-  border: 2px solid transparent;
-  background: none;
-  padding: 0;
-  border-radius: 10px;
-  cursor: pointer;
-}
-
-.gallery-thumb img {
-  display: block;
-  width: 72px;
-  height: 72px;
-  object-fit: cover;
-  border-radius: 10px;
-  border: 1px solid var(--card-border);
-  background: #f5f5f5;
-}
-
-.gallery-thumb.active {
-  border-color: var(--family);
 }
