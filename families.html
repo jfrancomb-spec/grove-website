@@ -1,5 +1,78 @@
-<script>
-  (function () {
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Grove | Families</title>
+  <link rel="stylesheet" href="./styles.css" />
+  <link rel="icon" type="image/png" href="./MainIcon.png" />
+</head>
+
+<body>
+  <div id="header-placeholder"></div>
+
+  <main>
+    <div class="hero">
+      <h1>Families</h1>
+      <div class="subtitle">
+        Browse local families in the Grove network and learn more before deciding whether a care opportunity is a fit.
+      </div>
+
+      <a class="button" href="./jobs.html">Browse Care Opportunities</a>
+      <a class="button" href="./caregiver.html">Create Caregiver Profile</a>
+    </div>
+
+    <section>
+      <div class="form-card mb-16">
+        <h2 class="mt-0">Filter Families</h2>
+
+        <div class="row">
+          <select id="famFilterType">
+            <option value="">All care types needed</option>
+            <option>Childcare</option>
+            <option>Senior Care</option>
+            <option>Pet Care</option>
+            <option>Household Help</option>
+            <option>Other</option>
+          </select>
+        </div>
+
+        <div class="row">
+          <input
+            id="famFilterLocation"
+            type="text"
+            placeholder="Filter by city/neighborhood (optional)"
+          />
+        </div>
+
+        <div class="row">
+          <input
+            id="famFilterKeyword"
+            type="text"
+            placeholder="Keyword (children, pets, household, etc.)"
+          />
+        </div>
+
+        <p id="famCount" class="mt-10"><strong></strong></p>
+
+        <button class="button" type="button" id="famApplyBtn">Apply Filters</button>
+        <button class="button" type="button" id="famClearBtn">Clear Filters</button>
+      </div>
+
+      <p class="mb-16">
+        Family profiles are visible within the Grove network so caregivers can better understand the home, care needs, and expectations before reaching out.
+      </p>
+
+      <div id="familiesContainer" class="cards"></div>
+    </section>
+  </main>
+
+  <div id="footer-placeholder"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script src="./app.js"></script>
+
+  <script>
     let allFamilies = [];
     let reviewMap = {};
 
@@ -63,56 +136,49 @@
     }
 
     function buildPhotoGallery(profile) {
-      const photos = Array.isArray(profile.photo_urls) && profile.photo_urls.length
-        ? profile.photo_urls.filter(Boolean)
-        : (profile.photo_url ? [profile.photo_url] : []);
+      const photos =
+        Array.isArray(profile.photo_urls) && profile.photo_urls.length
+          ? profile.photo_urls.filter(Boolean)
+          : (profile.photo_url ? [profile.photo_url] : []);
 
       if (!photos.length) return "";
 
+      const displayName = formatDisplayName(profile);
+
       return `
-        <div class="profile-photo-gallery" data-family-gallery>
+        <div class="profile-photo-gallery">
           <img
             class="profile-main-photo"
             src="${photos[0]}"
-            alt="${formatDisplayName(profile)}"
+            alt="${displayName}"
             data-main-photo
           >
-          ${
-            photos.length
-              ? `
-                <div class="profile-gallery">
-                  ${photos
-                    .map((photo, index) => `
-                      <button
-                        type="button"
-                        class="profile-thumb-button${index === 0 ? " active" : ""}"
-                        data-thumb-index="${index}"
-                        data-photo="${photo}"
-                        aria-label="View photo ${index + 1}"
-                      >
-                        <img src="${photo}" alt="Family photo ${index + 1}">
-                      </button>
-                    `)
-                    .join("")}
-                </div>
-              `
-              : ""
-          }
+          <div class="profile-gallery">
+            ${photos.map((photo, index) => `
+              <button
+                type="button"
+                class="profile-thumb-button${index === 0 ? " active" : ""}"
+                data-photo="${photo}"
+                aria-label="View photo ${index + 1}"
+              >
+                <img src="${photo}" alt="Family photo ${index + 1}">
+              </button>
+            `).join("")}
+          </div>
         </div>
       `;
     }
 
     function wireCardGallery(card) {
-      const gallery = card.querySelector("[data-family-gallery]");
-      if (!gallery) return;
+      const mainPhoto = card.querySelector("[data-main-photo]");
+      const thumbButtons = card.querySelectorAll(".profile-thumb-button");
 
-      const mainPhoto = gallery.querySelector("[data-main-photo]");
-      const thumbButtons = gallery.querySelectorAll("[data-thumb-index]");
+      if (!mainPhoto || !thumbButtons.length) return;
 
       thumbButtons.forEach((button) => {
         button.addEventListener("click", () => {
           const newPhoto = button.getAttribute("data-photo");
-          if (!mainPhoto || !newPhoto) return;
+          if (!newPhoto) return;
 
           mainPhoto.src = newPhoto;
 
@@ -149,6 +215,8 @@
       const container = document.getElementById("familiesContainer");
       const countEl = document.getElementById("famCount");
 
+      if (!container) return;
+
       if (countEl) {
         countEl.innerHTML = `<strong>${list.length} family profile(s) shown</strong>`;
       }
@@ -180,14 +248,14 @@
         card.innerHTML = `
           ${buildPhotoGallery(profile)}
           <h3>${displayName}</h3>
-          ${profile.location ? `<p><strong>Location:</strong> ${profile.location}</p>` : ``}
-          ${careTypesNeeded ? `<p><strong>Care Needed:</strong> ${careTypesNeeded}</p>` : ``}
-          ${responseTime ? `<p><strong>Response Time:</strong> ${responseTime}</p>` : ``}
-          ${encounters ? `<p><strong>Confirmed Encounters:</strong> ${encounters}</p>` : ``}
+          ${profile.location ? `<p><strong>Location:</strong> ${profile.location}</p>` : ""}
+          ${careTypesNeeded ? `<p><strong>Care Needed:</strong> ${careTypesNeeded}</p>` : ""}
+          ${responseTime ? `<p><strong>Response Time:</strong> ${responseTime}</p>` : ""}
+          ${encounters ? `<p><strong>Confirmed Encounters:</strong> ${encounters}</p>` : ""}
           ${getReviewSummary(profile.id)}
           ${getRecentReview(profile.id)}
           ${buildHomeBadges(profile)}
-          ${profile.household_description ? `<p>${profile.household_description}</p>` : ``}
+          ${profile.household_description ? `<p>${profile.household_description}</p>` : ""}
           ${buildActionButtons(profile)}
         `;
 
@@ -267,7 +335,9 @@
       const container = document.getElementById("familiesContainer");
 
       if (!window.db) {
-        container.innerHTML = "<p>Database connection not ready. Please refresh.</p>";
+        if (container) {
+          container.innerHTML = "<p>Database connection not ready. Please refresh.</p>";
+        }
         return;
       }
 
@@ -279,7 +349,9 @@
         .order("created_at", { ascending: false });
 
       if (error) {
-        container.innerHTML = "<p>Unable to load families right now.</p>";
+        if (container) {
+          container.innerHTML = "<p>Unable to load families right now.</p>";
+        }
         console.error(error);
         return;
       }
@@ -308,5 +380,6 @@
       wireEvents();
       loadFamiliesOnce();
     });
-  })();
-</script>
+  </script>
+</body>
+</html>
