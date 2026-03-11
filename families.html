@@ -22,49 +22,70 @@
       <a class="button" href="./caregiver.html">Create Caregiver Profile</a>
     </div>
 
-    <section>
-      <div class="form-card mb-16">
-        <h2 class="mt-0">Filter Families</h2>
-
-        <div class="row">
-          <select id="famFilterType">
-            <option value="">All care types needed</option>
-            <option>Childcare</option>
-            <option>Senior Care</option>
-            <option>Pet Care</option>
-            <option>Household Help</option>
-            <option>Other</option>
-          </select>
-        </div>
-
-        <div class="row">
-          <input
-            id="famFilterLocation"
-            type="text"
-            placeholder="Filter by city/neighborhood (optional)"
-          />
-        </div>
-
-        <div class="row">
-          <input
-            id="famFilterKeyword"
-            type="text"
-            placeholder="Keyword (children, pets, household, etc.)"
-          />
-        </div>
-
-        <p id="famCount" class="mt-10"><strong></strong></p>
-
-        <button class="button" type="button" id="famApplyBtn">Apply Filters</button>
-        <button class="button" type="button" id="famClearBtn">Clear Filters</button>
+    <section class="browse-layout">
+  <aside class="filter-sidebar" id="familyFilterSidebar">
+    <div class="form-card filter-card">
+      <div class="filter-card-header">
+        <h2 class="mt-0 mb-0">Filter Families</h2>
+        <button type="button" class="filter-close" id="familyFilterClose">✕</button>
       </div>
 
-      <p class="mb-16">
-        Family profiles are visible within the Grove network so caregivers can better understand the home, care needs, and expectations before reaching out.
-      </p>
+      <div class="row">
+        <label for="famFilterType"><strong>Care Type Needed</strong></label>
+        <select id="famFilterType">
+          <option value="">All care types needed</option>
+          <option>Childcare</option>
+          <option>Senior Care</option>
+          <option>Pet Care</option>
+          <option>Household Help</option>
+          <option>Other</option>
+        </select>
+      </div>
 
-      <div id="familiesContainer" class="cards"></div>
-    </section>
+      <div class="row">
+        <label for="famFilterLocation"><strong>Location</strong></label>
+        <input
+          id="famFilterLocation"
+          type="text"
+          placeholder="City or neighborhood"
+        />
+      </div>
+
+      <div class="row">
+        <label for="famFilterKeyword"><strong>Keyword</strong></label>
+        <input
+          id="famFilterKeyword"
+          type="text"
+          placeholder="Children, pets, household..."
+        />
+      </div>
+
+      <div class="filter-actions">
+        <button class="button button-family" type="button" id="famApplyBtn">Apply Filters</button>
+        <button class="button filter-clear-button" type="button" id="famClearBtn">Clear</button>
+      </div>
+    </div>
+  </aside>
+
+  <div class="browse-main">
+    <div class="browse-topbar">
+      <button type="button" class="button filter-toggle-button" id="familyFilterOpen">
+        Filter Families
+      </button>
+
+      <p id="famCount" class="browse-count mb-0"><strong></strong></p>
+    </div>
+
+    <p class="mb-16">
+      Family profiles are visible within the Grove network so caregivers can better understand the home, care needs, and expectations before reaching out.
+    </p>
+
+    <div id="familiesContainer" class="cards"></div>
+  </div>
+</section>
+
+
+    
   </main>
 
   <div id="footer-placeholder"></div>
