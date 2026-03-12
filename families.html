@@ -23,28 +23,28 @@
     </div>
 
     <section class="browse-layout">
-  <aside class="filter-sidebar" id="familyFilterSidebar">
-    <div class="form-card filter-card">
-<div class="filter-card-header">
-  <div>
-    <h2 class="mt-0 mb-0">Filter Families</h2>
-    <p id="famCount" class="filter-count text-small text-muted"></p>
-  </div>
-
-  <button type="button" class="filter-close" id="familyFilterClose">✕</button>
-</div>
-
-      <div class="row">
-        <label for="famFilterType"><strong>Care Type Needed</strong></label>
-        <select id="famFilterType">
-          <option value="">All care types needed</option>
-          <option>Childcare</option>
-          <option>Senior Care</option>
-          <option>Pet Care</option>
-          <option>Household Help</option>
-          <option>Other</option>
-        </select>
+<aside class="filter-sidebar" id="familyFilterSidebar">
+  <div class="form-card filter-card">
+    <div class="filter-card-header">
+      <div>
+        <h2 class="mt-0 mb-0">Filter Families</h2>
+        <p id="famCount" class="filter-count text-small text-muted"></p>
       </div>
+
+      <button type="button" class="filter-close" id="familyFilterClose">✕</button>
+    </div>
+
+    <div class="row">
+      <label for="famFilterType"><strong>Care Type Needed</strong></label>
+      <select id="famFilterType">
+        <option value="">All care types needed</option>
+        <option>Childcare</option>
+        <option>Senior Care</option>
+        <option>Pet Care</option>
+        <option>Household Help</option>
+        <option>Other</option>
+      </select>
+    </div>
 
       <div class="row">
         <label for="famFilterLocation"><strong>Location</strong></label>
@@ -385,38 +385,42 @@ countEl.textContent = `${list.length} family profile${list.length === 1 ? "" : "
       applyFilters();
     }
 
-    function wireEvents() {
-      document.getElementById("famApplyBtn")?.addEventListener("click", () => {
-        applyFilters();
-        document.getElementById("familyFilterSidebar")?.classList.remove("open");
-      });
-      document.getElementById("famClearBtn")?.addEventListener("click", () => {
-        document.getElementById("famFilterType").value = "";
-        document.getElementById("famFilterLocation").value = "";
-        document.getElementById("famFilterKeyword").value = "";
-        applyFilters();
-        document.getElementById("familyFilterSidebar")?.classList.remove("open");
-      });
+function wireEvents() {
+  document.getElementById("famApplyBtn")?.addEventListener("click", () => {
+    applyFilters();
+    document.getElementById("familyFilterSidebar")?.classList.remove("open");
+  });
 
-      document.getElementById("famFilterType")?.addEventListener("change", applyFilters);
-      document.getElementById("famFilterLocation")?.addEventListener("input", applyFilters);
-      document.getElementById("famFilterKeyword")?.addEventListener("input", applyFilters);
-    }
-      const filterSidebar = document.getElementById("familyFilterSidebar");
-      const filterOpen = document.getElementById("familyFilterOpen");
-      const filterClose = document.getElementById("familyFilterClose");
+  document.getElementById("famClearBtn")?.addEventListener("click", () => {
+    document.getElementById("famFilterType").value = "";
+    document.getElementById("famFilterLocation").value = "";
+    document.getElementById("famFilterKeyword").value = "";
+    applyFilters();
+    document.getElementById("familyFilterSidebar")?.classList.remove("open");
+  });
 
-      filterOpen?.addEventListener("click", () => {
-        filterSidebar?.classList.add("open");
-      });
+  document.getElementById("famFilterType")?.addEventListener("change", applyFilters);
+  document.getElementById("famFilterLocation")?.addEventListener("input", applyFilters);
+  document.getElementById("famFilterKeyword")?.addEventListener("input", applyFilters);
 
-      filterClose?.addEventListener("click", () => {
-        filterSidebar?.classList.remove("open");
-      });
-    window.addEventListener("DOMContentLoaded", () => {
-      wireEvents();
-      loadFamiliesOnce();
-    });
+  const filterSidebar = document.getElementById("familyFilterSidebar");
+  const filterOpen = document.getElementById("familyFilterOpen");
+  const filterClose = document.getElementById("familyFilterClose");
+
+  filterOpen?.addEventListener("click", () => {
+    filterSidebar?.classList.add("open");
+  });
+
+  filterClose?.addEventListener("click", () => {
+    filterSidebar?.classList.remove("open");
+  });
+}
+
+window.addEventListener("DOMContentLoaded", () => {
+  wireEvents();
+  loadFamiliesOnce();
+});
+
   </script>
 </body>
 </html>
