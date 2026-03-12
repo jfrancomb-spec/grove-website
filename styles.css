@@ -1149,12 +1149,13 @@ textarea:focus {
   }
 }
 .browse-layout {
-  display: grid;
-  grid-template-columns: 220px 1fr;
-  gap: 32px;
   max-width: 1280px;
   margin: 40px auto;
   padding: 0 20px;
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  gap: 32px;
+  align-items: start;
 }
 
 .browse-main {
