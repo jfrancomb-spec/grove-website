@@ -10,11 +10,9 @@
 </head>
 
 <body>
-  <!-- Shared header -->
   <div id="header-placeholder"></div>
 
   <main>
-    <!-- Hero -->
     <div class="hero">
       <h1>Caregivers</h1>
       <div class="subtitle">
@@ -25,72 +23,82 @@
       <a class="button" href="./jobs.html">Browse Care Opportunities</a>
     </div>
 
-    <!-- Filters + results -->
-    <section>
-      <div class="form-card mb-16">
-        <h2 class="mt-0">Filter Caregivers</h2>
+    <section class="browse-layout">
+      <aside class="filter-sidebar" id="caregiverFilterSidebar">
+        <div class="form-card filter-card">
+          <div class="filter-card-header">
+            <div>
+              <h2 class="mt-0 mb-0">Filter Caregivers</h2>
+              <p id="cgCount" class="filter-count text-small text-muted"></p>
+            </div>
 
-        <div class="row">
-          <select id="cgFilterType">
-            <option value="">All care types</option>
-            <option>Childcare</option>
-            <option>Senior Care</option>
-            <option>Pet Care</option>
-            <option>Household Help</option>
-            <option>Other</option>
-          </select>
+            <button type="button" class="filter-close" id="caregiverFilterClose">✕</button>
+          </div>
+
+          <div class="row">
+            <label for="cgFilterType"><strong>Care Type</strong></label>
+            <select id="cgFilterType">
+              <option value="">All care types</option>
+              <option>Childcare</option>
+              <option>Senior Care</option>
+              <option>Pet Care</option>
+              <option>Household Help</option>
+              <option>Other</option>
+            </select>
+          </div>
+
+          <div class="row">
+            <label for="cgFilterLocation"><strong>Location</strong></label>
+            <input
+              id="cgFilterLocation"
+              type="text"
+              placeholder="City or neighborhood"
+            />
+          </div>
+
+          <div class="row">
+            <label for="cgFilterKeyword"><strong>Keyword</strong></label>
+            <input
+              id="cgFilterKeyword"
+              type="text"
+              placeholder="Bio, availability, experience..."
+            />
+          </div>
+
+          <div class="filter-actions">
+            <button class="button button-caregiver" type="button" id="cgApplyBtn">Apply Filters</button>
+            <button class="button filter-clear-button" type="button" id="cgClearBtn">Clear</button>
+          </div>
+        </div>
+      </aside>
+
+      <div class="browse-main">
+        <div class="browse-topbar">
+          <button type="button" class="button filter-toggle-button" id="caregiverFilterOpen">
+            Filter Caregivers
+          </button>
         </div>
 
-        <div class="row">
-          <input
-            id="cgFilterLocation"
-            type="text"
-            placeholder="Filter by city/neighborhood (optional)"
-          />
-        </div>
+        <p class="mb-16">
+          Caregiver profiles are submitted by community members and approved before becoming visible.
+          Families and caregivers communicate directly and should use their own judgment when arranging care.
+        </p>
 
-        <div class="row">
-          <input
-            id="cgFilterKeyword"
-            type="text"
-            placeholder="Keyword (bio, availability, experience, etc.)"
-          />
-        </div>
-
-        <p id="cgCount" class="mt-10"><strong></strong></p>
-
-        <button class="button" type="button" id="cgApplyBtn">Apply Filters</button>
-        <button class="button" type="button" id="cgClearBtn">Clear Filters</button>
+        <div id="caregiversContainer" class="cards"></div>
       </div>
-
-      <p class="mb-16">
-        Caregiver profiles are submitted by community members and approved before becoming visible.
-        Families and caregivers communicate directly and should use their own judgment when arranging care.
-      </p>
-
-      <div id="caregiversContainer" class="cards"></div>
     </section>
   </main>
 
-  <!-- Shared footer -->
   <div id="footer-placeholder"></div>
 
-  <!-- Scripts -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
   <script src="./app.js"></script>
 
-  <!-- Page script -->
   <script>
     (function () {
-      // -----------------------------------
-      // Page state
-      // -----------------------------------
       let allCaregivers = [];
       let reviewMap = {};
 
-      // -----------------------------------
-      // Display helpers
-      // -----------------------------------
       function formatDisplayName(cg) {
         const first = cg.first_name || "";
         const lastInitial = cg.last_name ? `${cg.last_name.charAt(0)}.` : "";
@@ -110,9 +118,6 @@
         return `⭐ ${rounded}`;
       }
 
-      // -----------------------------------
-      // Review helpers
-      // -----------------------------------
       function getReviewSummary(cgId) {
         const reviews = reviewMap[cgId] || [];
         if (!reviews.length) return "";
@@ -136,9 +141,6 @@
         `;
       }
 
-      // -----------------------------------
-      // Badge helpers
-      // -----------------------------------
       function buildBadges(cg) {
         const badges = [];
 
@@ -158,70 +160,90 @@
         `;
       }
 
-      // -----------------------------------
-      // Photo gallery helper
-      // -----------------------------------
       function buildPhotoGallery(cg) {
-        const photos = Array.isArray(cg.photo_urls) && cg.photo_urls.length
-          ? cg.photo_urls
-          : (cg.photo_url ? [cg.photo_url] : []);
+        const photos =
+          Array.isArray(cg.photo_urls) && cg.photo_urls.length
+            ? cg.photo_urls.filter(Boolean)
+            : (cg.photo_url ? [cg.photo_url] : []);
 
         if (!photos.length) return "";
 
-        const main = photos[0];
-        const thumbs = photos
-          .slice(1)
-          .map((photo) => `
-            <img
-              src="${photo}"
-              alt="Caregiver photo thumbnail"
-              onclick="this.closest('.card').querySelector('.profile-main-photo').src='${photo}'"
-            >
-          `)
-          .join("");
+        const displayName = formatDisplayName(cg);
 
         return `
-          <img class="profile-main-photo" src="${main}" alt="${formatDisplayName(cg)}">
-          ${thumbs ? `<div class="profile-gallery">${thumbs}</div>` : ""}
+          <div class="profile-photo-gallery">
+            <img
+              class="profile-main-photo"
+              src="${photos[0]}"
+              alt="${displayName}"
+              data-main-photo
+            >
+            <div class="profile-gallery">
+              ${photos.map((photo, index) => `
+                <button
+                  type="button"
+                  class="profile-thumb-button${index === 0 ? " active" : ""}"
+                  data-photo="${photo}"
+                  aria-label="View photo ${index + 1}"
+                >
+                  <img src="${photo}" alt="Caregiver photo ${index + 1}">
+                </button>
+              `).join("")}
+            </div>
+          </div>
         `;
       }
 
-      // -----------------------------------
-      // Action buttons helper
-      // -----------------------------------
-function buildActionButtons(cg){
+      function wireCardGallery(card) {
+        const mainPhoto = card.querySelector("[data-main-photo]");
+        const thumbButtons = card.querySelectorAll(".profile-thumb-button");
 
-  const profileBtn = `
-<a class="button" href="./caregiver-profile.html?id=${cg.id}">
-  View Profile
-</a>
-  `;
+        if (!mainPhoto || !thumbButtons.length) return;
 
-  const messageBtn = cg.user_id
-    ? `
-      <a class="button" href="./messages.html?user=${cg.user_id}">
-        Contact This Caregiver
-      </a>
-    `
-    : "";
+        thumbButtons.forEach((button) => {
+          button.addEventListener("click", () => {
+            const newPhoto = button.getAttribute("data-photo");
+            if (!newPhoto) return;
 
-  return `
-    <div class="caregiver-actions">
-      ${profileBtn}
-      ${messageBtn}
-    </div>
-  `;
-}
+            mainPhoto.src = newPhoto;
 
-      // -----------------------------------
-      // Render caregiver cards
-      // -----------------------------------
+            thumbButtons.forEach((btn) => btn.classList.remove("active"));
+            button.classList.add("active");
+          });
+        });
+      }
+
+      function buildActionButtons(cg) {
+        const profileBtn = `
+          <a class="button" href="./caregiver-profile.html?id=${cg.id}">
+            View Profile
+          </a>
+        `;
+
+        const messageBtn = cg.user_id
+          ? `
+            <a class="button" href="./messages.html?user=${cg.user_id}">
+              Contact This Caregiver
+            </a>
+          `
+          : "";
+
+        return `
+          <div class="caregiver-actions">
+            ${profileBtn}
+            ${messageBtn}
+          </div>
+        `;
+      }
+
       function renderCaregivers(list) {
         const container = document.getElementById("caregiversContainer");
         const countEl = document.getElementById("cgCount");
 
+        if (!container) return;
+
         if (countEl) {
-          countEl.innerHTML = `<strong>${list.length} caregiver(s) shown</strong>`;
+          countEl.textContent = `${list.length} caregiver profile${list.length === 1 ? "" : "s"} shown`;
         }
 
         container.innerHTML = "";
@@ -251,25 +273,23 @@ function buildActionButtons(cg){
           card.innerHTML = `
             ${buildPhotoGallery(cg)}
             <h3>${displayName}${careTypes ? ` — ${careTypes}` : ""}</h3>
-            <p><strong>Location:</strong> ${cg.location || ""}</p>
-            ${cg.years_experience ? `<p><strong>Experience:</strong> ${cg.years_experience}</p>` : ``}
-            ${cg.availability ? `<p><strong>Availability:</strong> ${cg.availability}</p>` : ``}
-            ${responseTime ? `<p><strong>Response Time:</strong> ${responseTime}</p>` : ``}
-            ${encounters ? `<p><strong>Confirmed Encounters:</strong> ${encounters}</p>` : ``}
+            ${cg.location ? `<p><strong>Location:</strong> ${cg.location}</p>` : ""}
+            ${cg.years_experience ? `<p><strong>Experience:</strong> ${cg.years_experience}</p>` : ""}
+            ${cg.availability ? `<p><strong>Availability:</strong> ${cg.availability}</p>` : ""}
+            ${responseTime ? `<p><strong>Response Time:</strong> ${responseTime}</p>` : ""}
+            ${encounters ? `<p><strong>Confirmed Encounters:</strong> ${encounters}</p>` : ""}
             ${getReviewSummary(cg.id)}
             ${getRecentReview(cg.id)}
             ${buildBadges(cg)}
-            <p>${cg.bio || ""}</p>
+            ${cg.bio ? `<p>${cg.bio}</p>` : ""}
             ${buildActionButtons(cg)}
           `;
 
           container.appendChild(card);
+          wireCardGallery(card);
         });
       }
 
-      // -----------------------------------
-      // Filter caregivers
-      // -----------------------------------
       function applyFilters() {
         const typeVal = (document.getElementById("cgFilterType")?.value || "").trim().toLowerCase();
         const locVal = (document.getElementById("cgFilterLocation")?.value || "").trim().toLowerCase();
@@ -302,7 +322,8 @@ function buildActionButtons(cg){
             cgBio.includes(keyVal) ||
             cgExp.includes(keyVal) ||
             badgeText.includes(keyVal) ||
-            careTypes.includes(keyVal);
+            careTypes.includes(keyVal) ||
+            cgLoc.includes(keyVal);
 
           return typeOk && locOk && keyOk;
         });
@@ -310,9 +331,6 @@ function buildActionButtons(cg){
         renderCaregivers(filtered);
       }
 
-      // -----------------------------------
-      // Load reviews
-      // -----------------------------------
       async function loadReviews() {
         const { data: reviewData, error: reviewError } = await window.db
           .from("caregiver_reviews")
@@ -335,9 +353,6 @@ function buildActionButtons(cg){
         });
       }
 
-      // -----------------------------------
-      // Load caregiver profiles
-      // -----------------------------------
       async function loadCaregiversOnce() {
         let tries = 0;
         while (!window.db && tries < 40) {
@@ -348,7 +363,9 @@ function buildActionButtons(cg){
         const container = document.getElementById("caregiversContainer");
 
         if (!window.db) {
-          container.innerHTML = "<p>Database connection not ready. Please refresh.</p>";
+          if (container) {
+            container.innerHTML = "<p>Database connection not ready. Please refresh.</p>";
+          }
           return;
         }
 
@@ -356,10 +373,13 @@ function buildActionButtons(cg){
           .from("caregiver_profiles")
           .select("*")
           .eq("is_active", true)
+          .eq("approval_status", "approved")
           .order("created_at", { ascending: false });
 
         if (error) {
-          container.innerHTML = "<p>Unable to load caregivers right now.</p>";
+          if (container) {
+            container.innerHTML = "<p>Unable to load caregivers right now.</p>";
+          }
           console.error(error);
           return;
         }
@@ -369,27 +389,37 @@ function buildActionButtons(cg){
         applyFilters();
       }
 
-      // -----------------------------------
-      // Wire filter controls
-      // -----------------------------------
       function wireEvents() {
-        document.getElementById("cgApplyBtn")?.addEventListener("click", applyFilters);
+        document.getElementById("cgApplyBtn")?.addEventListener("click", () => {
+          applyFilters();
+          document.getElementById("caregiverFilterSidebar")?.classList.remove("open");
+        });
 
         document.getElementById("cgClearBtn")?.addEventListener("click", () => {
           document.getElementById("cgFilterType").value = "";
           document.getElementById("cgFilterLocation").value = "";
           document.getElementById("cgFilterKeyword").value = "";
           applyFilters();
+          document.getElementById("caregiverFilterSidebar")?.classList.remove("open");
         });
 
         document.getElementById("cgFilterType")?.addEventListener("change", applyFilters);
         document.getElementById("cgFilterLocation")?.addEventListener("input", applyFilters);
         document.getElementById("cgFilterKeyword")?.addEventListener("input", applyFilters);
+
+        const filterSidebar = document.getElementById("caregiverFilterSidebar");
+        const filterOpen = document.getElementById("caregiverFilterOpen");
+        const filterClose = document.getElementById("caregiverFilterClose");
+
+        filterOpen?.addEventListener("click", () => {
+          filterSidebar?.classList.add("open");
+        });
+
+        filterClose?.addEventListener("click", () => {
+          filterSidebar?.classList.remove("open");
+        });
       }
 
-      // -----------------------------------
-      // Initialize page
-      // -----------------------------------
       window.addEventListener("DOMContentLoaded", () => {
         wireEvents();
         loadCaregiversOnce();
