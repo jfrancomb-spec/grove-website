@@ -272,7 +272,8 @@
 
           card.innerHTML = `
             ${buildPhotoGallery(cg)}
-            <h3>${displayName}${careTypes ? ` — ${careTypes}` : ""}</h3>
+            <h3>${displayName}</h3>
+                ${careTypes ? `<p><strong>Care Types:</strong> ${careTypes}</p>` : ""}
             ${cg.location ? `<p><strong>Location:</strong> ${cg.location}</p>` : ""}
             ${cg.years_experience ? `<p><strong>Experience:</strong> ${cg.years_experience}</p>` : ""}
             ${cg.availability ? `<p><strong>Availability:</strong> ${cg.availability}</p>` : ""}
