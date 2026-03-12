@@ -1261,3 +1261,21 @@ textarea:focus {
 .filter-count {
   margin-top: 4px;
 }
+.listing-card-header {
+  margin-bottom: 10px;
+}
+
+.listing-subtitle {
+  margin: 0 0 6px;
+  color: var(--text);
+}
+
+.listing-summary {
+  margin: 0 0 10px;
+  color: var(--muted);
+  font-size: 0.95rem;
+}
+
+.listing-bio {
+  margin-top: 10px;
+}
