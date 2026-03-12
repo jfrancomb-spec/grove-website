@@ -99,43 +99,27 @@
   <script src="./browse-helpers.js"></script>
   
   <script>
+function formatDisplayName(profile) {
+  return formatBrowseDisplayName(profile);
+}
+
+function getReviewSummary(familyId) {
+  return getBrowseReviewSummary(familyId, reviewMap);
+}
+
+function getRecentReview(familyId) {
+  return getBrowseRecentReview(familyId, reviewMap);
+}
+
+    
     let allFamilies = [];
     let reviewMap = {};
-
-    function formatDisplayName(profile) {
-      const first = profile.first_name || "";
-      const lastInitial = profile.last_name ? `${profile.last_name.charAt(0)}.` : "";
-      return `${first} ${lastInitial}`.trim();
-    }
 
     function careTypesNeededText(profile) {
       if (Array.isArray(profile.care_types_needed) && profile.care_types_needed.length) {
         return profile.care_types_needed.join(", ");
       }
       return "";
-    }
-
-    function getReviewSummary(familyId) {
-      const reviews = reviewMap[familyId] || [];
-      if (!reviews.length) return "";
-
-      const avg = reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length;
-
-      return `
-        <p><strong>Rating:</strong> ${buildStars(avg)} (${reviews.length} review${reviews.length === 1 ? "" : "s"})</p>
-      `;
-    }
-
-    function getRecentReview(familyId) {
-      const reviews = reviewMap[familyId] || [];
-      if (!reviews.length) return "";
-
-      const latest = reviews[0];
-      if (!latest.review_text) return "";
-
-      return `
-        <p><strong>Recent Review:</strong> “${latest.review_text}”</p>
-      `;
     }
 
     function buildHomeBadges(profile) {
