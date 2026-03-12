@@ -236,60 +236,81 @@
         `;
       }
 
-      function renderCaregivers(list) {
-        const container = document.getElementById("caregiversContainer");
-        const countEl = document.getElementById("cgCount");
+function renderCaregivers(list) {
+  const container = document.getElementById("caregiversContainer");
+  const countEl = document.getElementById("cgCount");
 
-        if (!container) return;
+  if (!container) return;
 
-        if (countEl) {
-          countEl.textContent = `${list.length} caregiver profile${list.length === 1 ? "" : "s"} shown`;
-        }
+  if (countEl) {
+    countEl.textContent = `${list.length} caregiver profile${list.length === 1 ? "" : "s"} shown`;
+  }
 
-        container.innerHTML = "";
+  container.innerHTML = "";
 
-        if (!list.length) {
-          container.innerHTML = "<p>No caregivers match those filters yet.</p>";
-          return;
-        }
+  if (!list.length) {
+    container.innerHTML = "<p>No caregivers match those filters yet.</p>";
+    return;
+  }
 
-        list.forEach((cg) => {
-          const card = document.createElement("div");
-          card.className = "card caregiver-card";
+  list.forEach((cg) => {
+    const card = document.createElement("div");
+    card.className = "card caregiver-card";
 
-          const displayName = formatDisplayName(cg);
-          const careTypes = careTypesText(cg);
+    const displayName = formatDisplayName(cg);
+    const careTypes = careTypesText(cg);
 
-          const responseTime =
-            cg.average_response_minutes != null
-              ? `${cg.average_response_minutes} min average response`
-              : "";
+    const responseTime =
+      cg.average_response_minutes != null
+        ? `${cg.average_response_minutes} min avg response`
+        : "";
 
-          const encounters =
-            cg.confirmed_encounters != null
-              ? `${cg.confirmed_encounters} confirmed encounter${cg.confirmed_encounters === 1 ? "" : "s"}`
-              : "";
+    const encounters =
+      cg.confirmed_encounters != null
+        ? `${cg.confirmed_encounters} confirmed encounter${cg.confirmed_encounters === 1 ? "" : "s"}`
+        : "";
 
-          card.innerHTML = `
-            ${buildPhotoGallery(cg)}
-            <h3>${displayName}</h3>
-                ${careTypes ? `<p><strong>Care Types:</strong> ${careTypes}</p>` : ""}
-            ${cg.location ? `<p><strong>Location:</strong> ${cg.location}</p>` : ""}
-            ${cg.years_experience ? `<p><strong>Experience:</strong> ${cg.years_experience}</p>` : ""}
-            ${cg.availability ? `<p><strong>Availability:</strong> ${cg.availability}</p>` : ""}
-            ${responseTime ? `<p><strong>Response Time:</strong> ${responseTime}</p>` : ""}
-            ${encounters ? `<p><strong>Confirmed Encounters:</strong> ${encounters}</p>` : ""}
-            ${getReviewSummary(cg.id)}
-            ${getRecentReview(cg.id)}
-            ${buildBadges(cg)}
-            ${cg.bio ? `<p>${cg.bio}</p>` : ""}
-            ${buildActionButtons(cg)}
-          `;
+    const summaryBits = [
+      cg.location || "",
+      cg.years_experience ? `${cg.years_experience} experience` : "",
+      responseTime
+    ].filter(Boolean);
 
-          container.appendChild(card);
-          wireCardGallery(card);
-        });
+    card.innerHTML = `
+      ${buildPhotoGallery(cg)}
+
+      <div class="listing-card-header">
+        <div>
+          <h3>${displayName}</h3>
+          ${careTypes ? `<p class="listing-subtitle"><strong>Care Types:</strong> ${careTypes}</p>` : ""}
+          ${summaryBits.length ? `<p class="listing-summary">${summaryBits.join(" • ")}</p>` : ""}
+        </div>
+      </div>
+
+      ${getReviewSummary(cg.id)}
+      ${encounters ? `<p><strong>Confirmed Encounters:</strong> ${encounters}</p>` : ""}
+      ${buildBadges(cg)}
+
+      ${
+        cg.availability
+          ? `<p><strong>Availability:</strong> ${cg.availability}</p>`
+          : ""
       }
+
+      ${
+        cg.bio
+          ? `<p class="listing-bio">${cg.bio}</p>`
+          : ""
+      }
+
+      ${getRecentReview(cg.id)}
+      ${buildActionButtons(cg)}
+    `;
+
+    container.appendChild(card);
+    wireCardGallery(card);
+  });
+}
 
       function applyFilters() {
         const typeVal = (document.getElementById("cgFilterType")?.value || "").trim().toLowerCase();
