@@ -337,31 +337,25 @@ function renderCaregivers(list) {
       function wireEvents() {
         document.getElementById("cgApplyBtn")?.addEventListener("click", () => {
           applyFilters();
-          document.getElementById("caregiverFilterSidebar")?.classList.remove("open");
+          closeBrowseSidebar("caregiverFilterSidebar");
         });
-
+      
         document.getElementById("cgClearBtn")?.addEventListener("click", () => {
           document.getElementById("cgFilterType").value = "";
           document.getElementById("cgFilterLocation").value = "";
           document.getElementById("cgFilterKeyword").value = "";
           applyFilters();
-          document.getElementById("caregiverFilterSidebar")?.classList.remove("open");
+          closeBrowseSidebar("caregiverFilterSidebar");
         });
-
+      
         document.getElementById("cgFilterType")?.addEventListener("change", applyFilters);
         document.getElementById("cgFilterLocation")?.addEventListener("input", applyFilters);
         document.getElementById("cgFilterKeyword")?.addEventListener("input", applyFilters);
-
-        const filterSidebar = document.getElementById("caregiverFilterSidebar");
-        const filterOpen = document.getElementById("caregiverFilterOpen");
-        const filterClose = document.getElementById("caregiverFilterClose");
-
-        filterOpen?.addEventListener("click", () => {
-          filterSidebar?.classList.add("open");
-        });
-
-        filterClose?.addEventListener("click", () => {
-          filterSidebar?.classList.remove("open");
+      
+        wireBrowseSidebar({
+          sidebarId: "caregiverFilterSidebar",
+          openButtonId: "caregiverFilterOpen",
+          closeButtonId: "caregiverFilterClose"
         });
       }
 
