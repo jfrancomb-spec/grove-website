@@ -96,44 +96,28 @@
   <script src="./browse-common.js"></script>
   
   <script>
+  function formatDisplayName(cg) {
+  return formatBrowseDisplayName(cg);
+}
+
+function getReviewSummary(cgId) {
+  return getBrowseReviewSummary(cgId, reviewMap);
+}
+
+function getRecentReview(cgId) {
+  return getBrowseRecentReview(cgId, reviewMap);
+}
+    
+    
     (function () {
       let allCaregivers = [];
       let reviewMap = {};
-
-      function formatDisplayName(cg) {
-        const first = cg.first_name || "";
-        const lastInitial = cg.last_name ? `${cg.last_name.charAt(0)}.` : "";
-        return `${first} ${lastInitial}`.trim();
-      }
 
       function careTypesText(cg) {
         if (Array.isArray(cg.care_types) && cg.care_types.length) {
           return cg.care_types.join(", ");
         }
         return cg.care_type || "";
-      }
-
-      function getReviewSummary(cgId) {
-        const reviews = reviewMap[cgId] || [];
-        if (!reviews.length) return "";
-
-        const avg = reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length;
-
-        return `
-          <p><strong>Rating:</strong> ${buildStars(avg)} (${reviews.length} review${reviews.length === 1 ? "" : "s"})</p>
-        `;
-      }
-
-      function getRecentReview(cgId) {
-        const reviews = reviewMap[cgId] || [];
-        if (!reviews.length) return "";
-
-        const latest = reviews[0];
-        if (!latest.review_text) return "";
-
-        return `
-          <p><strong>Recent Review:</strong> “${latest.review_text}”</p>
-        `;
       }
 
       function buildBadges(cg) {
