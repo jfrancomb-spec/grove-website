@@ -463,7 +463,7 @@ textarea:focus {
   margin: 0 0 8px;
 }
 
-.caregiver-actions {
+.profile-actions {
   display: flex;
   flex-direction: row;
   flex-wrap: wrap;
@@ -471,7 +471,7 @@ textarea:focus {
   margin-top: 16px;
 }
 
-.caregiver-actions .button {
+.profile-actions .button {
   width: auto;
   margin: 0;
   text-align: center;
@@ -486,11 +486,11 @@ textarea:focus {
     height: 200px;
   }
 
-  .caregiver-actions {
+  .profile-actions {
     flex-direction: column;
   }
 
-  .caregiver-actions .button {
+  .profile-actions .button {
     width: 100%;
   }
 }
@@ -729,14 +729,14 @@ textarea:focus {
 /* =====================================================
    Card action buttons
 ===================================================== */
-.caregiver-actions {
+.profile-actions {
   display: flex;
   flex-direction: column;
   gap: 8px;
   margin-top: 14px;
 }
 
-.caregiver-actions .button {
+.profile-actions .button {
   width: 100%;
   text-align: center;
 }
