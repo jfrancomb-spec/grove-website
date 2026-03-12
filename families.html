@@ -114,12 +114,6 @@
       return "";
     }
 
-    function buildStars(avg) {
-      if (!avg) return "";
-      const rounded = Math.round(avg * 10) / 10;
-      return `⭐ ${rounded}`;
-    }
-
     function getReviewSummary(familyId) {
       const reviews = reviewMap[familyId] || [];
       if (!reviews.length) return "";
@@ -161,56 +155,7 @@
     }
 
     function buildPhotoGallery(profile) {
-      const photos =
-        Array.isArray(profile.photo_urls) && profile.photo_urls.length
-          ? profile.photo_urls.filter(Boolean)
-          : (profile.photo_url ? [profile.photo_url] : []);
-
-      if (!photos.length) return "";
-
-      const displayName = formatDisplayName(profile);
-
-      return `
-        <div class="profile-photo-gallery">
-          <img
-            class="profile-main-photo"
-            src="${photos[0]}"
-            alt="${displayName}"
-            data-main-photo
-          >
-          <div class="profile-gallery">
-            ${photos.map((photo, index) => `
-              <button
-                type="button"
-                class="profile-thumb-button${index === 0 ? " active" : ""}"
-                data-photo="${photo}"
-                aria-label="View photo ${index + 1}"
-              >
-                <img src="${photo}" alt="Family photo ${index + 1}">
-              </button>
-            `).join("")}
-          </div>
-        </div>
-      `;
-    }
-
-    function wireCardGallery(card) {
-      const mainPhoto = card.querySelector("[data-main-photo]");
-      const thumbButtons = card.querySelectorAll(".profile-thumb-button");
-
-      if (!mainPhoto || !thumbButtons.length) return;
-
-      thumbButtons.forEach((button) => {
-        button.addEventListener("click", () => {
-          const newPhoto = button.getAttribute("data-photo");
-          if (!newPhoto) return;
-
-          mainPhoto.src = newPhoto;
-
-          thumbButtons.forEach((btn) => btn.classList.remove("active"));
-          button.classList.add("active");
-        });
-      });
+      return buildBrowsePhotoGallery(profile, formatDisplayName(profile), "Family");
     }
 
     function buildActionButtons(profile) {
@@ -236,86 +181,58 @@
       `;
     }
 
-   function renderFamilies(list) {
-  const container = document.getElementById("familiesContainer");
-  const countEl = document.getElementById("famCount");
-
-  if (!container) return;
-
-  if (countEl) {
-    countEl.textContent = `${list.length} family profile${list.length === 1 ? "" : "s"} shown`;
-  }
-
-  container.innerHTML = "";
-
-  if (!list.length) {
-    container.innerHTML = "<p>No families match those filters yet.</p>";
-    return;
-  }
-
-  list.forEach((profile) => {
-    const card = document.createElement("div");
-    card.className = "card profile-card";
-
-    const displayName = formatDisplayName(profile);
-    const careTypesNeeded = careTypesNeededText(profile);
-
-    const responseTime =
-      profile.average_response_minutes != null
-        ? `${profile.average_response_minutes} min avg response`
-        : "";
-
-    const encounters =
-      profile.confirmed_encounters != null
-        ? `${profile.confirmed_encounters} confirmed encounter${profile.confirmed_encounters === 1 ? "" : "s"}`
-        : "";
-
-    const summaryBits = [
-      profile.location || "",
-      careTypesNeeded ? `Needs ${careTypesNeeded}` : "",
-      responseTime
-    ].filter(Boolean);
-
-    card.innerHTML = `
-      ${buildPhotoGallery(profile)}
-
-      <div class="listing-card-header">
-        <div>
-          <h3>${displayName}</h3>
-          ${summaryBits.length ? `<p class="listing-summary">${summaryBits.join(" • ")}</p>` : ""}
-        </div>
-      </div>
-
-      ${getReviewSummary(profile.id)}
-      ${encounters ? `<p><strong>Confirmed Encounters:</strong> ${encounters}</p>` : ""}
-      ${buildHomeBadges(profile)}
-
-      ${
-        profile.household_description
-          ? `<p class="listing-bio">${profile.household_description}</p>`
-          : ""
-      }
-
-      ${
-        profile.children_description
-          ? `<p><strong>Children:</strong> ${profile.children_description}</p>`
-          : ""
-      }
-
-      ${
-        profile.pets_description
-          ? `<p><strong>Pets:</strong> ${profile.pets_description}</p>`
-          : ""
-      }
-
-      ${getRecentReview(profile.id)}
-      ${buildActionButtons(profile)}
-    `;
-
-    container.appendChild(card);
-    wireCardGallery(card);
-  });
-}
+    function renderFamilies(list) {
+      const container = document.getElementById("familiesContainer");
+      const countEl = document.getElementById("famCount");
+    
+      renderBrowseCards({
+        list,
+        container,
+        countEl,
+        countLabel: "family profile",
+        emptyMessage: "No families match those filters yet.",
+        renderCard: (profile) => {
+          const displayName = formatDisplayName(profile);
+          const careTypesNeeded = careTypesNeededText(profile);
+    
+          const responseTime =
+            profile.average_response_minutes != null
+              ? `${profile.average_response_minutes} min avg response`
+              : "";
+    
+          const encounters =
+            profile.confirmed_encounters != null
+              ? `${profile.confirmed_encounters} confirmed encounter${profile.confirmed_encounters === 1 ? "" : "s"}`
+              : "";
+    
+          const summaryBits = [
+            profile.location || "",
+            careTypesNeeded ? `Needs ${careTypesNeeded}` : "",
+            responseTime
+          ].filter(Boolean);
+    
+          return `
+            ${buildPhotoGallery(profile)}
+    
+            <div class="listing-card-header">
+              <div>
+                <h3>${displayName}</h3>
+                ${summaryBits.length ? `<p class="listing-summary">${summaryBits.join(" • ")}</p>` : ""}
+              </div>
+            </div>
+    
+            ${getReviewSummary(profile.id)}
+            ${encounters ? `<p><strong>Confirmed Encounters:</strong> ${encounters}</p>` : ""}
+            ${buildHomeBadges(profile)}
+            ${profile.household_description ? `<p class="listing-bio">${profile.household_description}</p>` : ""}
+            ${profile.children_description ? `<p><strong>Children:</strong> ${profile.children_description}</p>` : ""}
+            ${profile.pets_description ? `<p><strong>Pets:</strong> ${profile.pets_description}</p>` : ""}
+            ${getRecentReview(profile.id)}
+            ${buildActionButtons(profile)}
+          `;
+        }
+      });
+    }
 
     function applyFilters() {
       const typeVal = (document.getElementById("famFilterType")?.value || "").trim().toLowerCase();
@@ -417,7 +334,7 @@
 function wireEvents() {
   document.getElementById("famApplyBtn")?.addEventListener("click", () => {
     applyFilters();
-    document.getElementById("familyFilterSidebar")?.classList.remove("open");
+    closeBrowseSidebar("familyFilterSidebar");
   });
 
   document.getElementById("famClearBtn")?.addEventListener("click", () => {
@@ -425,30 +342,19 @@ function wireEvents() {
     document.getElementById("famFilterLocation").value = "";
     document.getElementById("famFilterKeyword").value = "";
     applyFilters();
-    document.getElementById("familyFilterSidebar")?.classList.remove("open");
+    closeBrowseSidebar("familyFilterSidebar");
   });
 
   document.getElementById("famFilterType")?.addEventListener("change", applyFilters);
   document.getElementById("famFilterLocation")?.addEventListener("input", applyFilters);
   document.getElementById("famFilterKeyword")?.addEventListener("input", applyFilters);
 
-  const filterSidebar = document.getElementById("familyFilterSidebar");
-  const filterOpen = document.getElementById("familyFilterOpen");
-  const filterClose = document.getElementById("familyFilterClose");
-
-  filterOpen?.addEventListener("click", () => {
-    filterSidebar?.classList.add("open");
-  });
-
-  filterClose?.addEventListener("click", () => {
-    filterSidebar?.classList.remove("open");
+  wireBrowseSidebar({
+    sidebarId: "familyFilterSidebar",
+    openButtonId: "familyFilterOpen",
+    closeButtonId: "familyFilterClose"
   });
 }
-
-window.addEventListener("DOMContentLoaded", () => {
-  wireEvents();
-  loadFamiliesOnce();
-});
 
   </script>
 </body>
