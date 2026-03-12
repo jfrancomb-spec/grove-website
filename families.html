@@ -235,58 +235,86 @@
       `;
     }
 
-    function renderFamilies(list) {
-      const container = document.getElementById("familiesContainer");
-      const countEl = document.getElementById("famCount");
+   function renderFamilies(list) {
+  const container = document.getElementById("familiesContainer");
+  const countEl = document.getElementById("famCount");
 
-      if (!container) return;
+  if (!container) return;
 
-      if (countEl) {
-countEl.textContent = `${list.length} family profile${list.length === 1 ? "" : "s"} shown`;
-      }
+  if (countEl) {
+    countEl.textContent = `${list.length} family profile${list.length === 1 ? "" : "s"} shown`;
+  }
 
-      container.innerHTML = "";
+  container.innerHTML = "";
 
-      if (!list.length) {
-        container.innerHTML = "<p>No families match those filters yet.</p>";
-        return;
-      }
+  if (!list.length) {
+    container.innerHTML = "<p>No families match those filters yet.</p>";
+    return;
+  }
 
-      list.forEach((profile) => {
-        const card = document.createElement("div");
-        card.className = "card caregiver-card";
+  list.forEach((profile) => {
+    const card = document.createElement("div");
+    card.className = "card caregiver-card";
 
-        const displayName = formatDisplayName(profile);
-        const careTypesNeeded = careTypesNeededText(profile);
+    const displayName = formatDisplayName(profile);
+    const careTypesNeeded = careTypesNeededText(profile);
 
-        const responseTime =
-          profile.average_response_minutes != null
-            ? `${profile.average_response_minutes} min average response`
-            : "";
+    const responseTime =
+      profile.average_response_minutes != null
+        ? `${profile.average_response_minutes} min avg response`
+        : "";
 
-        const encounters =
-          profile.confirmed_encounters != null
-            ? `${profile.confirmed_encounters} confirmed encounter${profile.confirmed_encounters === 1 ? "" : "s"}`
-            : "";
+    const encounters =
+      profile.confirmed_encounters != null
+        ? `${profile.confirmed_encounters} confirmed encounter${profile.confirmed_encounters === 1 ? "" : "s"}`
+        : "";
 
-        card.innerHTML = `
-          ${buildPhotoGallery(profile)}
+    const summaryBits = [
+      profile.location || "",
+      careTypesNeeded ? `Needs ${careTypesNeeded}` : "",
+      responseTime
+    ].filter(Boolean);
+
+    card.innerHTML = `
+      ${buildPhotoGallery(profile)}
+
+      <div class="listing-card-header">
+        <div>
           <h3>${displayName}</h3>
-          ${profile.location ? `<p><strong>Location:</strong> ${profile.location}</p>` : ""}
-          ${careTypesNeeded ? `<p><strong>Care Needed:</strong> ${careTypesNeeded}</p>` : ""}
-          ${responseTime ? `<p><strong>Response Time:</strong> ${responseTime}</p>` : ""}
-          ${encounters ? `<p><strong>Confirmed Encounters:</strong> ${encounters}</p>` : ""}
-          ${getReviewSummary(profile.id)}
-          ${getRecentReview(profile.id)}
-          ${buildHomeBadges(profile)}
-          ${profile.household_description ? `<p>${profile.household_description}</p>` : ""}
-          ${buildActionButtons(profile)}
-        `;
+          ${summaryBits.length ? `<p class="listing-summary">${summaryBits.join(" • ")}</p>` : ""}
+        </div>
+      </div>
 
-        container.appendChild(card);
-        wireCardGallery(card);
-      });
-    }
+      ${getReviewSummary(profile.id)}
+      ${encounters ? `<p><strong>Confirmed Encounters:</strong> ${encounters}</p>` : ""}
+      ${buildHomeBadges(profile)}
+
+      ${
+        profile.household_description
+          ? `<p class="listing-bio">${profile.household_description}</p>`
+          : ""
+      }
+
+      ${
+        profile.children_description
+          ? `<p><strong>Children:</strong> ${profile.children_description}</p>`
+          : ""
+      }
+
+      ${
+        profile.pets_description
+          ? `<p><strong>Pets:</strong> ${profile.pets_description}</p>`
+          : ""
+      }
+
+      ${getRecentReview(profile.id)}
+      ${buildActionButtons(profile)}
+    `;
+
+    container.appendChild(card);
+    wireCardGallery(card);
+  });
+}
 
     function applyFilters() {
       const typeVal = (document.getElementById("famFilterType")?.value || "").trim().toLowerCase();
