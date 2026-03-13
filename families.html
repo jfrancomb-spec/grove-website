@@ -114,6 +114,107 @@ function getRecentReview(familyId) {
   return getBrowseRecentReview(familyId, reviewMap);
 }
 
+const familyReviewsByProfileId = {};
+
+function buildFamilyBadges(profile) {
+  const badges = [];
+
+  if (profile.has_dogs) badges.push("Has Dogs");
+  if (profile.has_cats) badges.push("Has Cats");
+  if (profile.driving_needed) badges.push("Driving Needed");
+  if (profile.smoking_in_home) badges.push("Smoking in Home");
+
+  return badges;
+}
+
+function buildFamilySummary(profile) {
+  const parts = [];
+
+  if (Array.isArray(profile.care_types_needed) && profile.care_types_needed.length) {
+    parts.push(`Needs: ${profile.care_types_needed.join(", ")}`);
+  }
+
+  if (profile.household_description) {
+    parts.push(profile.household_description);
+  } else if (profile.bio) {
+    parts.push(profile.bio);
+  }
+
+  return truncateText(parts.filter(Boolean).join(" • "), 160);
+}
+
+const familyBrowseConfig = {
+  getDisplayName(profile) {
+    return formatBrowseDisplayName(profile);
+  },
+
+  getMetaLine(profile) {
+    const parts = [];
+
+    if (profile.location) parts.push(profile.location);
+
+    const responseText = formatResponseTime(profile.average_response_minutes);
+    if (responseText) parts.push(responseText);
+
+    return parts.join(" • ");
+  },
+
+  getSummary(profile) {
+    return buildFamilySummary(profile);
+  },
+
+  getBadges(profile) {
+    return buildFamilyBadges(profile);
+  },
+
+  getActions(profile) {
+    return [
+      {
+        label: "View Family",
+        href: `family.html?id=${profile.id}`,
+        className: "button button-family"
+      }
+    ];
+  },
+
+  getReviewSummary(profile) {
+    const reviews = familyReviewsByProfileId[profile.id] || [];
+    return getBrowseReviewSummary(reviews);
+  },
+
+  getRecentReview(profile) {
+    const reviews = familyReviewsByProfileId[profile.id] || [];
+    return truncateText(getBrowseRecentReview(reviews), 120);
+  },
+
+  getAverageRating(profile) {
+    const reviews = familyReviewsByProfileId[profile.id] || [];
+    const ratings = reviews
+      .map(review => Number(review.rating))
+      .filter(rating => !Number.isNaN(rating));
+
+    if (!ratings.length) return null;
+
+    return ratings.reduce((sum, rating) => sum + rating, 0) / ratings.length;
+  }
+};
+
+function normalizeFamilyProfile(row) {
+  return {
+    ...row,
+    profile_type: "family"
+  };
+}
+
+function renderFamilyResults(rows) {
+  const normalized = rows.map(normalizeFamilyProfile);
+  const container = document.querySelector("#family-results");
+  const countEl = document.querySelector("#browse-count");
+
+  renderBrowseCards(container, normalized, familyBrowseConfig);
+  setBrowseCount(countEl, normalized.length, "families");
+}
+    
     function careTypesNeededText(profile) {
       if (Array.isArray(profile.care_types_needed) && profile.care_types_needed.length) {
         return profile.care_types_needed.join(", ");
