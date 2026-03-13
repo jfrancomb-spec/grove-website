@@ -1,8 +1,14 @@
-function buildBrowsePhotoGallery(profile, displayName, photoLabel) {
-  const photos =
-    Array.isArray(profile.photo_urls) && profile.photo_urls.length
-      ? profile.photo_urls.filter(Boolean)
-      : (profile.photo_url ? [profile.photo_url] : []);
+function buildStars(rating) {
+  const numericRating = Number(rating);
+
+  if (Number.isNaN(numericRating) || numericRating <= 0) return "";
+
+  const fullStars = Math.round(numericRating);
+  return "★".repeat(fullStars) + "☆".repeat(5 - fullStars);
+}
+
+function buildBrowsePhotoGallery(profile, displayName) {
+  const photos = getProfilePhotoArray(profile);
 
   if (!photos.length) return "";
 
@@ -20,9 +26,9 @@ function buildBrowsePhotoGallery(profile, displayName, photoLabel) {
             type="button"
             class="profile-thumb-button${index === 0 ? " active" : ""}"
             data-photo="${photo}"
-            aria-label="View ${photoLabel} photo ${index + 1}"
+            aria-label="View photo ${index + 1}"
           >
-            <img src="${photo}" alt="${photoLabel} photo ${index + 1}">
+            <img src="${photo}" alt="${displayName} photo ${index + 1}">
           </button>
         `).join("")}
       </div>
@@ -30,81 +36,171 @@ function buildBrowsePhotoGallery(profile, displayName, photoLabel) {
   `;
 }
 
-function wireBrowseCardGallery(card) {
-  const mainPhoto = card.querySelector("[data-main-photo]");
-  const thumbButtons = card.querySelectorAll(".profile-thumb-button");
+function buildProfileBadges(badges) {
+  if (!Array.isArray(badges) || !badges.length) return "";
 
-  if (!mainPhoto || !thumbButtons.length) return;
+  return `
+    <div class="profile-badges">
+      ${badges.map(badge => `<span class="profile-badge">${badge}</span>`).join("")}
+    </div>
+  `;
+}
 
-  thumbButtons.forEach((button) => {
-    button.addEventListener("click", () => {
-      const newPhoto = button.getAttribute("data-photo");
-      if (!newPhoto) return;
+function buildProfileReviewBlock(reviewSummary, recentReview, averageRating) {
+  if (!reviewSummary && !recentReview) return "";
 
-      mainPhoto.src = newPhoto;
+  return `
+    <div class="profile-review-block">
+      ${reviewSummary ? `
+        <div class="profile-review-summary">
+          ${averageRating ? `<span class="profile-stars">${buildStars(averageRating)}</span>` : ""}
+          <span>${reviewSummary}</span>
+        </div>
+      ` : ""}
+      ${recentReview ? `
+        <div class="profile-recent-review">“${recentReview}”</div>
+      ` : ""}
+    </div>
+  `;
+}
 
-      thumbButtons.forEach((btn) => btn.classList.remove("active"));
-      button.classList.add("active");
+function buildProfileActions(actions) {
+  if (!Array.isArray(actions) || !actions.length) return "";
+
+  return `
+    <div class="profile-actions">
+      ${actions.map(action => `
+        <a class="${action.className || "button"}" href="${action.href}">
+          ${action.label}
+        </a>
+      `).join("")}
+    </div>
+  `;
+}
+
+function buildProfileCardShell(profile, config) {
+  const displayName = config.getDisplayName(profile);
+  const summary = config.getSummary(profile);
+  const badges = config.getBadges(profile);
+  const actions = config.getActions(profile);
+  const reviewSummary = config.getReviewSummary(profile);
+  const recentReview = config.getRecentReview(profile);
+  const averageRating = config.getAverageRating ? config.getAverageRating(profile) : null;
+  const metaLine = config.getMetaLine ? config.getMetaLine(profile) : "";
+
+  return `
+    <article class="profile-card">
+      ${buildBrowsePhotoGallery(profile, displayName)}
+
+      <div class="profile-card-body">
+        <div class="profile-card-header">
+          <h3 class="profile-name">${displayName}</h3>
+          ${metaLine ? `<div class="profile-meta">${metaLine}</div>` : ""}
+        </div>
+
+        ${summary ? `<p class="profile-summary">${summary}</p>` : ""}
+
+        ${buildProfileBadges(badges)}
+
+        ${buildProfileReviewBlock(reviewSummary, recentReview, averageRating)}
+
+        ${buildProfileActions(actions)}
+      </div>
+    </article>
+  `;
+}
+
+function renderBrowseCards(container, items, config) {
+  if (!container) return;
+
+  if (!Array.isArray(items) || !items.length) {
+    container.innerHTML = `
+      <div class="empty-state">
+        <p>No results found.</p>
+      </div>
+    `;
+    return;
+  }
+
+  container.innerHTML = items
+    .map(item => buildProfileCardShell(item, config))
+    .join("");
+
+  wireBrowseCardGallery(container);
+}
+
+function wireBrowseCardGallery(container = document) {
+  const galleries = container.querySelectorAll(".profile-photo-gallery");
+
+  galleries.forEach(gallery => {
+    const mainPhoto = gallery.querySelector("[data-main-photo]");
+    const buttons = gallery.querySelectorAll(".profile-thumb-button");
+
+    buttons.forEach(button => {
+      button.addEventListener("click", () => {
+        const newPhoto = button.dataset.photo;
+        if (!mainPhoto || !newPhoto) return;
+
+        mainPhoto.src = newPhoto;
+
+        buttons.forEach(btn => btn.classList.remove("active"));
+        button.classList.add("active");
+      });
     });
   });
 }
 
-function setBrowseCount(countEl, count, label) {
-  if (!countEl) return;
-  countEl.textContent = `${count} ${label}${count === 1 ? "" : "s"} shown`;
-}
+function setBrowseCount(elementOrSelector, count, label = "results") {
+  const element =
+    typeof elementOrSelector === "string"
+      ? document.querySelector(elementOrSelector)
+      : elementOrSelector;
 
-function renderBrowseCards({
-  list,
-  container,
-  countEl,
-  countLabel,
-  emptyMessage,
-  renderCard
-}) {
-  if (!container) return;
+  if (!element) return;
 
-  setBrowseCount(countEl, list.length, countLabel);
-  container.innerHTML = "";
-
-  if (!list.length) {
-    container.innerHTML = `<p>${emptyMessage}</p>`;
-    return;
-  }
-
-  list.forEach((item) => {
-    const card = document.createElement("div");
-    card.className = "card profile-card";
-    card.innerHTML = renderCard(item);
-    container.appendChild(card);
-    wireBrowseCardGallery(card);
-  });
+  element.textContent = `${count} ${label}`;
 }
 
 function wireBrowseSidebar({
-  sidebarId,
-  openButtonId,
-  closeButtonId
-}) {
-  const sidebar = document.getElementById(sidebarId);
-  const openButton = document.getElementById(openButtonId);
-  const closeButton = document.getElementById(closeButtonId);
+  openButtonSelector = "[data-open-filters]",
+  closeButtonSelector = "[data-close-filters]",
+  sidebarSelector = ".filter-sidebar",
+  overlaySelector = ".filter-overlay"
+} = {}) {
+  const openButton = document.querySelector(openButtonSelector);
+  const closeButton = document.querySelector(closeButtonSelector);
+  const sidebar = document.querySelector(sidebarSelector);
+  const overlay = document.querySelector(overlaySelector);
 
-  openButton?.addEventListener("click", () => {
-    sidebar?.classList.add("open");
-  });
+  if (!sidebar) return;
 
-  closeButton?.addEventListener("click", () => {
-    sidebar?.classList.remove("open");
-  });
+  const openSidebar = () => {
+    sidebar.classList.add("open");
+    if (overlay) overlay.classList.add("open");
+    document.body.classList.add("filters-open");
+  };
+
+  const closeSidebar = () => {
+    sidebar.classList.remove("open");
+    if (overlay) overlay.classList.remove("open");
+    document.body.classList.remove("filters-open");
+  };
+
+  if (openButton) openButton.addEventListener("click", openSidebar);
+  if (closeButton) closeButton.addEventListener("click", closeSidebar);
+  if (overlay) overlay.addEventListener("click", closeSidebar);
+
+  return { openSidebar, closeSidebar };
 }
 
-function closeBrowseSidebar(sidebarId) {
-  document.getElementById(sidebarId)?.classList.remove("open");
-}
+function closeBrowseSidebar({
+  sidebarSelector = ".filter-sidebar",
+  overlaySelector = ".filter-overlay"
+} = {}) {
+  const sidebar = document.querySelector(sidebarSelector);
+  const overlay = document.querySelector(overlaySelector);
 
-function buildStars(avg) {
-  if (!avg) return "";
-  const rounded = Math.round(avg * 10) / 10;
-  return `⭐ ${rounded}`;
+  if (sidebar) sidebar.classList.remove("open");
+  if (overlay) overlay.classList.remove("open");
+  document.body.classList.remove("filters-open");
 }
