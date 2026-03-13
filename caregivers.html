@@ -114,6 +114,114 @@ function getReviewSummary(cgId) {
 function getRecentReview(cgId) {
   return getBrowseRecentReview(cgId, reviewMap);
 }
+
+
+const caregiverReviewsByProfileId = {};
+
+function buildCaregiverBadges(profile) {
+  const badges = [];
+
+  if (profile.cpr_certified) badges.push("CPR Certified");
+  if (profile.has_drivers_license) badges.push("Driver’s License");
+  if (profile.non_smoker) badges.push("Non-smoker");
+  if (profile.non_vaper) badges.push("Non-vaper");
+  if (profile.comfortable_with_dogs) badges.push("Dog Friendly");
+  if (profile.comfortable_with_cats) badges.push("Cat Friendly");
+
+  return badges;
+}
+
+function buildCaregiverSummary(profile) {
+  const parts = [];
+
+  if (profile.years_experience) {
+    parts.push(`${profile.years_experience}+ years experience`);
+  }
+
+  if (Array.isArray(profile.care_types) && profile.care_types.length) {
+    parts.push(profile.care_types.join(", "));
+  } else if (profile.care_type) {
+    parts.push(profile.care_type);
+  }
+
+  if (profile.availability) {
+    parts.push(profile.availability);
+  }
+
+  return truncateText(parts.filter(Boolean).join(" • "), 160);
+}
+
+const caregiverBrowseConfig = {
+  getDisplayName(profile) {
+    return formatBrowseDisplayName(profile);
+  },
+
+  getMetaLine(profile) {
+    const parts = [];
+
+    if (profile.location) parts.push(profile.location);
+
+    const responseText = formatResponseTime(profile.average_response_minutes);
+    if (responseText) parts.push(responseText);
+
+    return parts.join(" • ");
+  },
+
+  getSummary(profile) {
+    return buildCaregiverSummary(profile);
+  },
+
+  getBadges(profile) {
+    return buildCaregiverBadges(profile);
+  },
+
+  getActions(profile) {
+    return [
+      {
+        label: "View Profile",
+        href: `caregiver.html?id=${profile.id}`,
+        className: "button button-caregiver"
+      }
+    ];
+  },
+
+  getReviewSummary(profile) {
+    const reviews = caregiverReviewsByProfileId[profile.id] || [];
+    return getBrowseReviewSummary(reviews);
+  },
+
+  getRecentReview(profile) {
+    const reviews = caregiverReviewsByProfileId[profile.id] || [];
+    return truncateText(getBrowseRecentReview(reviews), 120);
+  },
+
+  getAverageRating(profile) {
+    const reviews = caregiverReviewsByProfileId[profile.id] || [];
+    const ratings = reviews
+      .map(review => Number(review.rating))
+      .filter(rating => !Number.isNaN(rating));
+
+    if (!ratings.length) return null;
+
+    return ratings.reduce((sum, rating) => sum + rating, 0) / ratings.length;
+  }
+};
+
+function normalizeCaregiverProfile(row) {
+  return {
+    ...row,
+    profile_type: "caregiver"
+  };
+}
+
+function renderCaregiverResults(rows) {
+  const normalized = rows.map(normalizeCaregiverProfile);
+  const container = document.querySelector("#caregiver-results");
+  const countEl = document.querySelector("#browse-count");
+
+  renderBrowseCards(container, normalized, caregiverBrowseConfig);
+  setBrowseCount(countEl, normalized.length, "caregivers");
+}
       
       function careTypesText(cg) {
         if (Array.isArray(cg.care_types) && cg.care_types.length) {
