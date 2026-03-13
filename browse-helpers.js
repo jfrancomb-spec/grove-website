@@ -1,28 +1,83 @@
 function formatBrowseDisplayName(profile) {
-  const first = profile.first_name || "";
-  const lastInitial = profile.last_name ? `${profile.last_name.charAt(0)}.` : "";
-  return `${first} ${lastInitial}`.trim();
+  if (profile.name_display && profile.name_display.trim()) {
+    return profile.name_display.trim();
+  }
+
+  const first = profile.first_name ? profile.first_name.trim() : "";
+  const last = profile.last_name ? profile.last_name.trim() : "";
+
+  if (first && last) return `${first} ${last}`;
+  if (first) return first;
+  if (last) return last;
+
+  return "Profile";
 }
 
-function getBrowseReviewSummary(entityId, reviewMap) {
-  const reviews = reviewMap[entityId] || [];
-  if (!reviews.length) return "";
+function getProfilePhotoArray(profile) {
+  const photos =
+    Array.isArray(profile.photo_urls) && profile.photo_urls.length
+      ? profile.photo_urls.filter(Boolean)
+      : (profile.photo_url ? [profile.photo_url] : []);
 
-  const avg = reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length;
-
-  return `
-    <p><strong>Rating:</strong> ${buildStars(avg)} (${reviews.length} review${reviews.length === 1 ? "" : "s"})</p>
-  `;
+  return photos;
 }
 
-function getBrowseRecentReview(entityId, reviewMap) {
-  const reviews = reviewMap[entityId] || [];
-  if (!reviews.length) return "";
+function getBrowseReviewSummary(reviews) {
+  if (!Array.isArray(reviews) || !reviews.length) {
+    return "No reviews yet";
+  }
 
-  const latest = reviews[0];
-  if (!latest.review_text) return "";
+  const ratings = reviews
+    .map(review => Number(review.rating))
+    .filter(rating => !Number.isNaN(rating));
 
-  return `
-    <p><strong>Recent Review:</strong> “${latest.review_text}”</p>
-  `;
+  if (!ratings.length) {
+    return `${reviews.length} review${reviews.length === 1 ? "" : "s"}`;
+  }
+
+  const average = ratings.reduce((sum, rating) => sum + rating, 0) / ratings.length;
+
+  return `${average.toFixed(1)} (${reviews.length} review${reviews.length === 1 ? "" : "s"})`;
+}
+
+function getBrowseRecentReview(reviews) {
+  if (!Array.isArray(reviews) || !reviews.length) return "";
+
+  const sorted = [...reviews].sort((a, b) => {
+    const aTime = new Date(a.created_at || 0).getTime();
+    const bTime = new Date(b.created_at || 0).getTime();
+    return bTime - aTime;
+  });
+
+  const latest = sorted[0];
+  const text = (latest.review_text || latest.review || "").trim();
+
+  return text || "";
+}
+
+function truncateText(text, maxLength = 140) {
+  if (!text) return "";
+  if (text.length <= maxLength) return text;
+  return `${text.slice(0, maxLength).trim()}…`;
+}
+
+function joinList(items, separator = ", ") {
+  if (!Array.isArray(items)) return "";
+  return items.filter(Boolean).join(separator);
+}
+
+function formatResponseTime(minutes) {
+  const value = Number(minutes);
+
+  if (Number.isNaN(value) || value <= 0) return "";
+
+  if (value < 60) {
+    return `${value} min response`;
+  }
+
+  const hours = Math.round((value / 60) * 10) / 10;
+
+  if (hours === 1) return "1 hr response";
+
+  return `${hours} hr response`;
 }
