@@ -92,11 +92,18 @@
   <div id="footer-placeholder"></div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-  <script src="./app.js"></script>
-  <script src="./browse-common.js"></script>
+<script src="./app.js"></script>
+<script src="./browse-common.js"></script>
+<script src="./browse-helpers.js"></script>
   
   <script>
-  function formatDisplayName(cg) {
+  
+    
+    (function () {
+      let allCaregivers = [];
+      let reviewMap = {};
+
+function formatDisplayName(cg) {
   return formatBrowseDisplayName(cg);
 }
 
@@ -107,12 +114,7 @@ function getReviewSummary(cgId) {
 function getRecentReview(cgId) {
   return getBrowseRecentReview(cgId, reviewMap);
 }
-    
-    
-    (function () {
-      let allCaregivers = [];
-      let reviewMap = {};
-
+      
       function careTypesText(cg) {
         if (Array.isArray(cg.care_types) && cg.care_types.length) {
           return cg.care_types.join(", ");
