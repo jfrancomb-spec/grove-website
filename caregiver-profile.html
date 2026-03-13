@@ -10,28 +10,25 @@
 </head>
 
 <body>
-  <!-- Shared header -->
   <div id="header-placeholder"></div>
 
   <main>
-    <!-- Hero -->
     <div class="hero">
       <h1>Caregiver Profile</h1>
       <div class="subtitle" id="profileSubtitle">Loading caregiver profile...</div>
     </div>
 
-    <!-- Profile content -->
     <section>
-      <div class="form-card" id="profileCard" style="display:none;">
+      <div class="form-card" id="profileCard" style="display: none;">
         <div id="profileContent"></div>
 
-        <div class="caregiver-actions mt-22">
-          <a class="button" id="contactBtn" href="#">Contact This Caregiver</a>
+        <div class="profile-actions mt-22" id="profileActions">
+          <a class="button button-caregiver" id="contactBtn" href="#">Contact This Caregiver</a>
           <a class="button" href="./caregivers.html">Back to Caregivers</a>
         </div>
       </div>
 
-      <div id="profileError" style="display:none;">
+      <div id="profileError" style="display: none;">
         <p>Unable to load this caregiver profile.</p>
         <p class="mt-16">
           <a href="./caregivers.html">← Back to Caregivers</a>
@@ -40,57 +37,49 @@
     </section>
   </main>
 
-  <!-- Shared footer -->
   <div id="footer-placeholder"></div>
 
-  <!-- Scripts -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
   <script src="./app.js"></script>
+  <script src="./browse-helpers.js"></script>
 
-  <!-- Page script -->
   <script>
     (function () {
-      // -----------------------------------
-      // Page state
-      // -----------------------------------
       let currentCaregiver = null;
       let currentReviews = [];
       let currentPhotoIndex = 0;
 
-      // -----------------------------------
-      // Display helpers
-      // -----------------------------------
-      function formatDisplayName(cg) {
-        const first = cg.first_name || "";
-        const lastInitial = cg.last_name ? `${cg.last_name.charAt(0)}.` : "";
-        return `${first} ${lastInitial}`.trim();
+      function formatDisplayName(profile) {
+        return formatBrowseDisplayName(profile);
       }
 
-      function careTypesText(cg) {
-        if (Array.isArray(cg.care_types) && cg.care_types.length) {
-          return cg.care_types.join(", ");
+      function getCareTypesText(profile) {
+        if (Array.isArray(profile.care_types) && profile.care_types.length) {
+          return profile.care_types.join(", ");
         }
-        return cg.care_type || "";
+
+        return profile.care_type || "";
       }
 
-      function buildStars(avg) {
-        if (!avg) return "";
-        const rounded = Math.round(avg * 10) / 10;
-        return `⭐ ${rounded}`;
+      function getProfilePhotos(profile) {
+        return getProfilePhotoArray(profile);
       }
 
-      // -----------------------------------
-      // Badge helpers
-      // -----------------------------------
-      function buildBadges(cg) {
+      function buildStarsLabel(avgRating) {
+        const numeric = Number(avgRating);
+        if (Number.isNaN(numeric) || numeric <= 0) return "";
+        return `⭐ ${numeric.toFixed(1)}`;
+      }
+
+      function buildCaregiverBadges(profile) {
         const badges = [];
 
-        if (cg.has_drivers_license) badges.push("Driver’s License");
-        if (cg.cpr_certified) badges.push("CPR Certified");
-        if (cg.non_smoker) badges.push("Non-Smoker");
-        if (cg.non_vaper) badges.push("Non-Vaper");
-        if (cg.comfortable_with_cats) badges.push("Comfortable with Cats");
-        if (cg.comfortable_with_dogs) badges.push("Comfortable with Dogs");
+        if (profile.has_drivers_license) badges.push("Driver’s License");
+        if (profile.cpr_certified) badges.push("CPR Certified");
+        if (profile.non_smoker) badges.push("Non-smoker");
+        if (profile.non_vaper) badges.push("Non-vaper");
+        if (profile.comfortable_with_cats) badges.push("Cat Friendly");
+        if (profile.comfortable_with_dogs) badges.push("Dog Friendly");
 
         if (!badges.length) return "";
 
@@ -101,20 +90,32 @@
         `;
       }
 
-      // -----------------------------------
-      // Review helpers
-      // -----------------------------------
       function buildReviewSummary(reviews) {
-        if (!reviews.length) {
-          return "<p><strong>Rating:</strong> No reviews yet.</p>";
+        if (!Array.isArray(reviews) || !reviews.length) {
+          return `<p><strong>Rating:</strong> No reviews yet</p>`;
         }
 
-        const avg = reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length;
-        return `<p><strong>Rating:</strong> ${buildStars(avg)} (${reviews.length} review${reviews.length === 1 ? "" : "s"})</p>`;
+        const ratings = reviews
+          .map((review) => Number(review.rating))
+          .filter((rating) => !Number.isNaN(rating));
+
+        if (!ratings.length) {
+          return `<p><strong>Rating:</strong> ${reviews.length} review${reviews.length === 1 ? "" : "s"}</p>`;
+        }
+
+        const average = ratings.reduce((sum, rating) => sum + rating, 0) / ratings.length;
+
+        return `
+          <p>
+            <strong>Rating:</strong>
+            ${buildStarsLabel(average)}
+            (${reviews.length} review${reviews.length === 1 ? "" : "s"})
+          </p>
+        `;
       }
 
       function buildReviews(reviews) {
-        if (!reviews.length) {
+        if (!Array.isArray(reviews) || !reviews.length) {
           return "<p>No reviews yet.</p>";
         }
 
@@ -122,7 +123,10 @@
           <div class="review-list">
             ${reviews.map((review) => `
               <div class="review-card">
-                <p><strong>${review.reviewer_name || "Anonymous"}</strong> • ${buildStars(review.rating)}</p>
+                <p>
+                  <strong>${review.reviewer_name || "Anonymous"}</strong>
+                  ${review.rating ? `• ${buildStarsLabel(review.rating)}` : ""}
+                </p>
                 ${review.review_text ? `<p>${review.review_text}</p>` : ""}
               </div>
             `).join("")}
@@ -130,40 +134,36 @@
         `;
       }
 
-      // -----------------------------------
-      // Photo gallery helpers
-      // -----------------------------------
-      function getPhotos(cg) {
-        if (Array.isArray(cg.photo_urls) && cg.photo_urls.length) {
-          return cg.photo_urls;
-        }
-        return cg.photo_url ? [cg.photo_url] : [];
-      }
+      function buildProfileGallery(profile) {
+        const photos = getProfilePhotos(profile);
 
-      function renderGallery(cg) {
-        const photos = getPhotos(cg);
         if (!photos.length) return "";
 
         const safeIndex = Math.min(currentPhotoIndex, photos.length - 1);
-        const main = photos[safeIndex];
+        const mainPhoto = photos[safeIndex];
+        const displayName = formatDisplayName(profile);
 
         return `
-          <div class="profile-gallery-wrap">
+          <div class="profile-photo-gallery profile-detail-gallery">
             <img
               class="profile-detail-main-photo"
               id="mainProfilePhoto"
-              src="${main}"
-              alt="${formatDisplayName(cg)}"
+              src="${mainPhoto}"
+              alt="${displayName}"
             >
+
             ${photos.length > 1 ? `
-              <div class="profile-gallery">
+              <div class="profile-gallery" id="profileGalleryThumbs">
                 ${photos.map((photo, index) => `
-                  <img
-                    src="${photo}"
-                    alt="Caregiver photo ${index + 1}"
-                    class="${index === safeIndex ? "active-thumb" : ""}"
-                    onclick="changeProfilePhoto(${index})"
+                  <button
+                    type="button"
+                    class="profile-thumb-button${index === safeIndex ? " active" : ""}"
+                    data-index="${index}"
+                    data-photo="${photo}"
+                    aria-label="View caregiver photo ${index + 1}"
                   >
+                    <img src="${photo}" alt="${displayName} photo ${index + 1}">
+                  </button>
                 `).join("")}
               </div>
             ` : ""}
@@ -171,60 +171,72 @@
         `;
       }
 
-      function changeProfilePhoto(index) {
-        currentPhotoIndex = index;
-        renderProfile();
+      function wireProfileGallery() {
+        const gallery = document.getElementById("profileGalleryThumbs");
+        const mainPhoto = document.getElementById("mainProfilePhoto");
+
+        if (!gallery || !mainPhoto) return;
+
+        const buttons = gallery.querySelectorAll(".profile-thumb-button");
+
+        buttons.forEach((button) => {
+          button.addEventListener("click", () => {
+            const newPhoto = button.dataset.photo;
+            const index = Number(button.dataset.index);
+
+            if (!newPhoto || Number.isNaN(index)) return;
+
+            currentPhotoIndex = index;
+            mainPhoto.src = newPhoto;
+
+            buttons.forEach((btn) => btn.classList.remove("active"));
+            button.classList.add("active");
+          });
+        });
       }
 
-      window.changeProfilePhoto = changeProfilePhoto;
-
-      // -----------------------------------
-      // Render full profile
-      // -----------------------------------
       function renderProfile() {
         if (!currentCaregiver) return;
 
-        const cg = currentCaregiver;
-        const displayName = formatDisplayName(cg);
-        const careTypes = careTypesText(cg);
+        const profile = currentCaregiver;
+        const displayName = formatDisplayName(profile);
+        const careTypes = getCareTypesText(profile);
 
-        const responseTime =
-          cg.average_response_minutes != null
-            ? `${cg.average_response_minutes} min average response`
-            : "—";
+        const responseTime = profile.average_response_minutes != null
+          ? formatResponseTime(profile.average_response_minutes)
+          : "";
 
-        const encounters =
-          cg.confirmed_encounters != null
-            ? `${cg.confirmed_encounters} confirmed encounter${cg.confirmed_encounters === 1 ? "" : "s"}`
-            : "0 confirmed encounters";
+        const encounters = profile.confirmed_encounters != null
+          ? `${profile.confirmed_encounters} confirmed encounter${Number(profile.confirmed_encounters) === 1 ? "" : "s"}`
+          : "";
 
         document.getElementById("profileSubtitle").textContent =
-          `${displayName}${careTypes ? ` • ${careTypes}` : ""}${cg.location ? ` • ${cg.location}` : ""}`;
+          `${displayName}${careTypes ? ` • ${careTypes}` : ""}${profile.location ? ` • ${profile.location}` : ""}`;
 
-        document.getElementById("contactBtn").href = cg.user_id
-          ? `./messages.html?user=${cg.user_id}`
-          : `./request.html?caregiver_id=${cg.id}`;
+        document.getElementById("contactBtn").href = profile.user_id
+          ? `./messages.html?user=${profile.user_id}`
+          : `./request.html?caregiver_id=${profile.id}`;
 
         document.getElementById("profileContent").innerHTML = `
           <div class="profile-detail">
-            ${renderGallery(cg)}
+            ${buildProfileGallery(profile)}
 
             <h2 class="text-center">${displayName}</h2>
 
             ${careTypes ? `<p class="text-center"><strong>Care Types:</strong> ${careTypes}</p>` : ""}
-            ${cg.location ? `<p class="text-center"><strong>Location:</strong> ${cg.location}</p>` : ""}
-            ${cg.years_experience ? `<p class="text-center"><strong>Experience:</strong> ${cg.years_experience}</p>` : ""}
-            ${cg.availability ? `<p class="text-center"><strong>Availability:</strong> ${cg.availability}</p>` : ""}
-            <p class="text-center"><strong>Response Time:</strong> ${responseTime}</p>
-            <p class="text-center"><strong>Confirmed Encounters:</strong> ${encounters}</p>
+            ${profile.location ? `<p class="text-center"><strong>Location:</strong> ${profile.location}</p>` : ""}
+            ${profile.years_experience ? `<p class="text-center"><strong>Experience:</strong> ${profile.years_experience}+ years</p>` : ""}
+            ${profile.availability ? `<p class="text-center"><strong>Availability:</strong> ${profile.availability}</p>` : ""}
+            ${responseTime ? `<p class="text-center"><strong>Response Time:</strong> ${responseTime}</p>` : ""}
+            ${encounters ? `<p class="text-center"><strong>Confirmed Encounters:</strong> ${encounters}</p>` : ""}
 
             ${buildReviewSummary(currentReviews)}
-            ${buildBadges(cg)}
+            ${buildCaregiverBadges(profile)}
 
-            ${cg.bio ? `
+            ${profile.bio ? `
               <div class="mt-22">
                 <h3 class="mb-6">About</h3>
-                <p>${cg.bio}</p>
+                <p>${profile.bio}</p>
               </div>
             ` : ""}
 
@@ -234,11 +246,10 @@
             </div>
           </div>
         `;
+
+        wireProfileGallery();
       }
 
-      // -----------------------------------
-      // Load caregiver + reviews
-      // -----------------------------------
       async function loadProfile() {
         const params = new URLSearchParams(window.location.search);
         const caregiverId = params.get("id");
@@ -264,6 +275,7 @@
           .select("*")
           .eq("id", caregiverId)
           .eq("is_active", true)
+          .eq("approval_status", "approved")
           .maybeSingle();
 
         if (caregiverError || !caregiver) {
@@ -291,9 +303,6 @@
         renderProfile();
       }
 
-      // -----------------------------------
-      // Init
-      // -----------------------------------
       window.addEventListener("DOMContentLoaded", () => {
         loadProfile();
       });
