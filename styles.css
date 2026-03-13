@@ -773,6 +773,11 @@ textarea:focus {
   object-fit: cover;
 }
 
+.profile-detail-gallery {
+  max-width: 420px;
+  margin: 0 auto 16px;
+}
+
 .active-thumb {
   outline: 2px solid var(--primary);
 }
