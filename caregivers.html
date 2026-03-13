@@ -23,272 +23,221 @@
       <a class="button" href="./jobs.html">Browse Care Opportunities</a>
     </div>
 
-<div class="browse-layout">
-  <aside class="filter-sidebar">
-    <!-- filters -->
-  </aside>
+    <section>
+      <div class="browse-layout">
+        <aside class="filter-sidebar" id="caregiverFilterSidebar">
+          <div class="card filter-card">
+            <div class="filter-card-header">
+              <h3 class="mb-0">Filters</h3>
+              <button
+                type="button"
+                class="filter-close"
+                id="caregiverFilterClose"
+                aria-label="Close filters"
+                data-close-filters
+              >
+                ×
+              </button>
+            </div>
 
-  <div class="browse-main">
-    <div class="browse-topbar">
-      <button type="button" class="button" data-open-filters>Filters</button>
-      <div id="browse-count"></div>
-    </div>
+            <div class="row">
+              <label for="cgFilterType">Care Type</label>
+              <select id="cgFilterType">
+                <option value="">All care types</option>
+                <option value="childcare">Childcare</option>
+                <option value="senior care">Senior Care</option>
+                <option value="pet care">Pet Care</option>
+                <option value="household help">Household Help</option>
+              </select>
+            </div>
 
-    <div id="caregiver-results" class="browse-results"></div>
-  </div>
-</div>
+            <div class="row">
+              <label for="cgFilterLocation">Location</label>
+              <input
+                type="text"
+                id="cgFilterLocation"
+                placeholder="City or area"
+              />
+            </div>
 
-<div class="filter-overlay"></div>
+            <div class="row">
+              <label for="cgFilterKeyword">Keyword</label>
+              <input
+                type="text"
+                id="cgFilterKeyword"
+                placeholder="Availability, CPR, pets, etc."
+              />
+            </div>
 
-        <p class="mb-16">
-          Caregiver profiles are submitted by community members and approved before becoming visible.
-          Families and caregivers communicate directly and should use their own judgment when arranging care.
-        </p>
+            <div class="filter-actions">
+              <button type="button" class="button" id="cgApplyBtn">Apply Filters</button>
+              <button type="button" class="button filter-clear-button" id="cgClearBtn">Clear Filters</button>
+            </div>
+          </div>
+        </aside>
 
-        <div id="caregiversContainer" class="cards"></div>
+        <div class="browse-main">
+          <div class="browse-topbar">
+            <button
+              type="button"
+              class="button filter-toggle-button"
+              id="caregiverFilterOpen"
+              data-open-filters
+            >
+              Filters
+            </button>
+
+            <p id="browse-count" class="browse-count">0 caregivers</p>
+          </div>
+
+          <p class="mb-16">
+            Caregiver profiles are submitted by community members and approved before becoming visible.
+            Families and caregivers communicate directly and should use their own judgment when arranging care.
+          </p>
+
+          <div id="caregiver-results" class="browse-results"></div>
+        </div>
       </div>
+
+      <div class="filter-overlay"></div>
     </section>
   </main>
 
   <div id="footer-placeholder"></div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-<script src="./app.js"></script>
-<script src="./browse-common.js"></script>
-<script src="./browse-helpers.js"></script>
-  
+  <script src="./app.js"></script>
+  <script src="./browse-helpers.js"></script>
+  <script src="./browse-common.js"></script>
+
   <script>
-  
-    
     (function () {
       let allCaregivers = [];
-      let reviewMap = {};
+      const caregiverReviewsByProfileId = {};
 
-function formatDisplayName(cg) {
-  return formatBrowseDisplayName(cg);
-}
-
-function getReviewSummary(cgId) {
-  return getBrowseReviewSummary(cgId, reviewMap);
-}
-
-function getRecentReview(cgId) {
-  return getBrowseRecentReview(cgId, reviewMap);
-}
-
-
-const caregiverReviewsByProfileId = {};
-
-function buildCaregiverBadges(profile) {
-  const badges = [];
-
-  if (profile.cpr_certified) badges.push("CPR Certified");
-  if (profile.has_drivers_license) badges.push("Driver’s License");
-  if (profile.non_smoker) badges.push("Non-smoker");
-  if (profile.non_vaper) badges.push("Non-vaper");
-  if (profile.comfortable_with_dogs) badges.push("Dog Friendly");
-  if (profile.comfortable_with_cats) badges.push("Cat Friendly");
-
-  return badges;
-}
-
-function buildCaregiverSummary(profile) {
-  const parts = [];
-
-  if (profile.years_experience) {
-    parts.push(`${profile.years_experience}+ years experience`);
-  }
-
-  if (Array.isArray(profile.care_types) && profile.care_types.length) {
-    parts.push(profile.care_types.join(", "));
-  } else if (profile.care_type) {
-    parts.push(profile.care_type);
-  }
-
-  if (profile.availability) {
-    parts.push(profile.availability);
-  }
-
-  return truncateText(parts.filter(Boolean).join(" • "), 160);
-}
-
-const caregiverBrowseConfig = {
-  getDisplayName(profile) {
-    return formatBrowseDisplayName(profile);
-  },
-
-  getMetaLine(profile) {
-    const parts = [];
-
-    if (profile.location) parts.push(profile.location);
-
-    const responseText = formatResponseTime(profile.average_response_minutes);
-    if (responseText) parts.push(responseText);
-
-    return parts.join(" • ");
-  },
-
-  getSummary(profile) {
-    return buildCaregiverSummary(profile);
-  },
-
-  getBadges(profile) {
-    return buildCaregiverBadges(profile);
-  },
-
-  getActions(profile) {
-    return [
-      {
-        label: "View Profile",
-        href: `caregiver.html?id=${profile.id}`,
-        className: "button button-caregiver"
-      }
-    ];
-  },
-
-  getReviewSummary(profile) {
-    const reviews = caregiverReviewsByProfileId[profile.id] || [];
-    return getBrowseReviewSummary(reviews);
-  },
-
-  getRecentReview(profile) {
-    const reviews = caregiverReviewsByProfileId[profile.id] || [];
-    return truncateText(getBrowseRecentReview(reviews), 120);
-  },
-
-  getAverageRating(profile) {
-    const reviews = caregiverReviewsByProfileId[profile.id] || [];
-    const ratings = reviews
-      .map(review => Number(review.rating))
-      .filter(rating => !Number.isNaN(rating));
-
-    if (!ratings.length) return null;
-
-    return ratings.reduce((sum, rating) => sum + rating, 0) / ratings.length;
-  }
-};
-
-function normalizeCaregiverProfile(row) {
-  return {
-    ...row,
-    profile_type: "caregiver"
-  };
-}
-
-function renderCaregiverResults(rows) {
-  const normalized = rows.map(normalizeCaregiverProfile);
-  const container = document.querySelector("#caregiver-results");
-  const countEl = document.querySelector("#browse-count");
-
-  renderBrowseCards(container, normalized, caregiverBrowseConfig);
-  setBrowseCount(countEl, normalized.length, "caregivers");
-}
-      
-      function careTypesText(cg) {
-        if (Array.isArray(cg.care_types) && cg.care_types.length) {
-          return cg.care_types.join(", ");
-        }
-        return cg.care_type || "";
-      }
-
-      function buildBadges(cg) {
+      function buildCaregiverBadges(profile) {
         const badges = [];
 
-        if (cg.has_drivers_license) badges.push("Driver’s License");
-        if (cg.cpr_certified) badges.push("CPR Certified");
-        if (cg.non_smoker) badges.push("Non-Smoker");
-        if (cg.non_vaper) badges.push("Non-Vaper");
-        if (cg.comfortable_with_cats) badges.push("Comfortable with Cats");
-        if (cg.comfortable_with_dogs) badges.push("Comfortable with Dogs");
+        if (profile.cpr_certified) badges.push("CPR Certified");
+        if (profile.has_drivers_license) badges.push("Driver’s License");
+        if (profile.non_smoker) badges.push("Non-smoker");
+        if (profile.non_vaper) badges.push("Non-vaper");
+        if (profile.comfortable_with_dogs) badges.push("Dog Friendly");
+        if (profile.comfortable_with_cats) badges.push("Cat Friendly");
 
-        if (!badges.length) return "";
-
-        return `
-          <div class="profile-badges">
-            ${badges.map((badge) => `<span class="profile-badge">${badge}</span>`).join("")}
-          </div>
-        `;
+        return badges;
       }
 
-      function buildPhotoGallery(cg) {
-        return buildBrowsePhotoGallery(cg, formatDisplayName(cg), "Caregiver");
+      function buildCaregiverSummary(profile) {
+        const parts = [];
+
+        if (profile.years_experience) {
+          parts.push(`${profile.years_experience}+ years experience`);
+        }
+
+        if (Array.isArray(profile.care_types) && profile.care_types.length) {
+          parts.push(profile.care_types.join(", "));
+        } else if (profile.care_type) {
+          parts.push(profile.care_type);
+        }
+
+        if (profile.availability) {
+          parts.push(profile.availability);
+        }
+
+        return truncateText(parts.filter(Boolean).join(" • "), 160);
       }
 
-      function buildActionButtons(cg) {
-        const profileBtn = `
-          <a class="button" href="./caregiver-profile.html?id=${cg.id}">
-            View Profile
-          </a>
-        `;
+      const caregiverBrowseConfig = {
+        getDisplayName(profile) {
+          return formatBrowseDisplayName(profile);
+        },
 
-        const messageBtn = cg.user_id
-          ? `
-            <a class="button" href="./messages.html?user=${cg.user_id}">
-              Contact This Caregiver
-            </a>
-          `
-          : "";
+        getMetaLine(profile) {
+          const parts = [];
 
-        return `
-          <div class="profile-actions">
-            ${profileBtn}
-            ${messageBtn}
-          </div>
-        `;
+          if (profile.location) parts.push(profile.location);
+
+          const responseText = formatResponseTime(profile.average_response_minutes);
+          if (responseText) parts.push(responseText);
+
+          if (profile.confirmed_encounters != null) {
+            const count = Number(profile.confirmed_encounters);
+            if (!Number.isNaN(count)) {
+              parts.push(
+                `${count} confirmed encounter${count === 1 ? "" : "s"}`
+              );
+            }
+          }
+
+          return parts.join(" • ");
+        },
+
+        getSummary(profile) {
+          return buildCaregiverSummary(profile);
+        },
+
+        getBadges(profile) {
+          return buildCaregiverBadges(profile);
+        },
+
+        getActions(profile) {
+          const actions = [
+            {
+              label: "View Profile",
+              href: `./caregiver-profile.html?id=${profile.id}`,
+              className: "button button-caregiver"
+            }
+          ];
+
+          if (profile.user_id) {
+            actions.push({
+              label: "Contact This Caregiver",
+              href: `./messages.html?user=${profile.user_id}`,
+              className: "button"
+            });
+          }
+
+          return actions;
+        },
+
+        getReviewSummary(profile) {
+          const reviews = caregiverReviewsByProfileId[profile.id] || [];
+          return getBrowseReviewSummary(reviews);
+        },
+
+        getRecentReview(profile) {
+          const reviews = caregiverReviewsByProfileId[profile.id] || [];
+          return truncateText(getBrowseRecentReview(reviews), 120);
+        },
+
+        getAverageRating(profile) {
+          const reviews = caregiverReviewsByProfileId[profile.id] || [];
+          const ratings = reviews
+            .map((review) => Number(review.rating))
+            .filter((rating) => !Number.isNaN(rating));
+
+          if (!ratings.length) return null;
+
+          return ratings.reduce((sum, rating) => sum + rating, 0) / ratings.length;
+        }
+      };
+
+      function normalizeCaregiverProfile(row) {
+        return {
+          ...row,
+          profile_type: "caregiver"
+        };
       }
 
-function renderCaregivers(list) {
-  const container = document.getElementById("caregiversContainer");
-  const countEl = document.getElementById("cgCount");
+      function renderCaregiverResults(rows) {
+        const normalized = rows.map(normalizeCaregiverProfile);
+        const container = document.querySelector("#caregiver-results");
+        const countEl = document.querySelector("#browse-count");
 
-  renderBrowseCards({
-    list,
-    container,
-    countEl,
-    countLabel: "caregiver profile",
-    emptyMessage: "No caregivers match those filters yet.",
-    renderCard: (cg) => {
-      const displayName = formatDisplayName(cg);
-      const careTypes = careTypesText(cg);
-
-      const responseTime =
-        cg.average_response_minutes != null
-          ? `${cg.average_response_minutes} min avg response`
-          : "";
-
-      const encounters =
-        cg.confirmed_encounters != null
-          ? `${cg.confirmed_encounters} confirmed encounter${cg.confirmed_encounters === 1 ? "" : "s"}`
-          : "";
-
-      const summaryBits = [
-        cg.location || "",
-        cg.years_experience ? `${cg.years_experience} experience` : "",
-        responseTime
-      ].filter(Boolean);
-
-      return `
-        ${buildPhotoGallery(cg)}
-
-        <div class="listing-card-header">
-          <div>
-            <h3>${displayName}</h3>
-            ${careTypes ? `<p class="listing-subtitle"><strong>Care Types:</strong> ${careTypes}</p>` : ""}
-            ${summaryBits.length ? `<p class="listing-summary">${summaryBits.join(" • ")}</p>` : ""}
-          </div>
-        </div>
-
-        ${getReviewSummary(cg.id)}
-        ${encounters ? `<p><strong>Confirmed Encounters:</strong> ${encounters}</p>` : ""}
-        ${buildBadges(cg)}
-        ${cg.availability ? `<p><strong>Availability:</strong> ${cg.availability}</p>` : ""}
-        ${cg.bio ? `<p class="listing-bio">${cg.bio}</p>` : ""}
-        ${getRecentReview(cg.id)}
-        ${buildActionButtons(cg)}
-      `;
-    }
-  });
-}
+        renderBrowseCards(container, normalized, caregiverBrowseConfig);
+        setBrowseCount(countEl, normalized.length, "caregivers");
+      }
 
       function applyFilters() {
         const typeVal = (document.getElementById("cgFilterType")?.value || "").trim().toLowerCase();
@@ -303,15 +252,15 @@ function renderCaregivers(list) {
           const cgLoc = (cg.location || "").trim().toLowerCase();
           const cgAvail = (cg.availability || "").trim().toLowerCase();
           const cgBio = (cg.bio || "").trim().toLowerCase();
-          const cgExp = (cg.years_experience || "").trim().toLowerCase();
+          const cgExp = String(cg.years_experience || "").trim().toLowerCase();
 
           const badgeText = [
             cg.has_drivers_license ? "driver's license" : "",
             cg.cpr_certified ? "cpr certified" : "",
             cg.non_smoker ? "non-smoker" : "",
             cg.non_vaper ? "non-vaper" : "",
-            cg.comfortable_with_cats ? "comfortable with cats" : "",
-            cg.comfortable_with_dogs ? "comfortable with dogs" : ""
+            cg.comfortable_with_cats ? "cat friendly comfortable with cats" : "",
+            cg.comfortable_with_dogs ? "dog friendly comfortable with dogs" : ""
           ].join(" ").toLowerCase();
 
           const typeOk = !typeVal || careTypes.includes(typeVal);
@@ -328,7 +277,7 @@ function renderCaregivers(list) {
           return typeOk && locOk && keyOk;
         });
 
-        renderCaregivers(filtered);
+        renderCaregiverResults(filtered);
       }
 
       async function loadReviews() {
@@ -340,31 +289,38 @@ function renderCaregivers(list) {
 
         if (reviewError) {
           console.error(reviewError);
-          reviewMap = {};
           return;
         }
 
-        reviewMap = {};
+        Object.keys(caregiverReviewsByProfileId).forEach((key) => {
+          delete caregiverReviewsByProfileId[key];
+        });
+
         (reviewData || []).forEach((review) => {
-          if (!reviewMap[review.caregiver_profile_id]) {
-            reviewMap[review.caregiver_profile_id] = [];
+          const profileId = review.caregiver_profile_id;
+          if (!profileId) return;
+
+          if (!caregiverReviewsByProfileId[profileId]) {
+            caregiverReviewsByProfileId[profileId] = [];
           }
-          reviewMap[review.caregiver_profile_id].push(review);
+
+          caregiverReviewsByProfileId[profileId].push(review);
         });
       }
 
       async function loadCaregiversOnce() {
         let tries = 0;
+
         while (!window.db && tries < 40) {
           await new Promise((resolve) => setTimeout(resolve, 50));
           tries++;
         }
 
-        const container = document.getElementById("caregiversContainer");
+        const resultsContainer = document.getElementById("caregiver-results");
 
         if (!window.db) {
-          if (container) {
-            container.innerHTML = "<p>Database connection not ready. Please refresh.</p>";
+          if (resultsContainer) {
+            resultsContainer.innerHTML = "<div class='empty-state'><p>Database connection not ready. Please refresh.</p></div>";
           }
           return;
         }
@@ -377,10 +333,10 @@ function renderCaregivers(list) {
           .order("created_at", { ascending: false });
 
         if (error) {
-          if (container) {
-            container.innerHTML = "<p>Unable to load caregivers right now.</p>";
-          }
           console.error(error);
+          if (resultsContainer) {
+            resultsContainer.innerHTML = "<div class='empty-state'><p>Unable to load caregivers right now.</p></div>";
+          }
           return;
         }
 
@@ -392,25 +348,26 @@ function renderCaregivers(list) {
       function wireEvents() {
         document.getElementById("cgApplyBtn")?.addEventListener("click", () => {
           applyFilters();
-          closeBrowseSidebar("caregiverFilterSidebar");
+          closeBrowseSidebar();
         });
-      
+
         document.getElementById("cgClearBtn")?.addEventListener("click", () => {
           document.getElementById("cgFilterType").value = "";
           document.getElementById("cgFilterLocation").value = "";
           document.getElementById("cgFilterKeyword").value = "";
           applyFilters();
-          closeBrowseSidebar("caregiverFilterSidebar");
+          closeBrowseSidebar();
         });
-      
+
         document.getElementById("cgFilterType")?.addEventListener("change", applyFilters);
         document.getElementById("cgFilterLocation")?.addEventListener("input", applyFilters);
         document.getElementById("cgFilterKeyword")?.addEventListener("input", applyFilters);
-      
+
         wireBrowseSidebar({
-          sidebarId: "caregiverFilterSidebar",
-          openButtonId: "caregiverFilterOpen",
-          closeButtonId: "caregiverFilterClose"
+          openButtonSelector: "#caregiverFilterOpen",
+          closeButtonSelector: "#caregiverFilterClose",
+          sidebarSelector: "#caregiverFilterSidebar",
+          overlaySelector: ".filter-overlay"
         });
       }
 
