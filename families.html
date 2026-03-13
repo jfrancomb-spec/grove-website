@@ -22,395 +22,360 @@
       <a class="button" href="./caregiver.html">Create Caregiver Profile</a>
     </div>
 
-    <section class="browse-layout">
-<aside class="filter-sidebar" id="familyFilterSidebar">
+    <section>
+      <div class="browse-layout">
+        <aside class="filter-sidebar" id="familyFilterSidebar">
+          <div class="card filter-card">
+            <div class="filter-card-header">
+              <h3 class="mb-0">Filters</h3>
+              <button
+                type="button"
+                class="filter-close"
+                id="familyFilterClose"
+                aria-label="Close filters"
+                data-close-filters
+              >
+                ×
+              </button>
+            </div>
 
-<div class="browse-layout">
-  <aside class="filter-sidebar">
-    <!-- filters -->
-  </aside>
+            <div class="row">
+              <label for="famFilterType">Care Needed</label>
+              <select id="famFilterType">
+                <option value="">All care needs</option>
+                <option value="childcare">Childcare</option>
+                <option value="senior care">Senior Care</option>
+                <option value="pet care">Pet Care</option>
+                <option value="household help">Household Help</option>
+              </select>
+            </div>
 
-  <div class="browse-main">
-    <div class="browse-topbar">
-      <button type="button" class="button" data-open-filters>Filters</button>
-      <div id="browse-count"></div>
-    </div>
+            <div class="row">
+              <label for="famFilterLocation">Location</label>
+              <input
+                type="text"
+                id="famFilterLocation"
+                placeholder="City or area"
+              />
+            </div>
 
-    <div id="family-results" class="browse-results"></div>
-  </div>
-</div>
+            <div class="row">
+              <label for="famFilterKeyword">Keyword</label>
+              <input
+                type="text"
+                id="famFilterKeyword"
+                placeholder="Children, pets, driving, etc."
+              />
+            </div>
 
-<div class="filter-overlay">
-  
-</div>
-  
-    </div>
+            <div class="filter-actions">
+              <button type="button" class="button" id="famApplyBtn">Apply Filters</button>
+              <button type="button" class="button filter-clear-button" id="famClearBtn">Clear Filters</button>
+            </div>
+          </div>
+        </aside>
 
-    <p class="mb-16">
-      Family profiles are visible within the Grove network so caregivers can better understand the home, care needs, and expectations before reaching out.
-    </p>
+        <div class="browse-main">
+          <div class="browse-topbar">
+            <button
+              type="button"
+              class="button filter-toggle-button"
+              id="familyFilterOpen"
+              data-open-filters
+            >
+              Filters
+            </button>
 
-    <div id="familiesContainer" class="cards"></div>
-  </div>
-</section>
+            <p id="browse-count" class="browse-count">0 families</p>
+          </div>
 
+          <p class="mb-16">
+            Family profiles are visible within the Grove network so caregivers can better understand the home, care needs, and expectations before reaching out.
+          </p>
 
-    
+          <div id="family-results" class="browse-results"></div>
+        </div>
+      </div>
+
+      <div class="filter-overlay"></div>
+    </section>
   </main>
 
   <div id="footer-placeholder"></div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
   <script src="./app.js"></script>
-  <script src="./browse-common.js"></script>
   <script src="./browse-helpers.js"></script>
-  
+  <script src="./browse-common.js"></script>
+
   <script>
-    let allFamilies = [];
-    let reviewMap = {};
-    
-  function formatDisplayName(profile) {
-  return formatBrowseDisplayName(profile);
-}
+    (function () {
+      let allFamilies = [];
+      const familyReviewsByProfileId = {};
 
-function getReviewSummary(familyId) {
-  return getBrowseReviewSummary(familyId, reviewMap);
-}
+      function buildFamilyBadges(profile) {
+        const badges = [];
 
-function getRecentReview(familyId) {
-  return getBrowseRecentReview(familyId, reviewMap);
-}
+        if (profile.has_dogs) badges.push("Has Dogs");
+        if (profile.has_cats) badges.push("Has Cats");
+        if (profile.driving_needed) badges.push("Driving Needed");
+        if (profile.smoking_in_home) badges.push("Smoking in Home");
 
-const familyReviewsByProfileId = {};
-
-function buildFamilyBadges(profile) {
-  const badges = [];
-
-  if (profile.has_dogs) badges.push("Has Dogs");
-  if (profile.has_cats) badges.push("Has Cats");
-  if (profile.driving_needed) badges.push("Driving Needed");
-  if (profile.smoking_in_home) badges.push("Smoking in Home");
-
-  return badges;
-}
-
-function buildFamilySummary(profile) {
-  const parts = [];
-
-  if (Array.isArray(profile.care_types_needed) && profile.care_types_needed.length) {
-    parts.push(`Needs: ${profile.care_types_needed.join(", ")}`);
-  }
-
-  if (profile.household_description) {
-    parts.push(profile.household_description);
-  } else if (profile.bio) {
-    parts.push(profile.bio);
-  }
-
-  return truncateText(parts.filter(Boolean).join(" • "), 160);
-}
-
-const familyBrowseConfig = {
-  getDisplayName(profile) {
-    return formatBrowseDisplayName(profile);
-  },
-
-  getMetaLine(profile) {
-    const parts = [];
-
-    if (profile.location) parts.push(profile.location);
-
-    const responseText = formatResponseTime(profile.average_response_minutes);
-    if (responseText) parts.push(responseText);
-
-    return parts.join(" • ");
-  },
-
-  getSummary(profile) {
-    return buildFamilySummary(profile);
-  },
-
-  getBadges(profile) {
-    return buildFamilyBadges(profile);
-  },
-
-  getActions(profile) {
-    return [
-      {
-        label: "View Family",
-        href: `family.html?id=${profile.id}`,
-        className: "button button-family"
+        return badges;
       }
-    ];
-  },
 
-  getReviewSummary(profile) {
-    const reviews = familyReviewsByProfileId[profile.id] || [];
-    return getBrowseReviewSummary(reviews);
-  },
+      function buildFamilySummary(profile) {
+        const parts = [];
 
-  getRecentReview(profile) {
-    const reviews = familyReviewsByProfileId[profile.id] || [];
-    return truncateText(getBrowseRecentReview(reviews), 120);
-  },
-
-  getAverageRating(profile) {
-    const reviews = familyReviewsByProfileId[profile.id] || [];
-    const ratings = reviews
-      .map(review => Number(review.rating))
-      .filter(rating => !Number.isNaN(rating));
-
-    if (!ratings.length) return null;
-
-    return ratings.reduce((sum, rating) => sum + rating, 0) / ratings.length;
-  }
-};
-
-function normalizeFamilyProfile(row) {
-  return {
-    ...row,
-    profile_type: "family"
-  };
-}
-
-function renderFamilyResults(rows) {
-  const normalized = rows.map(normalizeFamilyProfile);
-  const container = document.querySelector("#family-results");
-  const countEl = document.querySelector("#browse-count");
-
-  renderBrowseCards(container, normalized, familyBrowseConfig);
-  setBrowseCount(countEl, normalized.length, "families");
-}
-    
-    function careTypesNeededText(profile) {
-      if (Array.isArray(profile.care_types_needed) && profile.care_types_needed.length) {
-        return profile.care_types_needed.join(", ");
-      }
-      return "";
-    }
-
-    function buildHomeBadges(profile) {
-      const badges = [];
-
-      if (profile.has_cats) badges.push("Cats in Home");
-      if (profile.has_dogs) badges.push("Dogs in Home");
-      if (profile.smoking_in_home) badges.push("Smoking in Home");
-      if (profile.driving_needed) badges.push("Driving Needed");
-
-      if (!badges.length) return "";
-
-      return `
-        <div class="profile-badges">
-          ${badges.map((badge) => `<span class="profile-badge">${badge}</span>`).join("")}
-        </div>
-      `;
-    }
-
-    function buildPhotoGallery(profile) {
-      return buildBrowsePhotoGallery(profile, formatDisplayName(profile), "Family");
-    }
-
-    function buildActionButtons(profile) {
-      const profileBtn = `
-        <a class="button" href="./family-profile.html?id=${profile.id}">
-          View Profile
-        </a>
-      `;
-
-      const messageBtn = profile.user_id
-        ? `
-          <a class="button" href="./messages.html?user=${profile.user_id}">
-            Message This Family
-          </a>
-        `
-        : "";
-
-      return `
-        <div class="profile-actions">
-          ${profileBtn}
-          ${messageBtn}
-        </div>
-      `;
-    }
-
-    function renderFamilies(list) {
-      const container = document.getElementById("familiesContainer");
-      const countEl = document.getElementById("famCount");
-    
-      renderBrowseCards({
-        list,
-        container,
-        countEl,
-        countLabel: "family profile",
-        emptyMessage: "No families match those filters yet.",
-        renderCard: (profile) => {
-          const displayName = formatDisplayName(profile);
-          const careTypesNeeded = careTypesNeededText(profile);
-    
-          const responseTime =
-            profile.average_response_minutes != null
-              ? `${profile.average_response_minutes} min avg response`
-              : "";
-    
-          const encounters =
-            profile.confirmed_encounters != null
-              ? `${profile.confirmed_encounters} confirmed encounter${profile.confirmed_encounters === 1 ? "" : "s"}`
-              : "";
-    
-          const summaryBits = [
-            profile.location || "",
-            careTypesNeeded ? `Needs ${careTypesNeeded}` : "",
-            responseTime
-          ].filter(Boolean);
-    
-          return `
-            ${buildPhotoGallery(profile)}
-    
-            <div class="listing-card-header">
-              <div>
-                <h3>${displayName}</h3>
-                ${summaryBits.length ? `<p class="listing-summary">${summaryBits.join(" • ")}</p>` : ""}
-              </div>
-            </div>
-    
-            ${getReviewSummary(profile.id)}
-            ${encounters ? `<p><strong>Confirmed Encounters:</strong> ${encounters}</p>` : ""}
-            ${buildHomeBadges(profile)}
-            ${profile.household_description ? `<p class="listing-bio">${profile.household_description}</p>` : ""}
-            ${profile.children_description ? `<p><strong>Children:</strong> ${profile.children_description}</p>` : ""}
-            ${profile.pets_description ? `<p><strong>Pets:</strong> ${profile.pets_description}</p>` : ""}
-            ${getRecentReview(profile.id)}
-            ${buildActionButtons(profile)}
-          `;
+        if (Array.isArray(profile.care_types_needed) && profile.care_types_needed.length) {
+          parts.push(`Needs: ${profile.care_types_needed.join(", ")}`);
         }
+
+        if (profile.household_description) {
+          parts.push(profile.household_description);
+        } else if (profile.bio) {
+          parts.push(profile.bio);
+        }
+
+        if (profile.children_description) {
+          parts.push(`Children: ${profile.children_description}`);
+        }
+
+        if (profile.pets_description) {
+          parts.push(`Pets: ${profile.pets_description}`);
+        }
+
+        return truncateText(parts.filter(Boolean).join(" • "), 180);
+      }
+
+      const familyBrowseConfig = {
+        getDisplayName(profile) {
+          return formatBrowseDisplayName(profile);
+        },
+
+        getMetaLine(profile) {
+          const parts = [];
+
+          if (profile.location) parts.push(profile.location);
+
+          const responseText = formatResponseTime(profile.average_response_minutes);
+          if (responseText) parts.push(responseText);
+
+          if (profile.confirmed_encounters != null) {
+            const count = Number(profile.confirmed_encounters);
+            if (!Number.isNaN(count)) {
+              parts.push(
+                `${count} confirmed encounter${count === 1 ? "" : "s"}`
+              );
+            }
+          }
+
+          return parts.join(" • ");
+        },
+
+        getSummary(profile) {
+          return buildFamilySummary(profile);
+        },
+
+        getBadges(profile) {
+          return buildFamilyBadges(profile);
+        },
+
+        getActions(profile) {
+          const actions = [
+            {
+              label: "View Family",
+              href: `./family-profile.html?id=${profile.id}`,
+              className: "button button-family"
+            }
+          ];
+
+          if (profile.user_id) {
+            actions.push({
+              label: "Message This Family",
+              href: `./messages.html?user=${profile.user_id}`,
+              className: "button"
+            });
+          }
+
+          return actions;
+        },
+
+        getReviewSummary(profile) {
+          const reviews = familyReviewsByProfileId[profile.id] || [];
+          return getBrowseReviewSummary(reviews);
+        },
+
+        getRecentReview(profile) {
+          const reviews = familyReviewsByProfileId[profile.id] || [];
+          return truncateText(getBrowseRecentReview(reviews), 120);
+        },
+
+        getAverageRating(profile) {
+          const reviews = familyReviewsByProfileId[profile.id] || [];
+          const ratings = reviews
+            .map((review) => Number(review.rating))
+            .filter((rating) => !Number.isNaN(rating));
+
+          if (!ratings.length) return null;
+
+          return ratings.reduce((sum, rating) => sum + rating, 0) / ratings.length;
+        }
+      };
+
+      function normalizeFamilyProfile(row) {
+        return {
+          ...row,
+          profile_type: "family"
+        };
+      }
+
+      function renderFamilyResults(rows) {
+        const normalized = rows.map(normalizeFamilyProfile);
+        const container = document.querySelector("#family-results");
+        const countEl = document.querySelector("#browse-count");
+
+        renderBrowseCards(container, normalized, familyBrowseConfig);
+        setBrowseCount(countEl, normalized.length, "families");
+      }
+
+      function applyFilters() {
+        const typeVal = (document.getElementById("famFilterType")?.value || "").trim().toLowerCase();
+        const locVal = (document.getElementById("famFilterLocation")?.value || "").trim().toLowerCase();
+        const keyVal = (document.getElementById("famFilterKeyword")?.value || "").trim().toLowerCase();
+
+        const filtered = allFamilies.filter((profile) => {
+          const careTypesNeeded = Array.isArray(profile.care_types_needed)
+            ? profile.care_types_needed.join(" ").toLowerCase()
+            : "";
+
+          const location = (profile.location || "").trim().toLowerCase();
+          const household = (profile.household_description || "").trim().toLowerCase();
+          const children = (profile.children_description || "").trim().toLowerCase();
+          const pets = (profile.pets_description || "").trim().toLowerCase();
+          const bio = (profile.bio || "").trim().toLowerCase();
+
+          const badgeText = [
+            profile.has_cats ? "has cats cats in home" : "",
+            profile.has_dogs ? "has dogs dogs in home" : "",
+            profile.smoking_in_home ? "smoking in home" : "",
+            profile.driving_needed ? "driving needed" : ""
+          ].join(" ").toLowerCase();
+
+          const typeOk = !typeVal || careTypesNeeded.includes(typeVal);
+          const locOk = !locVal || location.includes(locVal);
+          const keyOk =
+            !keyVal ||
+            careTypesNeeded.includes(keyVal) ||
+            household.includes(keyVal) ||
+            children.includes(keyVal) ||
+            pets.includes(keyVal) ||
+            bio.includes(keyVal) ||
+            badgeText.includes(keyVal) ||
+            location.includes(keyVal);
+
+          return typeOk && locOk && keyOk;
+        });
+
+        renderFamilyResults(filtered);
+      }
+
+      async function loadReviews() {
+        const { data: reviewData, error: reviewError } = await window.db
+          .from("family_reviews")
+          .select("*")
+          .eq("is_visible", true)
+          .order("created_at", { ascending: false });
+
+        if (reviewError) {
+          console.error(reviewError);
+          return;
+        }
+
+        Object.keys(familyReviewsByProfileId).forEach((key) => {
+          delete familyReviewsByProfileId[key];
+        });
+
+        (reviewData || []).forEach((review) => {
+          const profileId = review.family_profile_id;
+          if (!profileId) return;
+
+          if (!familyReviewsByProfileId[profileId]) {
+            familyReviewsByProfileId[profileId] = [];
+          }
+
+          familyReviewsByProfileId[profileId].push(review);
+        });
+      }
+
+      async function loadFamiliesOnce() {
+        let tries = 0;
+
+        while (!window.db && tries < 40) {
+          await new Promise((resolve) => setTimeout(resolve, 50));
+          tries++;
+        }
+
+        const resultsContainer = document.getElementById("family-results");
+
+        if (!window.db) {
+          if (resultsContainer) {
+            resultsContainer.innerHTML = "<div class='empty-state'><p>Database connection not ready. Please refresh.</p></div>";
+          }
+          return;
+        }
+
+        const { data, error } = await window.db
+          .from("family_profiles")
+          .select("*")
+          .eq("is_active", true)
+          .eq("approval_status", "approved")
+          .order("created_at", { ascending: false });
+
+        if (error) {
+          console.error(error);
+          if (resultsContainer) {
+            resultsContainer.innerHTML = "<div class='empty-state'><p>Unable to load families right now.</p></div>";
+          }
+          return;
+        }
+
+        allFamilies = data || [];
+        await loadReviews();
+        applyFilters();
+      }
+
+      function wireEvents() {
+        document.getElementById("famApplyBtn")?.addEventListener("click", () => {
+          applyFilters();
+          closeBrowseSidebar();
+        });
+
+        document.getElementById("famClearBtn")?.addEventListener("click", () => {
+          document.getElementById("famFilterType").value = "";
+          document.getElementById("famFilterLocation").value = "";
+          document.getElementById("famFilterKeyword").value = "";
+          applyFilters();
+          closeBrowseSidebar();
+        });
+
+        document.getElementById("famFilterType")?.addEventListener("change", applyFilters);
+        document.getElementById("famFilterLocation")?.addEventListener("input", applyFilters);
+        document.getElementById("famFilterKeyword")?.addEventListener("input", applyFilters);
+
+        wireBrowseSidebar({
+          openButtonSelector: "#familyFilterOpen",
+          closeButtonSelector: "#familyFilterClose",
+          sidebarSelector: "#familyFilterSidebar",
+          overlaySelector: ".filter-overlay"
+        });
+      }
+
+      window.addEventListener("DOMContentLoaded", () => {
+        wireEvents();
+        loadFamiliesOnce();
       });
-    }
-
-    function applyFilters() {
-      const typeVal = (document.getElementById("famFilterType")?.value || "").trim().toLowerCase();
-      const locVal = (document.getElementById("famFilterLocation")?.value || "").trim().toLowerCase();
-      const keyVal = (document.getElementById("famFilterKeyword")?.value || "").trim().toLowerCase();
-
-      const filtered = allFamilies.filter((profile) => {
-        const careTypesNeeded = Array.isArray(profile.care_types_needed)
-          ? profile.care_types_needed.join(" ").toLowerCase()
-          : "";
-
-        const location = (profile.location || "").trim().toLowerCase();
-        const household = (profile.household_description || "").trim().toLowerCase();
-        const children = (profile.children_description || "").trim().toLowerCase();
-        const pets = (profile.pets_description || "").trim().toLowerCase();
-
-        const badgeText = [
-          profile.has_cats ? "cats in home" : "",
-          profile.has_dogs ? "dogs in home" : "",
-          profile.smoking_in_home ? "smoking in home" : "",
-          profile.driving_needed ? "driving needed" : ""
-        ].join(" ").toLowerCase();
-
-        const typeOk = !typeVal || careTypesNeeded.includes(typeVal);
-        const locOk = !locVal || location.includes(locVal);
-        const keyOk =
-          !keyVal ||
-          careTypesNeeded.includes(keyVal) ||
-          household.includes(keyVal) ||
-          children.includes(keyVal) ||
-          pets.includes(keyVal) ||
-          badgeText.includes(keyVal) ||
-          location.includes(keyVal);
-
-        return typeOk && locOk && keyOk;
-      });
-
-      renderFamilies(filtered);
-    }
-
-    async function loadReviews() {
-      const { data: reviewData, error: reviewError } = await window.db
-        .from("family_reviews")
-        .select("*")
-        .eq("is_visible", true)
-        .order("created_at", { ascending: false });
-
-      if (reviewError) {
-        console.error(reviewError);
-        reviewMap = {};
-        return;
-      }
-
-      reviewMap = {};
-      (reviewData || []).forEach((review) => {
-        if (!reviewMap[review.family_profile_id]) {
-          reviewMap[review.family_profile_id] = [];
-        }
-        reviewMap[review.family_profile_id].push(review);
-      });
-    }
-
-    async function loadFamiliesOnce() {
-      let tries = 0;
-      while (!window.db && tries < 40) {
-        await new Promise((resolve) => setTimeout(resolve, 50));
-        tries++;
-      }
-
-      const container = document.getElementById("familiesContainer");
-
-      if (!window.db) {
-        if (container) {
-          container.innerHTML = "<p>Database connection not ready. Please refresh.</p>";
-        }
-        return;
-      }
-
-      const { data, error } = await window.db
-        .from("family_profiles")
-        .select("*")
-        .eq("is_active", true)
-        .eq("approval_status", "approved")
-        .order("created_at", { ascending: false });
-
-      if (error) {
-        if (container) {
-          container.innerHTML = "<p>Unable to load families right now.</p>";
-        }
-        console.error(error);
-        return;
-      }
-
-      allFamilies = data || [];
-      await loadReviews();
-      applyFilters();
-    }
-
-function wireEvents() {
-  document.getElementById("famApplyBtn")?.addEventListener("click", () => {
-    applyFilters();
-    closeBrowseSidebar("familyFilterSidebar");
-  });
-
-  document.getElementById("famClearBtn")?.addEventListener("click", () => {
-    document.getElementById("famFilterType").value = "";
-    document.getElementById("famFilterLocation").value = "";
-    document.getElementById("famFilterKeyword").value = "";
-    applyFilters();
-    closeBrowseSidebar("familyFilterSidebar");
-  });
-
-  document.getElementById("famFilterType")?.addEventListener("change", applyFilters);
-  document.getElementById("famFilterLocation")?.addEventListener("input", applyFilters);
-  document.getElementById("famFilterKeyword")?.addEventListener("input", applyFilters);
-
-  wireBrowseSidebar({
-    sidebarId: "familyFilterSidebar",
-    openButtonId: "familyFilterOpen",
-    closeButtonId: "familyFilterClose"
-  });
-}
-window.addEventListener("DOMContentLoaded", () => {
-  wireEvents();
-  loadFamiliesOnce();
-});
+    })();
   </script>
 </body>
 </html>
