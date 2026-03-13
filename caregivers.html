@@ -23,61 +23,22 @@
       <a class="button" href="./jobs.html">Browse Care Opportunities</a>
     </div>
 
-    <section class="browse-layout">
-      <aside class="filter-sidebar" id="caregiverFilterSidebar">
-        <div class="form-card filter-card">
-          <div class="filter-card-header">
-            <div>
-              <h2 class="mt-0 mb-0">Filter Caregivers</h2>
-              <p id="cgCount" class="filter-count text-small text-muted"></p>
-            </div>
+<div class="browse-layout">
+  <aside class="filter-sidebar">
+    <!-- filters -->
+  </aside>
 
-            <button type="button" class="filter-close" id="caregiverFilterClose">✕</button>
-          </div>
+  <div class="browse-main">
+    <div class="browse-topbar">
+      <button type="button" class="button" data-open-filters>Filters</button>
+      <div id="browse-count"></div>
+    </div>
 
-          <div class="row">
-            <label for="cgFilterType"><strong>Care Type</strong></label>
-            <select id="cgFilterType">
-              <option value="">All care types</option>
-              <option>Childcare</option>
-              <option>Senior Care</option>
-              <option>Pet Care</option>
-              <option>Household Help</option>
-              <option>Other</option>
-            </select>
-          </div>
+    <div id="caregiver-results" class="browse-results"></div>
+  </div>
+</div>
 
-          <div class="row">
-            <label for="cgFilterLocation"><strong>Location</strong></label>
-            <input
-              id="cgFilterLocation"
-              type="text"
-              placeholder="City or neighborhood"
-            />
-          </div>
-
-          <div class="row">
-            <label for="cgFilterKeyword"><strong>Keyword</strong></label>
-            <input
-              id="cgFilterKeyword"
-              type="text"
-              placeholder="Bio, availability, experience..."
-            />
-          </div>
-
-          <div class="filter-actions">
-            <button class="button button-caregiver" type="button" id="cgApplyBtn">Apply Filters</button>
-            <button class="button filter-clear-button" type="button" id="cgClearBtn">Clear</button>
-          </div>
-        </div>
-      </aside>
-
-      <div class="browse-main">
-        <div class="browse-topbar">
-          <button type="button" class="button filter-toggle-button" id="caregiverFilterOpen">
-            Filter Caregivers
-          </button>
-        </div>
+<div class="filter-overlay"></div>
 
         <p class="mb-16">
           Caregiver profiles are submitted by community members and approved before becoming visible.
