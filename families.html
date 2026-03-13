@@ -99,7 +99,10 @@
   <script src="./browse-helpers.js"></script>
   
   <script>
-function formatDisplayName(profile) {
+    let allFamilies = [];
+    let reviewMap = {};
+    
+  function formatDisplayName(profile) {
   return formatBrowseDisplayName(profile);
 }
 
@@ -110,10 +113,6 @@ function getReviewSummary(familyId) {
 function getRecentReview(familyId) {
   return getBrowseRecentReview(familyId, reviewMap);
 }
-
-    
-    let allFamilies = [];
-    let reviewMap = {};
 
     function careTypesNeededText(profile) {
       if (Array.isArray(profile.care_types_needed) && profile.care_types_needed.length) {
@@ -340,7 +339,10 @@ function wireEvents() {
     closeButtonId: "familyFilterClose"
   });
 }
-
+window.addEventListener("DOMContentLoaded", () => {
+  wireEvents();
+  loadFamiliesOnce();
+});
   </script>
 </body>
 </html>
