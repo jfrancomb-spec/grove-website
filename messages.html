@@ -13,7 +13,6 @@
   <div id="header-placeholder"></div>
 
   <main>
-    <!-- Hero -->
     <div class="hero">
       <h1>Messages</h1>
       <div class="subtitle">
@@ -21,7 +20,6 @@
       </div>
     </div>
 
-    <!-- Messaging layout -->
     <section>
       <div class="messages-layout">
         <div class="form-card">
@@ -51,493 +49,649 @@
   <script src="./app.js"></script>
 
   <script>
-    // -----------------------------------
-    // Page state
-    // -----------------------------------
-    let currentUser = null;
-    let allMessages = [];
-    let selectedUserId = null;
-    let userInfoMap = {};
+    (function () {
+      let currentUser = null;
+      let selectedConversationId = null;
+      let conversations = [];
+      let messagesByConversationId = {};
+      let participantMap = {};
+      let userInfoMap = {};
 
-    // -----------------------------------
-    // Helpers
-    // -----------------------------------
-    function formatMessageTime(ts) {
-      try {
-        return new Date(ts).toLocaleString();
-      } catch {
-        return "";
-      }
-    }
-
-    function groupMessagesByOtherUser(messages, currentUserId) {
-      const map = {};
-
-      messages.forEach((msg) => {
-        const otherUserId = msg.sender_id === currentUserId ? msg.receiver_id : msg.sender_id;
-        if (!map[otherUserId]) map[otherUserId] = [];
-        map[otherUserId].push(msg);
-      });
-
-      Object.values(map).forEach((group) => {
-        group.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
-      });
-
-      return map;
-    }
-
-    function formatCaregiverName(profile) {
-      const first = profile.first_name || "";
-      const lastInitial = profile.last_name ? `${profile.last_name.charAt(0)}.` : "";
-      return `${first} ${lastInitial}`.trim() || "Caregiver";
-    }
-
-    function formatFamilyName(profile) {
-      const first = profile.first_name || "";
-      const lastInitial = profile.last_name ? `${profile.last_name.charAt(0)}.` : "";
-      return `${first} ${lastInitial}`.trim() || "Family";
-    }
-
-    function getDisplayName(userId) {
-      return userInfoMap[userId]?.name || "Conversation";
-    }
-
-    function getDisplayPhoto(userId) {
-      return userInfoMap[userId]?.photo_url || "";
-    }
-
-    function getConversationAvatar(userId) {
-      const photo = getDisplayPhoto(userId);
-      const name = getDisplayName(userId);
-      const initial = name ? name.charAt(0).toUpperCase() : "?";
-
-      if (photo) {
-        return `<img class="conversation-avatar" src="${photo}" alt="${name}">`;
+      function formatMessageTime(ts) {
+        try {
+          return new Date(ts).toLocaleString();
+        } catch {
+          return "";
+        }
       }
 
-      return `<div class="conversation-avatar conversation-avatar-fallback">${initial}</div>`;
-    }
-
-    // -----------------------------------
-    // Session
-    // -----------------------------------
-    async function loadSession() {
-      const { data } = await window.db.auth.getSession();
-      currentUser = data?.session?.user || null;
-
-      if (!currentUser) {
-        document.getElementById("conversationList").innerHTML = "<p>Please sign in first.</p>";
-        document.getElementById("threadHeader").textContent = "You must be signed in to view messages.";
-        return false;
+      function formatCaregiverName(profile) {
+        const first = profile.first_name || "";
+        const lastInitial = profile.last_name ? `${profile.last_name.charAt(0)}.` : "";
+        return `${first} ${lastInitial}`.trim() || "Caregiver";
       }
 
-      return true;
-    }
-
-    // -----------------------------------
-    // Load messages for current user
-    // -----------------------------------
-    async function loadMessages() {
-      const { data, error } = await window.db
-        .from("messages")
-        .select("*")
-        .or(`sender_id.eq.${currentUser.id},receiver_id.eq.${currentUser.id}`)
-        .order("created_at", { ascending: true });
-
-      if (error) {
-        handleError(error, "Unable to load messages");
-        return;
+      function formatFamilyName(profile) {
+        const first = profile.first_name || "";
+        const lastInitial = profile.last_name ? `${profile.last_name.charAt(0)}.` : "";
+        return `${first} ${lastInitial}`.trim() || "Family";
       }
 
-      allMessages = data || [];
-      await loadConversationInfo();
-      renderConversationList();
-      renderThreadFromQuery();
-    }
-
-    // -----------------------------------
-    // Load names + photos for other users
-    // -----------------------------------
-    async function loadConversationInfo() {
-      const otherUserIds = Array.from(
-        new Set(
-          allMessages.map((msg) =>
-            msg.sender_id === currentUser.id ? msg.receiver_id : msg.sender_id
-          )
-        )
-      );
-
-      if (!otherUserIds.length) {
-        userInfoMap = {};
-        return;
+      function getOtherParticipant(conversationId) {
+        const participants = participantMap[conversationId] || [];
+        return participants.find((p) => p.user_id !== currentUser.id) || null;
       }
 
-      userInfoMap = {};
-
-      const { data: caregiverProfiles, error: caregiverError } = await window.db
-        .from("caregiver_profiles")
-        .select("user_id, first_name, last_name, photo_url")
-        .in("user_id", otherUserIds);
-
-      if (!caregiverError && caregiverProfiles) {
-        caregiverProfiles.forEach((profile) => {
-          userInfoMap[profile.user_id] = {
-            name: formatCaregiverName(profile),
-            photo_url: profile.photo_url || ""
-          };
-        });
-      } else if (caregiverError) {
-        console.error(caregiverError);
+      function getDisplayNameForConversation(conversationId) {
+        const other = getOtherParticipant(conversationId);
+        if (!other) return "Conversation";
+        return userInfoMap[other.user_id]?.name || "Conversation";
       }
 
-      const { data: familyProfiles, error: familyError } = await window.db
-        .from("family_profiles")
-        .select("user_id, first_name, last_name, photo_url")
-        .in("user_id", otherUserIds);
+      function getDisplayPhotoForConversation(conversationId) {
+        const other = getOtherParticipant(conversationId);
+        if (!other) return "";
+        return userInfoMap[other.user_id]?.photo_url || "";
+      }
 
-      if (!familyError && familyProfiles) {
-        familyProfiles.forEach((profile) => {
-          if (!userInfoMap[profile.user_id]) {
-            userInfoMap[profile.user_id] = {
-              name: formatFamilyName(profile),
-              photo_url: profile.photo_url || ""
-            };
+      function getConversationAvatar(conversationId) {
+        const photo = getDisplayPhotoForConversation(conversationId);
+        const name = getDisplayNameForConversation(conversationId);
+        const initial = name ? name.charAt(0).toUpperCase() : "?";
+
+        if (photo) {
+          return `<img class="conversation-avatar" src="${photo}" alt="${name}">`;
+        }
+
+        return `<div class="conversation-avatar conversation-avatar-fallback">${initial}</div>`;
+      }
+
+      async function loadSession() {
+        const { data } = await window.db.auth.getSession();
+        currentUser = data?.session?.user || null;
+
+        if (!currentUser) {
+          document.getElementById("conversationList").innerHTML = "<p>Please sign in first.</p>";
+          document.getElementById("threadHeader").textContent = "You must be signed in to view messages.";
+          return false;
+        }
+
+        return true;
+      }
+
+      async function getCurrentUserFamilyProfileId() {
+        const { data, error } = await window.db
+          .from("family_profiles")
+          .select("id")
+          .eq("user_id", currentUser.id)
+          .eq("is_active", true)
+          .eq("approval_status", "approved")
+          .maybeSingle();
+
+        if (error) {
+          console.error(error);
+          return null;
+        }
+
+        return data?.id || null;
+      }
+
+      async function getCurrentUserCaregiverProfileId() {
+        const { data, error } = await window.db
+          .from("caregiver_profiles")
+          .select("id")
+          .eq("user_id", currentUser.id)
+          .eq("is_active", true)
+          .eq("approval_status", "approved")
+          .maybeSingle();
+
+        if (error) {
+          console.error(error);
+          return null;
+        }
+
+        return data?.id || null;
+      }
+
+      async function findExistingConversation(targetUserId, familyProfileId, caregiverProfileId) {
+        const { data: myParticipants, error: myParticipantsError } = await window.db
+          .from("conversation_participants")
+          .select("conversation_id")
+          .eq("user_id", currentUser.id);
+
+        if (myParticipantsError) {
+          console.error(myParticipantsError);
+          return null;
+        }
+
+        const conversationIds = (myParticipants || []).map((row) => row.conversation_id);
+        if (!conversationIds.length) return null;
+
+        const { data: conversationsData, error: conversationsError } = await window.db
+          .from("conversations")
+          .select("*")
+          .in("id", conversationIds)
+          .eq("family_profile_id", familyProfileId)
+          .eq("caregiver_profile_id", caregiverProfileId)
+          .eq("status", "active");
+
+        if (conversationsError) {
+          console.error(conversationsError);
+          return null;
+        }
+
+        if (!conversationsData?.length) return null;
+
+        for (const conversation of conversationsData) {
+          const { data: participants, error: participantsError } = await window.db
+            .from("conversation_participants")
+            .select("*")
+            .eq("conversation_id", conversation.id);
+
+          if (participantsError) {
+            console.error(participantsError);
+            continue;
           }
+
+          const userIds = (participants || []).map((p) => p.user_id);
+          if (userIds.includes(currentUser.id) && userIds.includes(targetUserId) && userIds.length === 2) {
+            return conversation;
+          }
+        }
+
+        return null;
+      }
+
+      async function createConversation(targetUserId, familyProfileId, caregiverProfileId) {
+        let myRole = "";
+        let myProfileId = null;
+        let targetRole = "";
+        let targetProfileId = null;
+
+        const myFamilyProfileId = await getCurrentUserFamilyProfileId();
+        const myCaregiverProfileId = await getCurrentUserCaregiverProfileId();
+
+        if (myFamilyProfileId && myFamilyProfileId === familyProfileId) {
+          myRole = "family";
+          myProfileId = familyProfileId;
+          targetRole = "caregiver";
+          targetProfileId = caregiverProfileId;
+        } else if (myCaregiverProfileId && myCaregiverProfileId === caregiverProfileId) {
+          myRole = "caregiver";
+          myProfileId = caregiverProfileId;
+          targetRole = "family";
+          targetProfileId = familyProfileId;
+        } else if (familyProfileId && caregiverProfileId) {
+          if (myFamilyProfileId) {
+            myRole = "family";
+            myProfileId = myFamilyProfileId;
+            targetRole = "caregiver";
+            targetProfileId = caregiverProfileId;
+          } else if (myCaregiverProfileId) {
+            myRole = "caregiver";
+            myProfileId = myCaregiverProfileId;
+            targetRole = "family";
+            targetProfileId = familyProfileId;
+          }
+        }
+
+        const { data: conversation, error: conversationError } = await window.db
+          .from("conversations")
+          .insert([{
+            created_by_user_id: currentUser.id,
+            conversation_type: "direct",
+            family_profile_id: familyProfileId,
+            caregiver_profile_id: caregiverProfileId,
+            status: "active",
+            last_message_at: null,
+            last_message_preview: null
+          }])
+          .select("*")
+          .single();
+
+        if (conversationError) {
+          console.error(conversationError);
+          return null;
+        }
+
+        const inserts = [
+          {
+            conversation_id: conversation.id,
+            user_id: currentUser.id,
+            participant_role: myRole || "user",
+            profile_id: myProfileId
+          },
+          {
+            conversation_id: conversation.id,
+            user_id: targetUserId,
+            participant_role: targetRole || "user",
+            profile_id: targetProfileId
+          }
+        ];
+
+        const { error: participantError } = await window.db
+          .from("conversation_participants")
+          .insert(inserts);
+
+        if (participantError) {
+          console.error(participantError);
+          return null;
+        }
+
+        return conversation;
+      }
+
+      async function ensureConversationFromQuery() {
+        const params = new URLSearchParams(window.location.search);
+
+        const requestedConversationId = params.get("conversation");
+        if (requestedConversationId) {
+          selectedConversationId = requestedConversationId;
+          return;
+        }
+
+        const targetUserId = params.get("targetUser");
+        let familyProfileId = params.get("familyProfileId");
+        let caregiverProfileId = params.get("caregiverProfileId");
+
+        if (!targetUserId) return;
+
+        if (!familyProfileId && caregiverProfileId) {
+          familyProfileId = await getCurrentUserFamilyProfileId();
+        }
+
+        if (!caregiverProfileId && familyProfileId) {
+          caregiverProfileId = await getCurrentUserCaregiverProfileId();
+        }
+
+        console.log("Messaging query debug", {
+          currentUserId: currentUser?.id,
+          targetUserId,
+          familyProfileId,
+          caregiverProfileId
         });
-      } else if (familyError) {
-        console.error(familyError);
-      }
-    }
 
-    // -----------------------------------
-    // Render inbox list
-    // -----------------------------------
-    function renderConversationList() {
-      const container = document.getElementById("conversationList");
-      container.innerHTML = "";
+        if (!familyProfileId || !caregiverProfileId) {
+          document.getElementById("threadHeader").textContent =
+            "Unable to start this conversation because the matching profile could not be found.";
+          return;
+        }
 
-      if (!allMessages.length) {
-        container.innerHTML = "<p>No conversations yet.</p>";
-        return;
-      }
+        const existing = await findExistingConversation(targetUserId, familyProfileId, caregiverProfileId);
 
-      const grouped = groupMessagesByOtherUser(allMessages, currentUser.id);
-      const userIds = Object.keys(grouped);
+        if (existing?.id) {
+          selectedConversationId = existing.id;
 
-      userIds.sort((a, b) => {
-        const lastA = grouped[a][grouped[a].length - 1];
-        const lastB = grouped[b][grouped[b].length - 1];
-        return new Date(lastB.created_at) - new Date(lastA.created_at);
-      });
-
-      userIds.forEach((userId) => {
-        const thread = grouped[userId];
-        const last = thread[thread.length - 1];
-        const unreadCount = thread.filter(
-          (m) => m.receiver_id === currentUser.id && !m.is_read
-        ).length;
-
-        const button = document.createElement("button");
-        button.type = "button";
-        button.className = "conversation-item";
-        if (selectedUserId === userId) button.classList.add("active");
-
-        button.innerHTML = `
-          <div class="conversation-row">
-            ${getConversationAvatar(userId)}
-            <div class="conversation-main">
-              <div class="conversation-top">
-                <span><strong>${getDisplayName(userId)}</strong></span>
-                ${unreadCount ? `<span class="unread-pill">${unreadCount}</span>` : ""}
-              </div>
-              <div class="conversation-preview">${last.message_text || ""}</div>
-              <div class="conversation-time">${formatMessageTime(last.created_at)}</div>
-            </div>
-          </div>
-        `;
-
-        button.addEventListener("click", () => {
-          selectedUserId = userId;
           const url = new URL(window.location.href);
-          url.searchParams.set("user", userId);
+          url.search = "";
+          url.searchParams.set("conversation", selectedConversationId);
           window.history.replaceState({}, "", url);
+
+          return;
+        }
+
+        const created = await createConversation(targetUserId, familyProfileId, caregiverProfileId);
+
+        if (created?.id) {
+          selectedConversationId = created.id;
+
+          const url = new URL(window.location.href);
+          url.search = "";
+          url.searchParams.set("conversation", selectedConversationId);
+          window.history.replaceState({}, "", url);
+        } else {
+          document.getElementById("threadHeader").textContent =
+            "Unable to create the conversation right now.";
+        }
+      }
+
+      async function loadConversations() {
+        const { data: myParticipants, error: participantError } = await window.db
+          .from("conversation_participants")
+          .select("*")
+          .eq("user_id", currentUser.id)
+          .eq("is_archived", false);
+
+        if (participantError) {
+          console.error(participantError);
+          document.getElementById("conversationList").innerHTML = "<p>Unable to load conversations.</p>";
+          return;
+        }
+
+        const conversationIds = (myParticipants || []).map((row) => row.conversation_id);
+
+        if (!conversationIds.length) {
+          conversations = [];
+          participantMap = {};
+          messagesByConversationId = {};
           renderConversationList();
           renderSelectedThread();
+          return;
+        }
+
+        const { data: conversationData, error: conversationError } = await window.db
+          .from("conversations")
+          .select("*")
+          .in("id", conversationIds)
+          .order("last_message_at", { ascending: false, nullsFirst: false });
+
+        if (conversationError) {
+          console.error(conversationError);
+          document.getElementById("conversationList").innerHTML = "<p>Unable to load conversations.</p>";
+          return;
+        }
+
+        conversations = conversationData || [];
+
+        const { data: allParticipants, error: allParticipantsError } = await window.db
+          .from("conversation_participants")
+          .select("*")
+          .in("conversation_id", conversationIds);
+
+        if (allParticipantsError) {
+          console.error(allParticipantsError);
+          return;
+        }
+
+        participantMap = {};
+        (allParticipants || []).forEach((participant) => {
+          if (!participantMap[participant.conversation_id]) {
+            participantMap[participant.conversation_id] = [];
+          }
+          participantMap[participant.conversation_id].push(participant);
         });
 
-        container.appendChild(button);
-      });
-    }
+        const { data: allMessages, error: messageError } = await window.db
+          .from("messages")
+          .select("*")
+          .in("conversation_id", conversationIds)
+          .order("created_at", { ascending: true });
 
-    // -----------------------------------
-    // Read selected thread from query string
-    // -----------------------------------
-    function renderThreadFromQuery() {
-      const params = new URLSearchParams(window.location.search);
-      const requestedUser = params.get("user");
+        if (messageError) {
+          console.error(messageError);
+          return;
+        }
 
-      if (requestedUser) {
-        selectedUserId = requestedUser;
+        messagesByConversationId = {};
+        (allMessages || []).forEach((message) => {
+          if (!messagesByConversationId[message.conversation_id]) {
+            messagesByConversationId[message.conversation_id] = [];
+          }
+          messagesByConversationId[message.conversation_id].push(message);
+        });
+
+        await loadConversationUserInfo();
         renderConversationList();
         renderSelectedThread();
       }
-    }
 
-    // -----------------------------------
-    // Render selected thread
-    // -----------------------------------
-function renderSelectedThread() {
-  const threadHeader = document.getElementById("threadHeader");
-  const threadEl = document.getElementById("messageThread");
-  const composer = document.getElementById("messageComposer");
+      async function loadConversationUserInfo() {
+        const participantUserIds = Array.from(
+          new Set(
+            Object.values(participantMap)
+              .flat()
+              .map((participant) => participant.user_id)
+              .filter((userId) => userId && userId !== currentUser.id)
+          )
+        );
 
-  threadEl.innerHTML = "";
+        if (!participantUserIds.length) {
+          userInfoMap = {};
+          return;
+        }
 
-  if (!selectedConversationId) {
-    const params = new URLSearchParams(window.location.search);
-    const targetUser = params.get("targetUser");
+        userInfoMap = {};
 
-    if (targetUser) {
-      threadHeader.textContent = "Start a new conversation";
-      threadEl.innerHTML = "<p>No messages yet. Write the first message below.</p>";
-      composer.style.display = "block";
-      return;
-    }
+        const { data: caregiverProfiles, error: caregiverError } = await window.db
+          .from("caregiver_profiles")
+          .select("user_id, first_name, last_name, photo_url")
+          .in("user_id", participantUserIds);
 
-    threadHeader.textContent = "Select a conversation to view messages.";
-    composer.style.display = "none";
-    return;
-  }
+        if (!caregiverError && caregiverProfiles) {
+          caregiverProfiles.forEach((profile) => {
+            userInfoMap[profile.user_id] = {
+              name: formatCaregiverName(profile),
+              photo_url: profile.photo_url || ""
+            };
+          });
+        } else if (caregiverError) {
+          console.error(caregiverError);
+        }
 
-  threadHeader.textContent = `Conversation with ${getDisplayNameForConversation(selectedConversationId)}`;
-  composer.style.display = "block";
+        const { data: familyProfiles, error: familyError } = await window.db
+          .from("family_profiles")
+          .select("user_id, first_name, last_name, photo_url")
+          .in("user_id", participantUserIds);
 
-  const thread = messagesByConversationId[selectedConversationId] || [];
-
-  if (!thread.length) {
-    threadEl.innerHTML = "<p>No messages yet. Start the conversation below.</p>";
-    return;
-  }
-
-  thread.forEach((message) => {
-    const div = document.createElement("div");
-    div.className =
-      message.sender_user_id === currentUser.id
-        ? "message-bubble sent"
-        : "message-bubble received";
-
-    div.innerHTML = `
-      <div>${message.message_text}</div>
-      <div class="message-time">${formatMessageTime(message.created_at)}</div>
-    `;
-
-    threadEl.appendChild(div);
-  });
-
-  threadEl.scrollTop = threadEl.scrollHeight;
-}
-
-    // -----------------------------------
-    // Mark received messages as read
-    // -----------------------------------
-    async function markMessagesRead(thread) {
-      const unreadIds = thread
-        .filter((msg) => msg.receiver_id === currentUser.id && !msg.is_read)
-        .map((msg) => msg.id);
-
-      if (!unreadIds.length) return;
-
-      const { error } = await window.db
-        .from("messages")
-        .update({ is_read: true })
-        .in("id", unreadIds);
-
-      if (error) {
-        console.error(error);
-        return;
+        if (!familyError && familyProfiles) {
+          familyProfiles.forEach((profile) => {
+            if (!userInfoMap[profile.user_id]) {
+              userInfoMap[profile.user_id] = {
+                name: formatFamilyName(profile),
+                photo_url: profile.photo_url || ""
+              };
+            }
+          });
+        } else if (familyError) {
+          console.error(familyError);
+        }
       }
 
-      allMessages = allMessages.map((msg) =>
-        unreadIds.includes(msg.id) ? { ...msg, is_read: true } : msg
-      );
+      function renderConversationList() {
+        const container = document.getElementById("conversationList");
+        container.innerHTML = "";
 
-      renderConversationList();
-    }
+        if (!conversations.length) {
+          container.innerHTML = "<p>No conversations yet.</p>";
+          return;
+        }
 
-    // -----------------------------------
-    // Send a message
-    // -----------------------------------
+        conversations.forEach((conversation) => {
+          const thread = messagesByConversationId[conversation.id] || [];
+          const lastMessage = thread.length ? thread[thread.length - 1] : null;
 
- async function sendMessage() {
-  const textEl = document.getElementById("messageText");
-  const text = textEl.value.trim();
+          const button = document.createElement("button");
+          button.type = "button";
+          button.className = "conversation-item";
 
-  if (!text) return;
+          if (selectedConversationId === conversation.id) {
+            button.classList.add("active");
+          }
 
-  if (!selectedConversationId) {
-    const params = new URLSearchParams(window.location.search);
-    const targetUserId = params.get("targetUser");
-    let familyProfileId = params.get("familyProfileId");
-    let caregiverProfileId = params.get("caregiverProfileId");
+          button.innerHTML = `
+            <div class="conversation-row">
+              ${getConversationAvatar(conversation.id)}
+              <div class="conversation-main">
+                <div class="conversation-top">
+                  <span><strong>${getDisplayNameForConversation(conversation.id)}</strong></span>
+                </div>
+                <div class="conversation-preview">${lastMessage?.message_text || "No messages yet"}</div>
+                <div class="conversation-time">${lastMessage ? formatMessageTime(lastMessage.created_at) : ""}</div>
+              </div>
+            </div>
+          `;
 
-    if (!targetUserId) {
-      alert("No conversation selected.");
-      return;
-    }
+          button.addEventListener("click", () => {
+            selectedConversationId = conversation.id;
+            const url = new URL(window.location.href);
+            url.search = "";
+            url.searchParams.set("conversation", conversation.id);
+            window.history.replaceState({}, "", url);
+            renderConversationList();
+            renderSelectedThread();
+          });
 
-    if (!familyProfileId && caregiverProfileId) {
-      familyProfileId = await getCurrentUserFamilyProfileId();
-    }
-
-    if (!caregiverProfileId && familyProfileId) {
-      caregiverProfileId = await getCurrentUserCaregiverProfileId();
-    }
-
-    if (!familyProfileId || !caregiverProfileId) {
-      alert("Unable to start this conversation because one of the required profiles could not be found.");
-      return;
-    }
-
-    const existing = await findExistingConversation(targetUserId, familyProfileId, caregiverProfileId);
-
-    if (existing?.id) {
-      selectedConversationId = existing.id;
-    } else {
-      const created = await createConversation(targetUserId, familyProfileId, caregiverProfileId);
-      if (!created?.id) {
-        alert("Unable to create the conversation.");
-        return;
+          container.appendChild(button);
+        });
       }
-      selectedConversationId = created.id;
-    }
 
-    const url = new URL(window.location.href);
-    url.search = "";
-    url.searchParams.set("conversation", selectedConversationId);
-    window.history.replaceState({}, "", url);
-  }
+      function renderSelectedThread() {
+        const threadHeader = document.getElementById("threadHeader");
+        const threadEl = document.getElementById("messageThread");
+        const composer = document.getElementById("messageComposer");
 
-  const payload = {
-    conversation_id: selectedConversationId,
-    sender_user_id: currentUser.id,
-    message_text: text
-  };
+        threadEl.innerHTML = "";
 
-  const { error: messageError } = await window.db
-    .from("messages")
-    .insert([payload]);
+        const params = new URLSearchParams(window.location.search);
+        const targetUser = params.get("targetUser");
 
-  if (messageError) {
-    console.error(messageError);
-    alert("Message send failed.");
-    return;
-  }
+        if (!selectedConversationId) {
+          if (targetUser) {
+            threadHeader.textContent = "Start a new conversation";
+            threadEl.innerHTML = "<p>Write your first message below.</p>";
+            composer.style.display = "block";
+            return;
+          }
 
-  const { error: conversationError } = await window.db
-    .from("conversations")
-    .update({
-      last_message_at: new Date().toISOString(),
-      last_message_preview: text
-    })
-    .eq("id", selectedConversationId);
+          threadHeader.textContent = "Select a conversation to view messages.";
+          composer.style.display = "none";
+          return;
+        }
 
-  if (conversationError) {
-    console.error(conversationError);
-  }
+        threadHeader.textContent = `Conversation with ${getDisplayNameForConversation(selectedConversationId)}`;
+        composer.style.display = "block";
 
-  textEl.value = "";
+        const thread = messagesByConversationId[selectedConversationId] || [];
 
-  const keepConversationId = selectedConversationId;
-  await loadConversations();
-  selectedConversationId = keepConversationId;
-  renderConversationList();
-  renderSelectedThread();
-}   
+        if (!thread.length) {
+          threadEl.innerHTML = "<p>No messages yet. Start the conversation below.</p>";
+          return;
+        }
 
-function wireComposerShortcuts() {
-  const textEl = document.getElementById("messageText");
-  if (!textEl) return;
+        thread.forEach((message) => {
+          const div = document.createElement("div");
+          div.className =
+            message.sender_user_id === currentUser.id
+              ? "message-bubble sent"
+              : "message-bubble received";
 
-  textEl.addEventListener("keydown", async (event) => {
-    if (event.key === "Enter" && !event.shiftKey) {
-      event.preventDefault();
-      await sendMessage();
-    }
-  });
-}
-async function ensureConversationFromQuery() {
-  const params = new URLSearchParams(window.location.search);
+          div.innerHTML = `
+            <div>${message.message_text}</div>
+            <div class="message-time">${formatMessageTime(message.created_at)}</div>
+          `;
 
-  const requestedConversationId = params.get("conversation");
-  if (requestedConversationId) {
-    selectedConversationId = requestedConversationId;
-    return;
-  }
+          threadEl.appendChild(div);
+        });
 
-  const targetUserId = params.get("targetUser");
-  let familyProfileId = params.get("familyProfileId");
-  let caregiverProfileId = params.get("caregiverProfileId");
+        threadEl.scrollTop = threadEl.scrollHeight;
+      }
 
-  if (!targetUserId) return;
+      async function sendMessage() {
+        const textEl = document.getElementById("messageText");
+        const text = textEl.value.trim();
 
-  if (!familyProfileId && caregiverProfileId) {
-    familyProfileId = await getCurrentUserFamilyProfileId();
-  }
+        if (!text) return;
 
-  if (!caregiverProfileId && familyProfileId) {
-    caregiverProfileId = await getCurrentUserCaregiverProfileId();
-  }
+        if (!selectedConversationId) {
+          const params = new URLSearchParams(window.location.search);
+          const targetUserId = params.get("targetUser");
+          let familyProfileId = params.get("familyProfileId");
+          let caregiverProfileId = params.get("caregiverProfileId");
 
-  if (!familyProfileId || !caregiverProfileId) {
-    console.error("Missing familyProfileId or caregiverProfileId", {
-      targetUserId,
-      familyProfileId,
-      caregiverProfileId
-    });
+          if (!targetUserId) {
+            alert("No conversation selected.");
+            return;
+          }
 
-    document.getElementById("threadHeader").textContent =
-      "Unable to start this conversation because the matching profile could not be found.";
+          if (!familyProfileId && caregiverProfileId) {
+            familyProfileId = await getCurrentUserFamilyProfileId();
+          }
 
-    return;
-  }
+          if (!caregiverProfileId && familyProfileId) {
+            caregiverProfileId = await getCurrentUserCaregiverProfileId();
+          }
 
-  const existing = await findExistingConversation(targetUserId, familyProfileId, caregiverProfileId);
+          console.log("Send message debug", {
+            currentUserId: currentUser?.id,
+            targetUserId,
+            familyProfileId,
+            caregiverProfileId
+          });
 
-  if (existing?.id) {
-    selectedConversationId = existing.id;
-    return;
-  }
+          if (!familyProfileId || !caregiverProfileId) {
+            alert("Unable to start this conversation because one of the required profiles could not be found.");
+            return;
+          }
 
-  const created = await createConversation(targetUserId, familyProfileId, caregiverProfileId);
+          const existing = await findExistingConversation(targetUserId, familyProfileId, caregiverProfileId);
 
-  if (created?.id) {
-    selectedConversationId = created.id;
+          if (existing?.id) {
+            selectedConversationId = existing.id;
+          } else {
+            const created = await createConversation(targetUserId, familyProfileId, caregiverProfileId);
+            if (!created?.id) {
+              alert("Unable to create the conversation.");
+              return;
+            }
+            selectedConversationId = created.id;
+          }
 
-    const url = new URL(window.location.href);
-    url.search = "";
-    url.searchParams.set("conversation", selectedConversationId);
-    window.history.replaceState({}, "", url);
-  } else {
-    console.error("Conversation creation failed");
-    document.getElementById("threadHeader").textContent =
-      "Unable to create the conversation right now.";
-  }
-}    
-    // -----------------------------------
-    // Init
-    // -----------------------------------
+          const url = new URL(window.location.href);
+          url.search = "";
+          url.searchParams.set("conversation", selectedConversationId);
+          window.history.replaceState({}, "", url);
+        }
 
-window.addEventListener("DOMContentLoaded", async () => {
-  const ok = await loadSession();
-  if (!ok) return;
+        const payload = {
+          conversation_id: selectedConversationId,
+          sender_user_id: currentUser.id,
+          message_text: text
+        };
 
-  document.getElementById("sendMessageBtn")?.addEventListener("click", sendMessage);
-  wireComposerShortcuts();
+        const { error: messageError } = await window.db
+          .from("messages")
+          .insert([payload]);
 
-  await ensureConversationFromQuery();
-  await loadConversations();
-});
-    
+        if (messageError) {
+          console.error(messageError);
+          alert("Message send failed.");
+          return;
+        }
+
+        const { error: conversationError } = await window.db
+          .from("conversations")
+          .update({
+            last_message_at: new Date().toISOString(),
+            last_message_preview: text
+          })
+          .eq("id", selectedConversationId);
+
+        if (conversationError) {
+          console.error(conversationError);
+        }
+
+        textEl.value = "";
+
+        const keepConversationId = selectedConversationId;
+        await loadConversations();
+        selectedConversationId = keepConversationId;
+        renderConversationList();
+        renderSelectedThread();
+      }
+
+      function wireComposerShortcuts() {
+        const textEl = document.getElementById("messageText");
+        if (!textEl) return;
+
+        textEl.addEventListener("keydown", async (event) => {
+          if (event.key === "Enter" && !event.shiftKey) {
+            event.preventDefault();
+            await sendMessage();
+          }
+        });
+      }
+
+      window.addEventListener("DOMContentLoaded", async () => {
+        const ok = await loadSession();
+        if (!ok) return;
+
+        document.getElementById("sendMessageBtn")?.addEventListener("click", sendMessage);
+        wireComposerShortcuts();
+
+        await ensureConversationFromQuery();
+        await loadConversations();
+      });
+    })();
   </script>
 </body>
 </html>
