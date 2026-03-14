@@ -106,6 +106,23 @@
         return `<div class="conversation-avatar conversation-avatar-fallback">${initial}</div>`;
       }
 
+function isConversationUnread(conversationId) {
+  const participants = participantMap[conversationId] || [];
+  const myParticipant = participants.find((p) => p.user_id === currentUser.id);
+  const thread = messagesByConversationId[conversationId] || [];
+
+  if (!myParticipant || !thread.length) return false;
+
+  const lastMessage = thread[thread.length - 1];
+
+  if (!lastMessage) return false;
+  if (lastMessage.sender_user_id === currentUser.id) return false;
+  if (!myParticipant.last_read_at) return true;
+
+  return new Date(lastMessage.created_at) > new Date(myParticipant.last_read_at);
+}
+
+      
       async function loadSession() {
         const { data } = await window.db.auth.getSession();
         currentUser = data?.session?.user || null;
@@ -477,14 +494,72 @@
         }
       }
 
-      function renderConversationList() {
-        const container = document.getElementById("conversationList");
-        container.innerHTML = "";
+function renderConversationList() {
+  const container = document.getElementById("conversationList");
+  container.innerHTML = "";
 
-        if (!conversations.length) {
-          container.innerHTML = "<p>No conversations yet.</p>";
-          return;
-        }
+  if (!conversations.length) {
+    container.innerHTML = "<p>No conversations yet.</p>";
+    return;
+  }
+
+  const sortedConversations = [...conversations].sort((a, b) => {
+    const aUnread = isConversationUnread(a.id) ? 1 : 0;
+    const bUnread = isConversationUnread(b.id) ? 1 : 0;
+
+    if (aUnread !== bUnread) {
+      return bUnread - aUnread;
+    }
+
+    const aTime = a.last_message_at ? new Date(a.last_message_at).getTime() : 0;
+    const bTime = b.last_message_at ? new Date(b.last_message_at).getTime() : 0;
+
+    return bTime - aTime;
+  });
+
+  sortedConversations.forEach((conversation) => {
+    const thread = messagesByConversationId[conversation.id] || [];
+    const lastMessage = thread.length ? thread[thread.length - 1] : null;
+    const unread = isConversationUnread(conversation.id);
+
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "conversation-item";
+
+    if (selectedConversationId === conversation.id) {
+      button.classList.add("active");
+    }
+
+    button.innerHTML = `
+      <div class="conversation-row">
+        ${getConversationAvatar(conversation.id)}
+        <div class="conversation-main">
+          <div class="conversation-top">
+            <span><strong>${getDisplayNameForConversation(conversation.id)}</strong></span>
+            ${unread ? `<span class="unread-pill">New</span>` : ""}
+          </div>
+          <div class="conversation-preview">${lastMessage?.message_text || "No messages yet"}</div>
+          <div class="conversation-time">${lastMessage ? formatMessageTime(lastMessage.created_at) : ""}</div>
+        </div>
+      </div>
+    `;
+
+    button.addEventListener("click", async () => {
+      selectedConversationId = conversation.id;
+
+      const url = new URL(window.location.href);
+      url.search = "";
+      url.searchParams.set("conversation", conversation.id);
+      window.history.replaceState({}, "", url);
+
+      await markConversationRead(conversation.id);
+      renderConversationList();
+      renderSelectedThread();
+    });
+
+    container.appendChild(button);
+  });
+}
 
         conversations.forEach((conversation) => {
           const thread = messagesByConversationId[conversation.id] || [];
@@ -574,8 +649,34 @@
         });
 
         threadEl.scrollTop = threadEl.scrollHeight;
+markConversationRead(selectedConversationId);
+      
       }
 
+async function markConversationRead(conversationId) {
+  if (!conversationId || !currentUser?.id) return;
+
+  const participants = participantMap[conversationId] || [];
+  const myParticipant = participants.find((p) => p.user_id === currentUser.id);
+
+  if (!myParticipant) return;
+
+  const now = new Date().toISOString();
+
+  const { error } = await window.db
+    .from("conversation_participants")
+    .update({ last_read_at: now })
+    .eq("id", myParticipant.id);
+
+  if (error) {
+    console.error(error);
+    return;
+  }
+
+  myParticipant.last_read_at = now;
+}
+
+    
       async function sendMessage() {
         const textEl = document.getElementById("messageText");
         const text = textEl.value.trim();
@@ -662,11 +763,15 @@
 
         textEl.value = "";
 
-        const keepConversationId = selectedConversationId;
-        await loadConversations();
-        selectedConversationId = keepConversationId;
-        renderConversationList();
-        renderSelectedThread();
+await markConversationRead(selectedConversationId);
+
+const keepConversationId = selectedConversationId;
+await loadConversations();
+selectedConversationId = keepConversationId;
+renderConversationList();
+renderSelectedThread();
+
+document.getElementById("messageText")?.focus();
       }
 
       function wireComposerShortcuts() {
