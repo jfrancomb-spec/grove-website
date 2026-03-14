@@ -1011,6 +1011,7 @@ textarea:focus {
   color: #fff;
   font-size: 12px;
   font-weight: 700;
+  line-height: 1.4;
 }
 
 .message-thread {
