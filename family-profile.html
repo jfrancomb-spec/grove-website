@@ -211,9 +211,22 @@
         document.getElementById("profileSubtitle").textContent =
           `${displayName}${profile.location ? ` • ${profile.location}` : ""}`;
 
-        document.getElementById("contactBtn").href = profile.user_id
-          ? `./messages.html?user=${profile.user_id}`
-          : "#";
+const contactBtn = document.getElementById("contactBtn");
+
+if (profile.user_id) {
+  contactBtn.style.display = "";
+  contactBtn.href = "#";
+  contactBtn.onclick = async (event) => {
+    event.preventDefault();
+
+    await window.openGroveConversation({
+      targetUserId: profile.user_id,
+      familyProfileId: profile.id
+    });
+  };
+} else {
+  contactBtn.style.display = "none";
+}
 
         document.getElementById("profileContent").innerHTML = `
           <div class="profile-detail">
