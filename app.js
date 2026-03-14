@@ -232,6 +232,55 @@ function wireCaregiverForm() {
 }
 
 // ======================================================
+// Messaging helpers
+// ======================================================
+
+async function openOrStartMessageThread({
+  targetUserId,
+  caregiverProfileId = null,
+  familyProfileId = null
+}) {
+  if (!window.db || !window.currentUser?.id || !targetUserId) return;
+
+  const currentUserId = window.currentUser.id;
+
+  const { data, error } = await window.db
+    .from("messages")
+    .select("id, sender_id, receiver_id, caregiver_profile_id, family_profile_id, created_at")
+    .or(
+      `and(sender_id.eq.${currentUserId},receiver_id.eq.${targetUserId}),and(sender_id.eq.${targetUserId},receiver_id.eq.${currentUserId})`
+    )
+    .eq("caregiver_profile_id", caregiverProfileId)
+    .eq("family_profile_id", familyProfileId)
+    .order("created_at", { ascending: true });
+
+  if (error) {
+    console.error(error);
+    return;
+  }
+
+  if (data && data.length) {
+    const firstMessage = data[0];
+    window.location.href = `./messages.html?thread=${firstMessage.id}`;
+    return;
+  }
+
+  const params = new URLSearchParams();
+
+  params.set("targetUser", targetUserId);
+
+  if (caregiverProfileId) {
+    params.set("caregiverProfileId", caregiverProfileId);
+  }
+
+  if (familyProfileId) {
+    params.set("familyProfileId", familyProfileId);
+  }
+
+  window.location.href = `./messages.html?${params.toString()}`;
+}
+
+// ======================================================
 // Admin helpers
 // ======================================================
 function getAdminBadges(profile) {
