@@ -69,11 +69,27 @@ function buildProfileActions(actions) {
 
   return `
     <div class="profile-actions">
-      ${actions.map(action => `
-        <a class="${action.className || "button"}" href="${action.href}">
-          ${action.label}
-        </a>
-      `).join("")}
+      ${actions.map((action) => {
+        if (action.action === "message") {
+          return `
+            <button
+              type="button"
+              class="${action.className || "button"}"
+              data-message-target-user="${action.targetUserId || ""}"
+              data-message-family-profile="${action.familyProfileId || ""}"
+              data-message-caregiver-profile="${action.caregiverProfileId || ""}"
+            >
+              ${action.label}
+            </button>
+          `;
+        }
+
+        return `
+          <a class="${action.className || "button"}" href="${action.href}">
+            ${action.label}
+          </a>
+        `;
+      }).join("")}
     </div>
   `;
 }
@@ -127,6 +143,7 @@ function renderBrowseCards(container, items, config) {
     .join("");
 
   wireBrowseCardGallery(container);
+  wireBrowseActionButtons(container);
 }
 
 function wireBrowseCardGallery(container = document) {
@@ -145,6 +162,26 @@ function wireBrowseCardGallery(container = document) {
 
         buttons.forEach(btn => btn.classList.remove("active"));
         button.classList.add("active");
+      });
+    });
+  });
+}
+
+function wireBrowseActionButtons(container = document) {
+  const buttons = container.querySelectorAll("[data-message-target-user]");
+
+  buttons.forEach((button) => {
+    button.addEventListener("click", async () => {
+      const targetUserId = button.dataset.messageTargetUser || "";
+      const familyProfileId = button.dataset.messageFamilyProfile || "";
+      const caregiverProfileId = button.dataset.messageCaregiverProfile || "";
+
+      if (!targetUserId || !window.openGroveConversation) return;
+
+      await window.openGroveConversation({
+        targetUserId,
+        familyProfileId: familyProfileId || null,
+        caregiverProfileId: caregiverProfileId || null
       });
     });
   });
