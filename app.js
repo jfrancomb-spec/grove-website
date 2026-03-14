@@ -280,6 +280,29 @@ async function openOrStartMessageThread({
   window.location.href = `./messages.html?${params.toString()}`;
 }
 
+async function openGroveConversation({
+  targetUserId,
+  familyProfileId = null,
+  caregiverProfileId = null
+}) {
+  if (!targetUserId) return;
+
+  const params = new URLSearchParams();
+  params.set("targetUser", targetUserId);
+
+  if (familyProfileId) {
+    params.set("familyProfileId", familyProfileId);
+  }
+
+  if (caregiverProfileId) {
+    params.set("caregiverProfileId", caregiverProfileId);
+  }
+
+  window.location.href = `./messages.html?${params.toString()}`;
+}
+
+window.openGroveConversation = openGroveConversation;
+
 // ======================================================
 // Admin helpers
 // ======================================================
