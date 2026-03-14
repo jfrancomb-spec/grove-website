@@ -363,47 +363,81 @@
     // -----------------------------------
     // Send a message
     // -----------------------------------
-    async function sendMessage() {
-      const textEl = document.getElementById("messageText");
-      const text = textEl.value.trim();
+async function sendMessage() {
+  const textEl = document.getElementById("messageText");
+  const text = textEl.value.trim();
 
-      if (!selectedUserId) {
-        alert("No conversation selected.");
-        return;
-      }
+  if (!selectedConversationId) {
+    alert("No conversation selected.");
+    return;
+  }
 
-      if (!text) return;
+  if (!text) return;
 
-      const payload = {
-        sender_id: currentUser.id,
-        receiver_id: selectedUserId,
-        message_text: text
-      };
+  const payload = {
+    conversation_id: selectedConversationId,
+    sender_user_id: currentUser.id,
+    message_text: text
+  };
 
-      const { error } = await window.db
-        .from("messages")
-        .insert([payload]);
+  const { error: messageError } = await window.db
+    .from("messages")
+    .insert([payload]);
 
-      if (error) {
-        handleError(error, "Message send failed");
-        return;
-      }
+  if (messageError) {
+    console.error(messageError);
+    alert("Message send failed.");
+    return;
+  }
 
-      textEl.value = "";
-      await loadMessages();
-      await renderSelectedThread();
+  const { error: conversationError } = await window.db
+    .from("conversations")
+    .update({
+      last_message_at: new Date().toISOString(),
+      last_message_preview: text
+    })
+    .eq("id", selectedConversationId);
+
+  if (conversationError) {
+    console.error(conversationError);
+  }
+
+  textEl.value = "";
+
+  const keepConversationId = selectedConversationId;
+  await loadConversations();
+  selectedConversationId = keepConversationId;
+  renderConversationList();
+  renderSelectedThread();
+}
+
+function wireComposerShortcuts() {
+  const textEl = document.getElementById("messageText");
+  if (!textEl) return;
+
+  textEl.addEventListener("keydown", async (event) => {
+    if (event.key === "Enter" && !event.shiftKey) {
+      event.preventDefault();
+      await sendMessage();
     }
-
+  });
+}
+    
     // -----------------------------------
     // Init
     // -----------------------------------
-    window.addEventListener("DOMContentLoaded", async () => {
-      const ok = await loadSession();
-      if (!ok) return;
 
-      document.getElementById("sendMessageBtn")?.addEventListener("click", sendMessage);
-      await loadMessages();
-    });
+window.addEventListener("DOMContentLoaded", async () => {
+  const ok = await loadSession();
+  if (!ok) return;
+
+  document.getElementById("sendMessageBtn")?.addEventListener("click", sendMessage);
+  wireComposerShortcuts();
+
+  await ensureConversationFromQuery();
+  await loadConversations();
+});
+    
   </script>
 </body>
 </html>
