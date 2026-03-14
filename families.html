@@ -181,25 +181,27 @@
           return buildFamilyBadges(profile);
         },
 
-        getActions(profile) {
-          const actions = [
-            {
-              label: "View Family",
-              href: `./family-profile.html?id=${profile.id}`,
-              className: "button button-family"
-            }
-          ];
+getActions(profile) {
+  const actions = [
+    {
+      label: "View Family",
+      href: `./family-profile.html?id=${profile.id}`,
+      className: "button button-family"
+    }
+  ];
 
-          if (profile.user_id) {
-            actions.push({
-              label: "Message This Family",
-              href: `./messages.html?user=${profile.user_id}`,
-              className: "button"
-            });
-          }
+  if (profile.user_id) {
+    actions.push({
+      action: "message",
+      label: "Message",
+      targetUserId: profile.user_id,
+      familyProfileId: profile.id,
+      className: "button"
+    });
+  }
 
-          return actions;
-        },
+  return actions;
+},
 
         getReviewSummary(profile) {
           const reviews = familyReviewsByProfileId[profile.id] || [];
