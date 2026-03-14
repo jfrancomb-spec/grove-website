@@ -286,52 +286,56 @@
     // -----------------------------------
     // Render selected thread
     // -----------------------------------
-    async function renderSelectedThread() {
-      const threadHeader = document.getElementById("threadHeader");
-      const threadEl = document.getElementById("messageThread");
-      const composer = document.getElementById("messageComposer");
+function renderSelectedThread() {
+  const threadHeader = document.getElementById("threadHeader");
+  const threadEl = document.getElementById("messageThread");
+  const composer = document.getElementById("messageComposer");
 
-      threadEl.innerHTML = "";
+  threadEl.innerHTML = "";
 
-      if (!selectedUserId) {
-        threadHeader.textContent = "Select a conversation to view messages.";
-        composer.style.display = "none";
-        return;
-      }
+  if (!selectedConversationId) {
+    const params = new URLSearchParams(window.location.search);
+    const targetUser = params.get("targetUser");
 
-      threadHeader.textContent = `Conversation with ${getDisplayName(selectedUserId)}`;
+    if (targetUser) {
+      threadHeader.textContent = "Start a new conversation";
+      threadEl.innerHTML = "<p>No messages yet. Write the first message below.</p>";
       composer.style.display = "block";
-
-      const thread = allMessages.filter((msg) => {
-        return (
-          (msg.sender_id === currentUser.id && msg.receiver_id === selectedUserId) ||
-          (msg.sender_id === selectedUserId && msg.receiver_id === currentUser.id)
-        );
-      });
-
-      if (!thread.length) {
-        threadEl.innerHTML = "<p>No messages yet. Start the conversation below.</p>";
-        return;
-      }
-
-      thread.forEach((msg) => {
-        const div = document.createElement("div");
-        div.className =
-          msg.sender_id === currentUser.id
-            ? "message-bubble sent"
-            : "message-bubble received";
-
-        div.innerHTML = `
-          <div>${msg.message_text}</div>
-          <div class="message-time">${formatMessageTime(msg.created_at)}</div>
-        `;
-
-        threadEl.appendChild(div);
-      });
-
-      threadEl.scrollTop = threadEl.scrollHeight;
-      await markMessagesRead(thread);
+      return;
     }
+
+    threadHeader.textContent = "Select a conversation to view messages.";
+    composer.style.display = "none";
+    return;
+  }
+
+  threadHeader.textContent = `Conversation with ${getDisplayNameForConversation(selectedConversationId)}`;
+  composer.style.display = "block";
+
+  const thread = messagesByConversationId[selectedConversationId] || [];
+
+  if (!thread.length) {
+    threadEl.innerHTML = "<p>No messages yet. Start the conversation below.</p>";
+    return;
+  }
+
+  thread.forEach((message) => {
+    const div = document.createElement("div");
+    div.className =
+      message.sender_user_id === currentUser.id
+        ? "message-bubble sent"
+        : "message-bubble received";
+
+    div.innerHTML = `
+      <div>${message.message_text}</div>
+      <div class="message-time">${formatMessageTime(message.created_at)}</div>
+    `;
+
+    threadEl.appendChild(div);
+  });
+
+  threadEl.scrollTop = threadEl.scrollHeight;
+}
 
     // -----------------------------------
     // Mark received messages as read
@@ -363,16 +367,55 @@
     // -----------------------------------
     // Send a message
     // -----------------------------------
-async function sendMessage() {
+
+ async function sendMessage() {
   const textEl = document.getElementById("messageText");
   const text = textEl.value.trim();
 
-  if (!selectedConversationId) {
-    alert("No conversation selected.");
-    return;
-  }
-
   if (!text) return;
+
+  if (!selectedConversationId) {
+    const params = new URLSearchParams(window.location.search);
+    const targetUserId = params.get("targetUser");
+    let familyProfileId = params.get("familyProfileId");
+    let caregiverProfileId = params.get("caregiverProfileId");
+
+    if (!targetUserId) {
+      alert("No conversation selected.");
+      return;
+    }
+
+    if (!familyProfileId && caregiverProfileId) {
+      familyProfileId = await getCurrentUserFamilyProfileId();
+    }
+
+    if (!caregiverProfileId && familyProfileId) {
+      caregiverProfileId = await getCurrentUserCaregiverProfileId();
+    }
+
+    if (!familyProfileId || !caregiverProfileId) {
+      alert("Unable to start this conversation because one of the required profiles could not be found.");
+      return;
+    }
+
+    const existing = await findExistingConversation(targetUserId, familyProfileId, caregiverProfileId);
+
+    if (existing?.id) {
+      selectedConversationId = existing.id;
+    } else {
+      const created = await createConversation(targetUserId, familyProfileId, caregiverProfileId);
+      if (!created?.id) {
+        alert("Unable to create the conversation.");
+        return;
+      }
+      selectedConversationId = created.id;
+    }
+
+    const url = new URL(window.location.href);
+    url.search = "";
+    url.searchParams.set("conversation", selectedConversationId);
+    window.history.replaceState({}, "", url);
+  }
 
   const payload = {
     conversation_id: selectedConversationId,
@@ -409,7 +452,7 @@ async function sendMessage() {
   selectedConversationId = keepConversationId;
   renderConversationList();
   renderSelectedThread();
-}
+}   
 
 function wireComposerShortcuts() {
   const textEl = document.getElementById("messageText");
@@ -422,7 +465,64 @@ function wireComposerShortcuts() {
     }
   });
 }
-    
+async function ensureConversationFromQuery() {
+  const params = new URLSearchParams(window.location.search);
+
+  const requestedConversationId = params.get("conversation");
+  if (requestedConversationId) {
+    selectedConversationId = requestedConversationId;
+    return;
+  }
+
+  const targetUserId = params.get("targetUser");
+  let familyProfileId = params.get("familyProfileId");
+  let caregiverProfileId = params.get("caregiverProfileId");
+
+  if (!targetUserId) return;
+
+  if (!familyProfileId && caregiverProfileId) {
+    familyProfileId = await getCurrentUserFamilyProfileId();
+  }
+
+  if (!caregiverProfileId && familyProfileId) {
+    caregiverProfileId = await getCurrentUserCaregiverProfileId();
+  }
+
+  if (!familyProfileId || !caregiverProfileId) {
+    console.error("Missing familyProfileId or caregiverProfileId", {
+      targetUserId,
+      familyProfileId,
+      caregiverProfileId
+    });
+
+    document.getElementById("threadHeader").textContent =
+      "Unable to start this conversation because the matching profile could not be found.";
+
+    return;
+  }
+
+  const existing = await findExistingConversation(targetUserId, familyProfileId, caregiverProfileId);
+
+  if (existing?.id) {
+    selectedConversationId = existing.id;
+    return;
+  }
+
+  const created = await createConversation(targetUserId, familyProfileId, caregiverProfileId);
+
+  if (created?.id) {
+    selectedConversationId = created.id;
+
+    const url = new URL(window.location.href);
+    url.search = "";
+    url.searchParams.set("conversation", selectedConversationId);
+    window.history.replaceState({}, "", url);
+  } else {
+    console.error("Conversation creation failed");
+    document.getElementById("threadHeader").textContent =
+      "Unable to create the conversation right now.";
+  }
+}    
     // -----------------------------------
     // Init
     // -----------------------------------
