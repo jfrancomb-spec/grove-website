@@ -148,7 +148,9 @@
 
   <script>
     let currentUser = null;
-    let existingProfile = null;
+    let existingProfileParent = null;
+    let currentVisibleVersion = null;
+    let currentPendingVersion = null;
 
     function formatPhoneNumber(value) {
       const digits = value.replace(/\D/g, "").slice(0, 10);
@@ -220,6 +222,22 @@
       drawGallery();
     }
 
+    function getWorkingProfileVersion() {
+      return currentPendingVersion || currentVisibleVersion || null;
+    }
+
+    function getProfileStatusBadgeHtml() {
+      if (currentPendingVersion) {
+        return `<span class="badge badge-pending">Pending Review</span>`;
+      }
+
+      if (currentVisibleVersion) {
+        return `<span class="badge badge-approved">Approved</span>`;
+      }
+
+      return `<span class="badge badge-pending">Not Submitted</span>`;
+    }
+
     async function sendMagicLink() {
       const email = document.getElementById("fam_auth_email").value.trim();
       const msg = document.getElementById("authMessage");
@@ -256,7 +274,7 @@
       window.location.href = "./family.html";
     }
 
-    async function loadOwnProfile() {
+    async function loadOwnProfileParent() {
       if (!currentUser) return null;
 
       const { data, error } = await window.db
@@ -273,8 +291,55 @@
       return data || null;
     }
 
-    function fillProfileForm(profile) {
-      existingProfile = profile;
+    async function loadProfileVersion(versionId) {
+      if (!versionId) return null;
+
+      const { data, error } = await window.db
+        .from("family_profile_versions")
+        .select("*")
+        .eq("id", versionId)
+        .maybeSingle();
+
+      if (error) {
+        handleError(error, "Profile version load failed");
+        return null;
+      }
+
+      return data || null;
+    }
+
+    async function loadOwnProfileBundle() {
+      existingProfileParent = await loadOwnProfileParent();
+
+      if (!existingProfileParent) {
+        currentVisibleVersion = null;
+        currentPendingVersion = null;
+        return;
+      }
+
+      currentVisibleVersion = await loadProfileVersion(existingProfileParent.current_visible_version_id);
+      currentPendingVersion = await loadProfileVersion(existingProfileParent.current_pending_version_id);
+    }
+
+    async function loadMessageCount() {
+      if (!currentUser) return 0;
+
+      const { count, error } = await window.db
+        .from("conversation_participants")
+        .select("*", { count: "exact", head: true })
+        .eq("user_id", currentUser.id)
+        .eq("is_archived", false);
+
+      if (error) {
+        console.error(error);
+        return 0;
+      }
+
+      return count || 0;
+    }
+
+    function fillProfileForm() {
+      const profile = getWorkingProfileVersion();
 
       document.getElementById("fam_first_name").value = profile?.first_name || "";
       document.getElementById("fam_last_name").value = profile?.last_name || "";
@@ -292,29 +357,15 @@
 
       setSelectedCareTypesNeeded(profile?.care_types_needed || []);
 
-      const status = profile?.approval_status || "pending";
-      const statusEl = document.getElementById("dashProfileStatus");
-
-      let label = "Pending Review";
-      let badgeClass = "badge-pending";
-
-      if (status === "approved") {
-        label = "Approved";
-        badgeClass = "badge-approved";
-      } else if (status === "denied") {
-        label = "Needs Update";
-        badgeClass = "badge-denied";
-      }
-
-      statusEl.innerHTML = `<span class="badge ${badgeClass}">${label}</span>`;
+      document.getElementById("dashProfileStatus").innerHTML = getProfileStatusBadgeHtml();
 
       document.getElementById("dashConfirmedEncounters").textContent =
-        profile?.confirmed_encounters != null ? profile.confirmed_encounters : 0;
+        existingProfileParent?.confirmed_encounters != null ? existingProfileParent.confirmed_encounters : 0;
 
       document.getElementById("dashResponseTime").textContent =
-        profile?.average_response_minutes != null ? `${profile.average_response_minutes} min` : "—";
-
-      document.getElementById("dashMessages").textContent = "0";
+        existingProfileParent?.average_response_minutes != null
+          ? `${existingProfileParent.average_response_minutes} min`
+          : "—";
 
       renderPhotoPreview(profile?.photo_urls || (profile?.photo_url ? [profile.photo_url] : []));
     }
@@ -324,7 +375,9 @@
       const files = Array.from(photoInput?.files || []).slice(0, 5);
 
       if (!files.length) {
-        return existingProfile?.photo_urls || (existingProfile?.photo_url ? [existingProfile.photo_url] : []);
+        const existingUrls = getWorkingProfileVersion()?.photo_urls
+          || (getWorkingProfileVersion()?.photo_url ? [getWorkingProfileVersion().photo_url] : []);
+        return existingUrls;
       }
 
       const photoUrls = [];
@@ -356,6 +409,45 @@
       return photoUrls;
     }
 
+    async function ensureParentProfile() {
+      if (existingProfileParent) return existingProfileParent;
+
+      const { data, error } = await window.db
+        .from("family_profiles")
+        .insert([{
+          user_id: currentUser.id,
+          is_active: false,
+          confirmed_encounters: 0
+        }])
+        .select("*")
+        .single();
+
+      if (error) {
+        handleError(error, "Unable to create family profile");
+        return null;
+      }
+
+      existingProfileParent = data;
+      return data;
+    }
+
+    async function getNextVersionNumber(familyProfileId) {
+      const { data, error } = await window.db
+        .from("family_profile_versions")
+        .select("version_number")
+        .eq("family_profile_id", familyProfileId)
+        .order("version_number", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (error) {
+        handleError(error, "Unable to determine next profile version");
+        return null;
+      }
+
+      return (data?.version_number || 0) + 1;
+    }
+
     async function saveProfile(e) {
       e.preventDefault();
 
@@ -364,17 +456,25 @@
         return;
       }
 
+      const parent = await ensureParentProfile();
+      if (!parent) return;
+
       const photoUrls = await uploadFamilyPhotos(currentUser.id);
       if (photoUrls === null) return;
 
       const firstName = document.getElementById("fam_first_name").value.trim();
       const lastName = document.getElementById("fam_last_name").value.trim();
 
+      const nextVersionNumber = await getNextVersionNumber(parent.id);
+      if (nextVersionNumber === null) return;
+
       const payload = {
-        user_id: currentUser.id,
+        family_profile_id: parent.id,
+        version_number: nextVersionNumber,
+        submitted_at: new Date().toISOString(),
+        name_display: `${firstName} ${lastName}`.trim(),
         first_name: firstName,
         last_name: lastName,
-        name_display: `${firstName} ${lastName}`.trim(),
         email: currentUser.email || "",
         phone: document.getElementById("fam_phone").value.trim(),
         location: document.getElementById("fam_location").value.trim(),
@@ -388,21 +488,40 @@
         pets_description: document.getElementById("fam_pets_description").value.trim(),
         photo_urls: photoUrls,
         photo_url: photoUrls[0] || null,
-        approval_status: existingProfile?.approval_status || "pending"
+        content_status: "queued",
+        moderation_reason: null,
+        moderation_details: {},
+        flag_trigger_type: "none",
+        is_live: false
       };
 
-      const { error } = await window.db
-        .from("family_profiles")
-        .upsert(payload, { onConflict: "user_id" });
+      const { data: newVersion, error: versionError } = await window.db
+        .from("family_profile_versions")
+        .insert([payload])
+        .select("*")
+        .single();
 
-      if (error) {
-        handleError(error, "Profile save failed");
+      if (versionError || !newVersion) {
+        handleError(versionError, "Profile save failed");
+        return;
+      }
+
+      const { error: parentUpdateError } = await window.db
+        .from("family_profiles")
+        .update({
+          current_pending_version_id: newVersion.id
+        })
+        .eq("id", parent.id);
+
+      if (parentUpdateError) {
+        handleError(parentUpdateError, "Profile save failed");
         return;
       }
 
       document.getElementById("familyProfileSuccess").style.display = "block";
-      existingProfile = await loadOwnProfile();
-      fillProfileForm(existingProfile);
+
+      await loadOwnProfileBundle();
+      fillProfileForm();
     }
 
     async function checkSessionAndSetup() {
@@ -430,8 +549,11 @@
       signedInText.textContent = `Signed in as ${currentUser.email}. You can review and update your family profile below.`;
       emailInput.value = currentUser.email || "";
 
-      existingProfile = await loadOwnProfile();
-      fillProfileForm(existingProfile);
+      await loadOwnProfileBundle();
+      fillProfileForm();
+
+      const messageCount = await loadMessageCount();
+      document.getElementById("dashMessages").textContent = messageCount;
     }
 
     window.addEventListener("DOMContentLoaded", () => {
