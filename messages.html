@@ -676,115 +676,114 @@ async function markConversationRead(conversationId) {
   myParticipant.last_read_at = now;
 }
 
+async function sendMessage() {
+  const textEl = document.getElementById("messageText");
+  const text = textEl.value.trim();
+
+  if (!text) return;
+
+  if (!selectedConversationId) {
+    const params = new URLSearchParams(window.location.search);
+    const targetUserId = params.get("targetUser");
+    let familyProfileId = params.get("familyProfileId");
+    let caregiverProfileId = params.get("caregiverProfileId");
+
+    if (!targetUserId) {
+      alert("No conversation selected.");
+      return;
+    }
+
+    if (!familyProfileId && caregiverProfileId) {
+      familyProfileId = await getCurrentUserFamilyProfileId();
+    }
+
+    if (!caregiverProfileId && familyProfileId) {
+      caregiverProfileId = await getCurrentUserCaregiverProfileId();
+    }
+
+    console.log("Send message debug", {
+      currentUserId: currentUser?.id,
+      targetUserId,
+      familyProfileId,
+      caregiverProfileId
+    });
+
+    if (!familyProfileId || !caregiverProfileId) {
+      alert("Unable to start this conversation because one of the required profiles could not be found.");
+      return;
+    }
+
+    const existing = await findExistingConversation(targetUserId, familyProfileId, caregiverProfileId);
+
+    if (existing?.id) {
+      selectedConversationId = existing.id;
+    } else {
+      const created = await createConversation(targetUserId, familyProfileId, caregiverProfileId);
+      if (!created?.id) {
+        alert("Unable to create the conversation.");
+        return;
+      }
+      selectedConversationId = created.id;
+    }
+
+    const url = new URL(window.location.href);
+    url.search = "";
+    url.searchParams.set("conversation", selectedConversationId);
+    window.history.replaceState({}, "", url);
+  }
+
+  const sendButton = document.getElementById("sendMessageBtn");
+  const originalButtonText = sendButton?.textContent || "Send Message";
+
+  try {
+    if (sendButton) {
+      sendButton.disabled = true;
+      sendButton.textContent = "Sending...";
+    }
+
+    const { data, error } = await window.db.functions.invoke("send-message", {
+      body: {
+        conversationId: selectedConversationId,
+        messageText: text
+      }
+    });
+
+    if (error) {
+      console.error("Edge function send-message failed:", error);
+      alert("Message send failed.");
+      return;
+    }
+
+    if (!data?.success) {
+      console.error("Unexpected send-message response:", data);
+      alert("Message send failed.");
+      return;
+    }
+
+    textEl.value = "";
+
+    await markConversationRead(selectedConversationId);
+
+    const keepConversationId = selectedConversationId;
+    await loadConversations();
+    selectedConversationId = keepConversationId;
+    renderConversationList();
+    renderSelectedThread();
+
+    document.getElementById("messageText")?.focus();
+  } catch (err) {
+    console.error("Send message error:", err);
+    alert("Message send failed.");
+  } finally {
+    if (sendButton) {
+      sendButton.disabled = false;
+      sendButton.textContent = originalButtonText;
+    }
+  }
+}
+
+
     
-      async function sendMessage() {
-        const textEl = document.getElementById("messageText");
-        const text = textEl.value.trim();
-
-        if (!text) return;
-
-        if (!selectedConversationId) {
-          const params = new URLSearchParams(window.location.search);
-          const targetUserId = params.get("targetUser");
-          let familyProfileId = params.get("familyProfileId");
-          let caregiverProfileId = params.get("caregiverProfileId");
-
-          if (!targetUserId) {
-            alert("No conversation selected.");
-            return;
-          }
-
-          if (!familyProfileId && caregiverProfileId) {
-            familyProfileId = await getCurrentUserFamilyProfileId();
-          }
-
-          if (!caregiverProfileId && familyProfileId) {
-            caregiverProfileId = await getCurrentUserCaregiverProfileId();
-          }
-
-          console.log("Send message debug", {
-            currentUserId: currentUser?.id,
-            targetUserId,
-            familyProfileId,
-            caregiverProfileId
-          });
-
-          if (!familyProfileId || !caregiverProfileId) {
-            alert("Unable to start this conversation because one of the required profiles could not be found.");
-            return;
-          }
-
-          const existing = await findExistingConversation(targetUserId, familyProfileId, caregiverProfileId);
-
-          if (existing?.id) {
-            selectedConversationId = existing.id;
-          } else {
-            const created = await createConversation(targetUserId, familyProfileId, caregiverProfileId);
-            if (!created?.id) {
-              alert("Unable to create the conversation.");
-              return;
-            }
-            selectedConversationId = created.id;
-          }
-
-          const url = new URL(window.location.href);
-          url.search = "";
-          url.searchParams.set("conversation", selectedConversationId);
-          window.history.replaceState({}, "", url);
-        }
-
-        const payload = {
-          conversation_id: selectedConversationId,
-          sender_user_id: currentUser.id,
-          message_text: text
-        };
-
-        const { error: messageError } = await window.db
-          .from("messages")
-          .insert([payload]);
-
-        if (messageError) {
-          console.error(messageError);
-          alert("Message send failed.");
-          return;
-        }
-
-        const { error: conversationError } = await window.db
-          .from("conversations")
-          .update({
-            last_message_at: new Date().toISOString(),
-            last_message_preview: text
-          })
-          .eq("id", selectedConversationId);
-
-        if (conversationError) {
-          console.error(conversationError);
-        }
-
-        textEl.value = "";
-
-await markConversationRead(selectedConversationId);
-
-const keepConversationId = selectedConversationId;
-await loadConversations();
-selectedConversationId = keepConversationId;
-renderConversationList();
-renderSelectedThread();
-
-document.getElementById("messageText")?.focus();
-      }
-
-      function wireComposerShortcuts() {
-        const textEl = document.getElementById("messageText");
-        if (!textEl) return;
-
-        textEl.addEventListener("keydown", async (event) => {
-          if (event.key === "Enter" && !event.shiftKey) {
-            event.preventDefault();
-            await sendMessage();
-          }
-        });
-      }
 
       window.addEventListener("DOMContentLoaded", async () => {
         const ok = await loadSession();
