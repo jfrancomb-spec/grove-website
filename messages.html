@@ -65,16 +65,26 @@
         }
       }
 
+      function escapeHtml(value) {
+        if (value === null || value === undefined) return "";
+        return String(value)
+          .replaceAll("&", "&amp;")
+          .replaceAll("<", "&lt;")
+          .replaceAll(">", "&gt;")
+          .replaceAll('"', "&quot;")
+          .replaceAll("'", "&#39;");
+      }
+
       function formatCaregiverName(profile) {
         const first = profile.first_name || "";
         const lastInitial = profile.last_name ? `${profile.last_name.charAt(0)}.` : "";
-        return `${first} ${lastInitial}`.trim() || "Caregiver";
+        return `${first} ${lastInitial}`.trim() || profile.name_display || "Caregiver";
       }
 
       function formatFamilyName(profile) {
         const first = profile.first_name || "";
         const lastInitial = profile.last_name ? `${profile.last_name.charAt(0)}.` : "";
-        return `${first} ${lastInitial}`.trim() || "Family";
+        return `${first} ${lastInitial}`.trim() || profile.name_display || "Family";
       }
 
       function getOtherParticipant(conversationId) {
@@ -100,29 +110,29 @@
         const initial = name ? name.charAt(0).toUpperCase() : "?";
 
         if (photo) {
-          return `<img class="conversation-avatar" src="${photo}" alt="${name}">`;
+          return `<img class="conversation-avatar" src="${escapeHtml(photo)}" alt="${escapeHtml(name)}">`;
         }
 
-        return `<div class="conversation-avatar conversation-avatar-fallback">${initial}</div>`;
+        return `<div class="conversation-avatar conversation-avatar-fallback">${escapeHtml(initial)}</div>`;
       }
 
-function isConversationUnread(conversationId) {
-  const participants = participantMap[conversationId] || [];
-  const myParticipant = participants.find((p) => p.user_id === currentUser.id);
-  const thread = messagesByConversationId[conversationId] || [];
+      function isConversationUnread(conversationId) {
+        const participants = participantMap[conversationId] || [];
+        const myParticipant = participants.find((p) => p.user_id === currentUser.id);
+        const thread = messagesByConversationId[conversationId] || [];
 
-  if (!myParticipant || !thread.length) return false;
+        if (!myParticipant || !thread.length) return false;
 
-  const lastMessage = thread[thread.length - 1];
+        if (myParticipant.has_unread_visible_messages === true) return true;
 
-  if (!lastMessage) return false;
-  if (lastMessage.sender_user_id === currentUser.id) return false;
-  if (!myParticipant.last_read_at) return true;
+        const lastMessage = thread[thread.length - 1];
+        if (!lastMessage) return false;
+        if (lastMessage.sender_user_id === currentUser.id) return false;
+        if (!myParticipant.last_read_at) return true;
 
-  return new Date(lastMessage.created_at) > new Date(myParticipant.last_read_at);
-}
+        return new Date(lastMessage.created_at) > new Date(myParticipant.last_read_at);
+      }
 
-      
       async function loadSession() {
         const { data } = await window.db.auth.getSession();
         currentUser = data?.session?.user || null;
@@ -139,10 +149,9 @@ function isConversationUnread(conversationId) {
       async function getCurrentUserFamilyProfileId() {
         const { data, error } = await window.db
           .from("family_profiles")
-          .select("id")
+          .select("id, current_visible_version_id")
           .eq("user_id", currentUser.id)
-          .eq("is_active", true)
-          .eq("approval_status", "approved")
+          .not("current_visible_version_id", "is", null)
           .maybeSingle();
 
         if (error) {
@@ -156,10 +165,9 @@ function isConversationUnread(conversationId) {
       async function getCurrentUserCaregiverProfileId() {
         const { data, error } = await window.db
           .from("caregiver_profiles")
-          .select("id")
+          .select("id, current_visible_version_id")
           .eq("user_id", currentUser.id)
-          .eq("is_active", true)
-          .eq("approval_status", "approved")
+          .not("current_visible_version_id", "is", null)
           .maybeSingle();
 
         if (error) {
@@ -261,7 +269,11 @@ function isConversationUnread(conversationId) {
             caregiver_profile_id: caregiverProfileId,
             status: "active",
             last_message_at: null,
-            last_message_preview: null
+            last_message_preview: null,
+            last_visible_message_at: null,
+            last_visible_message_preview: null,
+            has_hidden_messages: false,
+            first_hidden_message_at: null
           }])
           .select("*")
           .single();
@@ -276,13 +288,15 @@ function isConversationUnread(conversationId) {
             conversation_id: conversation.id,
             user_id: currentUser.id,
             participant_role: myRole || "user",
-            profile_id: myProfileId
+            profile_id: myProfileId,
+            has_unread_visible_messages: false
           },
           {
             conversation_id: conversation.id,
             user_id: targetUserId,
             participant_role: targetRole || "user",
-            profile_id: targetProfileId
+            profile_id: targetProfileId,
+            has_unread_visible_messages: false
           }
         ];
 
@@ -363,14 +377,11 @@ function isConversationUnread(conversationId) {
       }
 
       async function loadConversations() {
-const { data: allMessages, error: messageError } = await window.db
-  .from("messages")
-  .select("*")
-  .in("conversation_id", conversationIds)
-  .or(
-    `and(sender_user_id.eq.${currentUser.id},visible_to_sender.eq.true),and(sender_user_id.neq.${currentUser.id},visible_to_recipient.eq.true)`
-  )
-  .order("created_at", { ascending: true });
+        const { data: myParticipants, error: participantError } = await window.db
+          .from("conversation_participants")
+          .select("*")
+          .eq("user_id", currentUser.id)
+          .eq("is_archived", false);
 
         if (participantError) {
           console.error(participantError);
@@ -393,7 +404,7 @@ const { data: allMessages, error: messageError } = await window.db
           .from("conversations")
           .select("*")
           .in("id", conversationIds)
-          .order("last_message_at", { ascending: false, nullsFirst: false });
+          .order("last_visible_message_at", { ascending: false, nullsFirst: false });
 
         if (conversationError) {
           console.error(conversationError);
@@ -425,6 +436,9 @@ const { data: allMessages, error: messageError } = await window.db
           .from("messages")
           .select("*")
           .in("conversation_id", conversationIds)
+          .or(
+            `and(sender_user_id.eq.${currentUser.id},visible_to_sender.eq.true),and(sender_user_id.neq.${currentUser.id},visible_to_recipient.eq.true)`
+          )
           .order("created_at", { ascending: true });
 
         if (messageError) {
@@ -464,105 +478,168 @@ const { data: allMessages, error: messageError } = await window.db
 
         const { data: caregiverProfiles, error: caregiverError } = await window.db
           .from("caregiver_profiles")
-          .select("user_id, first_name, last_name, photo_url")
-          .in("user_id", participantUserIds);
+          .select("user_id, current_visible_version_id")
+          .in("user_id", participantUserIds)
+          .not("current_visible_version_id", "is", null);
 
-        if (!caregiverError && caregiverProfiles) {
-          caregiverProfiles.forEach((profile) => {
-            userInfoMap[profile.user_id] = {
-              name: formatCaregiverName(profile),
-              photo_url: profile.photo_url || ""
-            };
-          });
-        } else if (caregiverError) {
+        if (caregiverError) {
           console.error(caregiverError);
+        }
+
+        const caregiverVersionIds = (caregiverProfiles || [])
+          .map((profile) => profile.current_visible_version_id)
+          .filter(Boolean);
+
+        if (caregiverVersionIds.length) {
+          const { data: caregiverVersions, error: caregiverVersionsError } = await window.db
+            .from("caregiver_profile_versions")
+            .select("id, first_name, last_name, name_display, photo_url")
+            .in("id", caregiverVersionIds);
+
+          if (caregiverVersionsError) {
+            console.error(caregiverVersionsError);
+          } else {
+            const caregiverVersionMap = {};
+            (caregiverVersions || []).forEach((version) => {
+              caregiverVersionMap[version.id] = version;
+            });
+
+            (caregiverProfiles || []).forEach((profile) => {
+              const version = caregiverVersionMap[profile.current_visible_version_id];
+              if (version) {
+                userInfoMap[profile.user_id] = {
+                  name: formatCaregiverName(version),
+                  photo_url: version.photo_url || ""
+                };
+              }
+            });
+          }
         }
 
         const { data: familyProfiles, error: familyError } = await window.db
           .from("family_profiles")
-          .select("user_id, first_name, last_name, photo_url")
-          .in("user_id", participantUserIds);
+          .select("user_id, current_visible_version_id")
+          .in("user_id", participantUserIds)
+          .not("current_visible_version_id", "is", null);
 
-        if (!familyError && familyProfiles) {
-          familyProfiles.forEach((profile) => {
-            if (!userInfoMap[profile.user_id]) {
-              userInfoMap[profile.user_id] = {
-                name: formatFamilyName(profile),
-                photo_url: profile.photo_url || ""
-              };
-            }
-          });
-        } else if (familyError) {
+        if (familyError) {
           console.error(familyError);
+        }
+
+        const familyVersionIds = (familyProfiles || [])
+          .map((profile) => profile.current_visible_version_id)
+          .filter(Boolean);
+
+        if (familyVersionIds.length) {
+          const { data: familyVersions, error: familyVersionsError } = await window.db
+            .from("family_profile_versions")
+            .select("id, first_name, last_name, name_display, photo_url")
+            .in("id", familyVersionIds);
+
+          if (familyVersionsError) {
+            console.error(familyVersionsError);
+          } else {
+            const familyVersionMap = {};
+            (familyVersions || []).forEach((version) => {
+              familyVersionMap[version.id] = version;
+            });
+
+            (familyProfiles || []).forEach((profile) => {
+              if (userInfoMap[profile.user_id]) return;
+
+              const version = familyVersionMap[profile.current_visible_version_id];
+              if (version) {
+                userInfoMap[profile.user_id] = {
+                  name: formatFamilyName(version),
+                  photo_url: version.photo_url || ""
+                };
+              }
+            });
+          }
         }
       }
 
-function renderConversationList() {
-  const container = document.getElementById("conversationList");
-  container.innerHTML = "";
+      function renderConversationList() {
+        const container = document.getElementById("conversationList");
+        container.innerHTML = "";
 
-  if (!conversations.length) {
-    container.innerHTML = "<p>No conversations yet.</p>";
-    return;
-  }
+        if (!conversations.length) {
+          container.innerHTML = "<p>No conversations yet.</p>";
+          return;
+        }
 
-  const sortedConversations = [...conversations].sort((a, b) => {
-    const aUnread = isConversationUnread(a.id) ? 1 : 0;
-    const bUnread = isConversationUnread(b.id) ? 1 : 0;
+        const sortedConversations = [...conversations].sort((a, b) => {
+          const aUnread = isConversationUnread(a.id) ? 1 : 0;
+          const bUnread = isConversationUnread(b.id) ? 1 : 0;
 
-    if (aUnread !== bUnread) {
-      return bUnread - aUnread;
-    }
+          if (aUnread !== bUnread) {
+            return bUnread - aUnread;
+          }
 
-    const aTime = a.last_message_at ? new Date(a.last_message_at).getTime() : 0;
-    const bTime = b.last_message_at ? new Date(b.last_message_at).getTime() : 0;
+          const aThread = messagesByConversationId[a.id] || [];
+          const bThread = messagesByConversationId[b.id] || [];
 
-    return bTime - aTime;
-  });
+          const aLast = aThread.length ? aThread[aThread.length - 1] : null;
+          const bLast = bThread.length ? bThread[bThread.length - 1] : null;
 
-  sortedConversations.forEach((conversation) => {
-    const thread = messagesByConversationId[conversation.id] || [];
-    const lastMessage = thread.length ? thread[thread.length - 1] : null;
-    const unread = isConversationUnread(conversation.id);
+          const aTime = aLast
+            ? new Date(aLast.received_at || aLast.sent_at || aLast.created_at).getTime()
+            : (a.last_visible_message_at ? new Date(a.last_visible_message_at).getTime() : 0);
 
-    const button = document.createElement("button");
-    button.type = "button";
-    button.className = "conversation-item";
+          const bTime = bLast
+            ? new Date(bLast.received_at || bLast.sent_at || bLast.created_at).getTime()
+            : (b.last_visible_message_at ? new Date(b.last_visible_message_at).getTime() : 0);
 
-    if (selectedConversationId === conversation.id) {
-      button.classList.add("active");
-    }
+          return bTime - aTime;
+        });
 
-    button.innerHTML = `
-      <div class="conversation-row">
-        ${getConversationAvatar(conversation.id)}
-        <div class="conversation-main">
-          <div class="conversation-top">
-            <span><strong>${getDisplayNameForConversation(conversation.id)}</strong></span>
-            ${unread ? `<span class="unread-pill">New</span>` : ""}
-          </div>
-          <div class="conversation-preview">${lastMessage?.message_text || "No messages yet"}</div>
-          <div class="conversation-time">${lastMessage ? formatMessageTime(lastMessage.created_at) : ""}</div>
-        </div>
-      </div>
-    `;
+        sortedConversations.forEach((conversation) => {
+          const thread = messagesByConversationId[conversation.id] || [];
+          const lastMessage = thread.length ? thread[thread.length - 1] : null;
+          const unread = isConversationUnread(conversation.id);
 
-    button.addEventListener("click", async () => {
-      selectedConversationId = conversation.id;
+          const previewText = lastMessage?.message_text || conversation.last_visible_message_preview || "No messages yet";
+          const previewTime = lastMessage
+            ? (lastMessage.received_at || lastMessage.sent_at || lastMessage.created_at)
+            : conversation.last_visible_message_at;
 
-      const url = new URL(window.location.href);
-      url.search = "";
-      url.searchParams.set("conversation", conversation.id);
-      window.history.replaceState({}, "", url);
+          const button = document.createElement("button");
+          button.type = "button";
+          button.className = "conversation-item";
 
-      await markConversationRead(conversation.id);
-      renderConversationList();
-      renderSelectedThread();
-    });
+          if (selectedConversationId === conversation.id) {
+            button.classList.add("active");
+          }
 
-    container.appendChild(button);
-  });
-}
+          button.innerHTML = `
+            <div class="conversation-row">
+              ${getConversationAvatar(conversation.id)}
+              <div class="conversation-main">
+                <div class="conversation-top">
+                  <span><strong>${escapeHtml(getDisplayNameForConversation(conversation.id))}</strong></span>
+                  ${unread ? `<span class="unread-pill">New</span>` : ""}
+                </div>
+                <div class="conversation-preview">${escapeHtml(previewText)}</div>
+                <div class="conversation-time">${previewTime ? formatMessageTime(previewTime) : ""}</div>
+              </div>
+            </div>
+          `;
+
+          button.addEventListener("click", async () => {
+            selectedConversationId = conversation.id;
+
+            const url = new URL(window.location.href);
+            url.search = "";
+            url.searchParams.set("conversation", conversation.id);
+            window.history.replaceState({}, "", url);
+
+            await markConversationRead(conversation.id);
+            await loadConversations();
+          });
+
+          container.appendChild(button);
+        });
+      }
 
       function renderSelectedThread() {
         const threadHeader = document.getElementById("threadHeader");
@@ -597,162 +674,174 @@ function renderConversationList() {
           return;
         }
 
-thread.forEach((message) => {
-  const isSentByMe = message.sender_user_id === currentUser.id;
-  const timeLabel = isSentByMe ? "Sent" : "Received";
-  const displayTime = isSentByMe
-    ? (message.sent_at || message.created_at)
-    : (message.received_at || message.created_at);
+        thread.forEach((message) => {
+          const isSentByMe = message.sender_user_id === currentUser.id;
+          const timeLabel = isSentByMe ? "Sent" : "Received";
+          const displayTime = isSentByMe
+            ? (message.sent_at || message.created_at)
+            : (message.received_at || message.created_at);
 
-  const div = document.createElement("div");
-  div.className = isSentByMe
-    ? "message-bubble sent"
-    : "message-bubble received";
+          const div = document.createElement("div");
+          div.className = isSentByMe
+            ? "message-bubble sent"
+            : "message-bubble received";
 
-  div.innerHTML = `
-    <div>${message.message_text}</div>
-    <div class="message-time">${timeLabel} ${formatMessageTime(displayTime)}</div>
-  `;
+          div.innerHTML = `
+            <div>${escapeHtml(message.message_text)}</div>
+            <div class="message-time">${timeLabel} ${formatMessageTime(displayTime)}</div>
+          `;
 
-  threadEl.appendChild(div);
-});
+          threadEl.appendChild(div);
+        });
 
         threadEl.scrollTop = threadEl.scrollHeight;
-markConversationRead(selectedConversationId);
-      
+        markConversationRead(selectedConversationId);
       }
 
-async function markConversationRead(conversationId) {
-  if (!conversationId || !currentUser?.id) return;
+      async function markConversationRead(conversationId) {
+        if (!conversationId || !currentUser?.id) return;
 
-  const participants = participantMap[conversationId] || [];
-  const myParticipant = participants.find((p) => p.user_id === currentUser.id);
+        const participants = participantMap[conversationId] || [];
+        const myParticipant = participants.find((p) => p.user_id === currentUser.id);
 
-  if (!myParticipant) return;
+        if (!myParticipant) return;
 
-  const now = new Date().toISOString();
+        const now = new Date().toISOString();
 
-  const { error } = await window.db
-    .from("conversation_participants")
-    .update({ last_read_at: now })
-    .eq("id", myParticipant.id);
+        const { error } = await window.db
+          .from("conversation_participants")
+          .update({
+            last_read_at: now,
+            has_unread_visible_messages: false
+          })
+          .eq("id", myParticipant.id);
 
-  if (error) {
-    console.error(error);
-    return;
-  }
+        if (error) {
+          console.error(error);
+          return;
+        }
 
-  myParticipant.last_read_at = now;
-}
-
-async function sendMessage() {
-  const textEl = document.getElementById("messageText");
-  const text = textEl.value.trim();
-
-  if (!text) return;
-
-  if (!selectedConversationId) {
-    const params = new URLSearchParams(window.location.search);
-    const targetUserId = params.get("targetUser");
-    let familyProfileId = params.get("familyProfileId");
-    let caregiverProfileId = params.get("caregiverProfileId");
-
-    if (!targetUserId) {
-      alert("No conversation selected.");
-      return;
-    }
-
-    if (!familyProfileId && caregiverProfileId) {
-      familyProfileId = await getCurrentUserFamilyProfileId();
-    }
-
-    if (!caregiverProfileId && familyProfileId) {
-      caregiverProfileId = await getCurrentUserCaregiverProfileId();
-    }
-
-    console.log("Send message debug", {
-      currentUserId: currentUser?.id,
-      targetUserId,
-      familyProfileId,
-      caregiverProfileId
-    });
-
-    if (!familyProfileId || !caregiverProfileId) {
-      alert("Unable to start this conversation because one of the required profiles could not be found.");
-      return;
-    }
-
-    const existing = await findExistingConversation(targetUserId, familyProfileId, caregiverProfileId);
-
-    if (existing?.id) {
-      selectedConversationId = existing.id;
-    } else {
-      const created = await createConversation(targetUserId, familyProfileId, caregiverProfileId);
-      if (!created?.id) {
-        alert("Unable to create the conversation.");
-        return;
+        myParticipant.last_read_at = now;
+        myParticipant.has_unread_visible_messages = false;
       }
-      selectedConversationId = created.id;
-    }
 
-    const url = new URL(window.location.href);
-    url.search = "";
-    url.searchParams.set("conversation", selectedConversationId);
-    window.history.replaceState({}, "", url);
-  }
+      async function sendMessage() {
+        const textEl = document.getElementById("messageText");
+        const text = textEl.value.trim();
 
-  const sendButton = document.getElementById("sendMessageBtn");
-  const originalButtonText = sendButton?.textContent || "Send Message";
+        if (!text) return;
 
-  try {
-    if (sendButton) {
-      sendButton.disabled = true;
-      sendButton.textContent = "Sending...";
-    }
+        if (!selectedConversationId) {
+          const params = new URLSearchParams(window.location.search);
+          const targetUserId = params.get("targetUser");
+          let familyProfileId = params.get("familyProfileId");
+          let caregiverProfileId = params.get("caregiverProfileId");
 
-    const { data, error } = await window.db.functions.invoke("send-message", {
-      body: {
-        conversationId: selectedConversationId,
-        messageText: text
+          if (!targetUserId) {
+            alert("No conversation selected.");
+            return;
+          }
+
+          if (!familyProfileId && caregiverProfileId) {
+            familyProfileId = await getCurrentUserFamilyProfileId();
+          }
+
+          if (!caregiverProfileId && familyProfileId) {
+            caregiverProfileId = await getCurrentUserCaregiverProfileId();
+          }
+
+          console.log("Send message debug", {
+            currentUserId: currentUser?.id,
+            targetUserId,
+            familyProfileId,
+            caregiverProfileId
+          });
+
+          if (!familyProfileId || !caregiverProfileId) {
+            alert("Unable to start this conversation because one of the required profiles could not be found.");
+            return;
+          }
+
+          const existing = await findExistingConversation(targetUserId, familyProfileId, caregiverProfileId);
+
+          if (existing?.id) {
+            selectedConversationId = existing.id;
+          } else {
+            const created = await createConversation(targetUserId, familyProfileId, caregiverProfileId);
+            if (!created?.id) {
+              alert("Unable to create the conversation.");
+              return;
+            }
+            selectedConversationId = created.id;
+          }
+
+          const url = new URL(window.location.href);
+          url.search = "";
+          url.searchParams.set("conversation", selectedConversationId);
+          window.history.replaceState({}, "", url);
+        }
+
+        const sendButton = document.getElementById("sendMessageBtn");
+        const originalButtonText = sendButton?.textContent || "Send Message";
+
+        try {
+          if (sendButton) {
+            sendButton.disabled = true;
+            sendButton.textContent = "Sending...";
+          }
+
+          const { data, error } = await window.db.functions.invoke("send-message", {
+            body: {
+              conversationId: selectedConversationId,
+              messageText: text
+            }
+          });
+
+          if (error) {
+            console.error("Edge function send-message failed:", error);
+            alert("Message send failed.");
+            return;
+          }
+
+          if (!data?.success) {
+            console.error("Unexpected send-message response:", data);
+            alert("Message send failed.");
+            return;
+          }
+
+          textEl.value = "";
+
+          await markConversationRead(selectedConversationId);
+
+          const keepConversationId = selectedConversationId;
+          await loadConversations();
+          selectedConversationId = keepConversationId;
+          renderConversationList();
+          renderSelectedThread();
+
+          document.getElementById("messageText")?.focus();
+        } catch (err) {
+          console.error("Send message error:", err);
+          alert("Message send failed.");
+        } finally {
+          if (sendButton) {
+            sendButton.disabled = false;
+            sendButton.textContent = originalButtonText;
+          }
+        }
       }
-    });
 
-    if (error) {
-      console.error("Edge function send-message failed:", error);
-      alert("Message send failed.");
-      return;
-    }
+      function wireComposerShortcuts() {
+        const textEl = document.getElementById("messageText");
+        if (!textEl) return;
 
-    if (!data?.success) {
-      console.error("Unexpected send-message response:", data);
-      alert("Message send failed.");
-      return;
-    }
-
-    textEl.value = "";
-
-    await markConversationRead(selectedConversationId);
-
-    const keepConversationId = selectedConversationId;
-    await loadConversations();
-    selectedConversationId = keepConversationId;
-    renderConversationList();
-    renderSelectedThread();
-
-    document.getElementById("messageText")?.focus();
-  } catch (err) {
-    console.error("Send message error:", err);
-    alert("Message send failed.");
-  } finally {
-    if (sendButton) {
-      sendButton.disabled = false;
-      sendButton.textContent = originalButtonText;
-    }
-  }
-}
-
-
-    
+        textEl.addEventListener("keydown", async (event) => {
+          if (event.key === "Enter" && !event.shiftKey) {
+            event.preventDefault();
+            await sendMessage();
+          }
+        });
+      }
 
       window.addEventListener("DOMContentLoaded", async () => {
         const ok = await loadSession();
