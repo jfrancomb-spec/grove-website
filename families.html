@@ -181,27 +181,27 @@
           return buildFamilyBadges(profile);
         },
 
-getActions(profile) {
-  const actions = [
-    {
-      label: "View Family",
-      href: `./family-profile.html?id=${profile.id}`,
-      className: "button button-family"
-    }
-  ];
+        getActions(profile) {
+          const actions = [
+            {
+              label: "View Family",
+              href: `./family-profile.html?id=${profile.id}`,
+              className: "button button-family"
+            }
+          ];
 
-  if (profile.user_id) {
-    actions.push({
-      action: "message",
-      label: "Message",
-      targetUserId: profile.user_id,
-      familyProfileId: profile.id,
-      className: "button"
-    });
-  }
+          if (profile.user_id) {
+            actions.push({
+              action: "message",
+              label: "Message",
+              targetUserId: profile.user_id,
+              familyProfileId: profile.id,
+              className: "button"
+            });
+          }
 
-  return actions;
-},
+          return actions;
+        },
 
         getReviewSummary(profile) {
           const reviews = familyReviewsByProfileId[profile.id] || [];
@@ -225,20 +225,26 @@ getActions(profile) {
         }
       };
 
-      function normalizeFamilyProfile(row) {
+      function normalizeFamilyProfile(parentRow, versionRow) {
         return {
-          ...row,
-          profile_type: "family"
+          ...parentRow,
+          ...versionRow,
+          id: parentRow.id,
+          family_profile_id: parentRow.id,
+          current_visible_version_id: parentRow.current_visible_version_id,
+          profile_type: "family",
+          user_id: parentRow.user_id,
+          average_response_minutes: parentRow.average_response_minutes,
+          confirmed_encounters: parentRow.confirmed_encounters
         };
       }
 
       function renderFamilyResults(rows) {
-        const normalized = rows.map(normalizeFamilyProfile);
         const container = document.querySelector("#family-results");
         const countEl = document.querySelector("#browse-count");
 
-        renderBrowseCards(container, normalized, familyBrowseConfig);
-        setBrowseCount(countEl, normalized.length, "families");
+        renderBrowseCards(container, rows, familyBrowseConfig);
+        setBrowseCount(countEl, rows.length, "families");
       }
 
       function applyFilters() {
@@ -287,6 +293,7 @@ getActions(profile) {
           .from("family_reviews")
           .select("*")
           .eq("is_visible", true)
+          .in("content_status", ["visible", "approved"])
           .order("created_at", { ascending: false });
 
         if (reviewError) {
@@ -327,22 +334,59 @@ getActions(profile) {
           return;
         }
 
-        const { data, error } = await window.db
+        const { data: parentRows, error: parentError } = await window.db
           .from("family_profiles")
-          .select("*")
-          .eq("is_active", true)
-          .eq("approval_status", "approved")
+          .select("id, user_id, current_visible_version_id, average_response_minutes, confirmed_encounters")
+          .not("current_visible_version_id", "is", null)
           .order("created_at", { ascending: false });
 
-        if (error) {
-          console.error(error);
+        if (parentError) {
+          console.error(parentError);
           if (resultsContainer) {
             resultsContainer.innerHTML = "<div class='empty-state'><p>Unable to load families right now.</p></div>";
           }
           return;
         }
 
-        allFamilies = data || [];
+        const versionIds = (parentRows || [])
+          .map((row) => row.current_visible_version_id)
+          .filter(Boolean);
+
+        if (!versionIds.length) {
+          allFamilies = [];
+          await loadReviews();
+          applyFilters();
+          return;
+        }
+
+        const { data: versionRows, error: versionError } = await window.db
+          .from("family_profile_versions")
+          .select("*")
+          .in("id", versionIds)
+          .eq("is_live", true)
+          .in("content_status", ["visible", "approved"]);
+
+        if (versionError) {
+          console.error(versionError);
+          if (resultsContainer) {
+            resultsContainer.innerHTML = "<div class='empty-state'><p>Unable to load families right now.</p></div>";
+          }
+          return;
+        }
+
+        const versionMap = {};
+        (versionRows || []).forEach((version) => {
+          versionMap[version.id] = version;
+        });
+
+        allFamilies = (parentRows || [])
+          .map((parent) => {
+            const version = versionMap[parent.current_visible_version_id];
+            if (!version) return null;
+            return normalizeFamilyProfile(parent, version);
+          })
+          .filter(Boolean);
+
         await loadReviews();
         applyFilters();
       }
