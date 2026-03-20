@@ -35,37 +35,37 @@
         <p id="authMessage" class="success"></p>
       </div>
 
-<div class="form-card" id="profileCard" style="display:none;">
-  <div class="flex-between">
-    <h2 class="mb-0">Your Caregiver Dashboard</h2>
-    <button class="button" type="button" id="signOutBtn">Sign Out</button>
-  </div>
+      <div class="form-card" id="profileCard" style="display:none;">
+        <div class="flex-between">
+          <h2 class="mb-0">Your Caregiver Dashboard</h2>
+          <button class="button" type="button" id="signOutBtn">Sign Out</button>
+        </div>
 
-  <p class="mt-10" id="signedInText"></p>
+        <p class="mt-10" id="signedInText"></p>
 
-  <div class="dashboard-stats">
-    <div class="dashboard-stat">
-      <div class="dashboard-label">Profile Status</div>
-      <div class="dashboard-value" id="dashProfileStatus">—</div>
-    </div>
+        <div class="dashboard-stats">
+          <div class="dashboard-stat">
+            <div class="dashboard-label">Profile Status</div>
+            <div class="dashboard-value" id="dashProfileStatus">—</div>
+          </div>
 
-    <div class="dashboard-stat">
-      <div class="dashboard-label">Confirmed Encounters</div>
-      <div class="dashboard-value" id="dashConfirmedEncounters">0</div>
-    </div>
+          <div class="dashboard-stat">
+            <div class="dashboard-label">Confirmed Encounters</div>
+            <div class="dashboard-value" id="dashConfirmedEncounters">0</div>
+          </div>
 
-    <div class="dashboard-stat">
-      <div class="dashboard-label">Average Response Time</div>
-      <div class="dashboard-value" id="dashResponseTime">—</div>
-    </div>
+          <div class="dashboard-stat">
+            <div class="dashboard-label">Average Response Time</div>
+            <div class="dashboard-value" id="dashResponseTime">—</div>
+          </div>
 
-    <div class="dashboard-stat">
-      <div class="dashboard-label">Messages</div>
-      <div class="dashboard-value" id="dashMessages">0</div>
-    </div>
-  </div>
+          <div class="dashboard-stat">
+            <div class="dashboard-label">Messages</div>
+            <div class="dashboard-value" id="dashMessages">0</div>
+          </div>
+        </div>
 
-  <h3 class="mt-22">Your Profile</h3>
+        <h3 class="mt-22">Your Profile</h3>
 
         <form id="caregiverProfileForm">
           <div class="row">
@@ -156,7 +156,9 @@
 
   <script>
     let currentUser = null;
-    let existingProfile = null;
+    let existingProfileParent = null;
+    let currentVisibleVersion = null;
+    let currentPendingVersion = null;
 
     function formatPhoneNumber(value) {
       const digits = value.replace(/\D/g, "").slice(0, 10);
@@ -200,6 +202,22 @@
       wrap.style.display = "block";
     }
 
+    function getWorkingProfileVersion() {
+      return currentPendingVersion || currentVisibleVersion || null;
+    }
+
+    function getProfileStatusBadgeHtml() {
+      if (currentPendingVersion) {
+        return `<span class="badge badge-pending">Pending Review</span>`;
+      }
+
+      if (currentVisibleVersion) {
+        return `<span class="badge badge-approved">Approved</span>`;
+      }
+
+      return `<span class="badge badge-pending">Not Submitted</span>`;
+    }
+
     async function sendMagicLink() {
       const email = document.getElementById("cg_auth_email").value.trim();
       const msg = document.getElementById("authMessage");
@@ -209,12 +227,12 @@
         return;
       }
 
-const { error } = await window.db.auth.signInWithOtp({
-  email,
-  options: {
-    emailRedirectTo: "https://jfrancomb-spec.github.io/grove-website/caregiver.html"
-  }
-});
+      const { error } = await window.db.auth.signInWithOtp({
+        email,
+        options: {
+          emailRedirectTo: "https://jfrancomb-spec.github.io/grove-website/caregiver.html"
+        }
+      });
 
       if (error) {
         handleError(error, "Sign-in link failed");
@@ -227,7 +245,7 @@ const { error } = await window.db.auth.signInWithOtp({
       }
     }
 
-    async function loadOwnProfile() {
+    async function loadOwnProfileParent() {
       if (!currentUser) return null;
 
       const { data, error } = await window.db
@@ -244,47 +262,66 @@ const { error } = await window.db.auth.signInWithOtp({
       return data || null;
     }
 
-    function fillProfileForm(profile) {
-      existingProfile = profile;
+    async function loadProfileVersion(versionId) {
+      if (!versionId) return null;
 
-const status = profile?.status || "draft";
-const statusEl = document.getElementById("dashProfileStatus");
+      const { data, error } = await window.db
+        .from("caregiver_profile_versions")
+        .select("*")
+        .eq("id", versionId)
+        .maybeSingle();
 
-let label = "Draft";
-let badgeClass = "badge-pending";
+      if (error) {
+        handleError(error, "Profile version load failed");
+        return null;
+      }
 
-if (status === "pending") {
-  label = "Pending Review";
-  badgeClass = "badge-pending";
-}
+      return data || null;
+    }
 
-if (status === "approved") {
-  label = "Approved";
-  badgeClass = "badge-approved";
-}
+    async function loadOwnProfileBundle() {
+      existingProfileParent = await loadOwnProfileParent();
 
-if (status === "denied") {
-  label = "Needs Update";
-  badgeClass = "badge-denied";
-}
+      if (!existingProfileParent) {
+        currentVisibleVersion = null;
+        currentPendingVersion = null;
+        return;
+      }
 
-if (status === "draft") {
-  label = "Draft";
-  badgeClass = "badge-pending";
-}
+      currentVisibleVersion = await loadProfileVersion(existingProfileParent.current_visible_version_id);
+      currentPendingVersion = await loadProfileVersion(existingProfileParent.current_pending_version_id);
+    }
 
-statusEl.innerHTML = `<span class="badge ${badgeClass}">${label}</span>`;
-      
-document.getElementById("dashConfirmedEncounters").textContent =
-  profile?.confirmed_encounters != null ? profile.confirmed_encounters : 0;
+    async function loadMessageCount() {
+      if (!currentUser) return 0;
 
-document.getElementById("dashResponseTime").textContent =
-  profile?.average_response_minutes != null
-    ? `${profile.average_response_minutes} min`
-    : "—";
+      const { count, error } = await window.db
+        .from("conversation_participants")
+        .select("*", { count: "exact", head: true })
+        .eq("user_id", currentUser.id)
+        .eq("is_archived", false);
 
-document.getElementById("dashMessages").textContent = "0";
-      
+      if (error) {
+        console.error(error);
+        return 0;
+      }
+
+      return count || 0;
+    }
+
+    function fillProfileForm() {
+      const profile = getWorkingProfileVersion();
+
+      document.getElementById("dashProfileStatus").innerHTML = getProfileStatusBadgeHtml();
+
+      document.getElementById("dashConfirmedEncounters").textContent =
+        existingProfileParent?.confirmed_encounters != null ? existingProfileParent.confirmed_encounters : 0;
+
+      document.getElementById("dashResponseTime").textContent =
+        existingProfileParent?.average_response_minutes != null
+          ? `${existingProfileParent.average_response_minutes} min`
+          : "—";
+
       document.getElementById("cg_first_name").value = profile?.first_name || "";
       document.getElementById("cg_last_name").value = profile?.last_name || "";
       document.getElementById("cg_email").value = currentUser?.email || profile?.email || "";
@@ -310,7 +347,9 @@ document.getElementById("dashMessages").textContent = "0";
       const files = Array.from(photoInput?.files || []).slice(0, 5);
 
       if (!files.length) {
-        return existingProfile?.photo_urls || (existingProfile?.photo_url ? [existingProfile.photo_url] : []);
+        const existingUrls = getWorkingProfileVersion()?.photo_urls
+          || (getWorkingProfileVersion()?.photo_url ? [getWorkingProfileVersion().photo_url] : []);
+        return existingUrls;
       }
 
       const photoUrls = [];
@@ -342,6 +381,45 @@ document.getElementById("dashMessages").textContent = "0";
       return photoUrls;
     }
 
+    async function ensureParentProfile() {
+      if (existingProfileParent) return existingProfileParent;
+
+      const { data, error } = await window.db
+        .from("caregiver_profiles")
+        .insert([{
+          user_id: currentUser.id,
+          is_active: false,
+          confirmed_encounters: 0
+        }])
+        .select("*")
+        .single();
+
+      if (error) {
+        handleError(error, "Unable to create caregiver profile");
+        return null;
+      }
+
+      existingProfileParent = data;
+      return data;
+    }
+
+    async function getNextVersionNumber(caregiverProfileId) {
+      const { data, error } = await window.db
+        .from("caregiver_profile_versions")
+        .select("version_number")
+        .eq("caregiver_profile_id", caregiverProfileId)
+        .order("version_number", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (error) {
+        handleError(error, "Unable to determine next profile version");
+        return null;
+      }
+
+      return (data?.version_number || 0) + 1;
+    }
+
     async function saveProfile(e) {
       e.preventDefault();
 
@@ -356,17 +434,25 @@ document.getElementById("dashMessages").textContent = "0";
         return;
       }
 
+      const parent = await ensureParentProfile();
+      if (!parent) return;
+
       const photoUrls = await uploadCaregiverPhotos(currentUser.id);
       if (photoUrls === null) return;
 
       const firstName = document.getElementById("cg_first_name").value.trim();
       const lastName = document.getElementById("cg_last_name").value.trim();
 
+      const nextVersionNumber = await getNextVersionNumber(parent.id);
+      if (nextVersionNumber === null) return;
+
       const payload = {
-        user_id: currentUser.id,
+        caregiver_profile_id: parent.id,
+        version_number: nextVersionNumber,
+        submitted_at: new Date().toISOString(),
+        name_display: `${firstName} ${lastName}`.trim(),
         first_name: firstName,
         last_name: lastName,
-        name_display: `${firstName} ${lastName}`.trim(),
         email: currentUser.email || "",
         phone: document.getElementById("cg_phone").value.trim(),
         location: document.getElementById("cg_location").value.trim(),
@@ -382,21 +468,41 @@ document.getElementById("dashMessages").textContent = "0";
         comfortable_with_dogs: document.getElementById("cg_comfortable_with_dogs").checked,
         bio: document.getElementById("cg_bio").value.trim(),
         photo_urls: photoUrls,
-        photo_url: photoUrls[0] || null
+        photo_url: photoUrls[0] || null,
+        content_status: "queued",
+        moderation_reason: null,
+        moderation_details: {},
+        flag_trigger_type: "none",
+        is_live: false
       };
 
-      const { error } = await window.db
-        .from("caregiver_profiles")
-        .upsert(payload, { onConflict: "user_id" });
+      const { data: newVersion, error: versionError } = await window.db
+        .from("caregiver_profile_versions")
+        .insert([payload])
+        .select("*")
+        .single();
 
-      if (error) {
-        handleError(error, "Profile save failed");
+      if (versionError || !newVersion) {
+        handleError(versionError, "Profile save failed");
+        return;
+      }
+
+      const { error: parentUpdateError } = await window.db
+        .from("caregiver_profiles")
+        .update({
+          current_pending_version_id: newVersion.id
+        })
+        .eq("id", parent.id);
+
+      if (parentUpdateError) {
+        handleError(parentUpdateError, "Profile save failed");
         return;
       }
 
       document.getElementById("caregiverProfileSuccess").style.display = "block";
-      existingProfile = await loadOwnProfile();
-      fillProfileForm(existingProfile);
+
+      await loadOwnProfileBundle();
+      fillProfileForm();
     }
 
     async function signOut() {
@@ -430,11 +536,14 @@ document.getElementById("dashMessages").textContent = "0";
 
       authCard.style.display = "none";
       profileCard.style.display = "block";
-signedInText.textContent = `Signed in as ${currentUser.email}. You can review and update your caregiver profile below.`;
+      signedInText.textContent = `Signed in as ${currentUser.email}. You can review and update your caregiver profile below.`;
       emailInput.value = currentUser.email || "";
 
-      existingProfile = await loadOwnProfile();
-      fillProfileForm(existingProfile);
+      await loadOwnProfileBundle();
+      fillProfileForm();
+
+      const messageCount = await loadMessageCount();
+      document.getElementById("dashMessages").textContent = messageCount;
     }
 
     window.addEventListener("DOMContentLoaded", () => {
