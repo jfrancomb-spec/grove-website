@@ -45,7 +45,8 @@
 
   <script>
     (function () {
-      let currentFamily = null;
+      let currentFamilyParent = null;
+      let currentFamilyVersion = null;
       let currentReviews = [];
       let currentPhotoIndex = 0;
 
@@ -194,39 +195,41 @@
       }
 
       function renderProfile() {
-        if (!currentFamily) return;
+        if (!currentFamilyParent || !currentFamilyVersion) return;
 
-        const profile = currentFamily;
+        const parent = currentFamilyParent;
+        const profile = currentFamilyVersion;
+
         const displayName = formatDisplayName(profile);
         const careTypesNeeded = getCareTypesNeededText(profile);
 
-        const responseTime = profile.average_response_minutes != null
-          ? formatResponseTime(profile.average_response_minutes)
+        const responseTime = parent.average_response_minutes != null
+          ? formatResponseTime(parent.average_response_minutes)
           : "";
 
-        const encounters = profile.confirmed_encounters != null
-          ? `${profile.confirmed_encounters} confirmed encounter${Number(profile.confirmed_encounters) === 1 ? "" : "s"}`
+        const encounters = parent.confirmed_encounters != null
+          ? `${parent.confirmed_encounters} confirmed encounter${Number(parent.confirmed_encounters) === 1 ? "" : "s"}`
           : "";
 
         document.getElementById("profileSubtitle").textContent =
           `${displayName}${profile.location ? ` • ${profile.location}` : ""}`;
 
-const contactBtn = document.getElementById("contactBtn");
+        const contactBtn = document.getElementById("contactBtn");
 
-if (profile.user_id) {
-  contactBtn.style.display = "";
-  contactBtn.href = "#";
-  contactBtn.onclick = async (event) => {
-    event.preventDefault();
+        if (parent.user_id) {
+          contactBtn.style.display = "";
+          contactBtn.href = "#";
+          contactBtn.onclick = async (event) => {
+            event.preventDefault();
 
-    await window.openGroveConversation({
-      targetUserId: profile.user_id,
-      familyProfileId: profile.id
-    });
-  };
-} else {
-  contactBtn.style.display = "none";
-}
+            await window.openGroveConversation({
+              targetUserId: parent.user_id,
+              familyProfileId: parent.id
+            });
+          };
+        } else {
+          contactBtn.style.display = "none";
+        }
 
         document.getElementById("profileContent").innerHTML = `
           <div class="profile-detail">
@@ -300,16 +303,29 @@ if (profile.user_id) {
           return;
         }
 
-        const { data: profile, error: profileError } = await window.db
+        const { data: familyParent, error: familyParentError } = await window.db
           .from("family_profiles")
-          .select("*")
+          .select("id, user_id, current_visible_version_id, average_response_minutes, confirmed_encounters")
           .eq("id", familyId)
-          .eq("is_active", true)
-          .eq("approval_status", "approved")
+          .not("current_visible_version_id", "is", null)
           .maybeSingle();
 
-        if (profileError || !profile) {
-          console.error(profileError);
+        if (familyParentError || !familyParent) {
+          console.error(familyParentError);
+          document.getElementById("profileError").style.display = "block";
+          return;
+        }
+
+        const { data: familyVersion, error: familyVersionError } = await window.db
+          .from("family_profile_versions")
+          .select("*")
+          .eq("id", familyParent.current_visible_version_id)
+          .eq("is_live", true)
+          .in("content_status", ["visible", "approved"])
+          .maybeSingle();
+
+        if (familyVersionError || !familyVersion) {
+          console.error(familyVersionError);
           document.getElementById("profileError").style.display = "block";
           return;
         }
@@ -319,13 +335,15 @@ if (profile.user_id) {
           .select("*")
           .eq("family_profile_id", familyId)
           .eq("is_visible", true)
+          .in("content_status", ["visible", "approved"])
           .order("created_at", { ascending: false });
 
         if (reviewError) {
           console.error(reviewError);
         }
 
-        currentFamily = profile;
+        currentFamilyParent = familyParent;
+        currentFamilyVersion = familyVersion;
         currentReviews = reviews || [];
         currentPhotoIndex = 0;
 
