@@ -41,6 +41,7 @@
 
         <form id="editCaregiverForm">
           <input id="edit_id" type="hidden" />
+          <input id="edit_version_id" type="hidden" />
 
           <div class="row">
             <input id="edit_first_name" type="text" placeholder="First Name" required />
@@ -120,6 +121,9 @@
   <script src="./app.js"></script>
 
   <script>
+    let existingParentProfile = null;
+    let existingWorkingVersion = null;
+
     function formatPhoneNumber(value) {
       const digits = value.replace(/\D/g, "").slice(0, 10);
       if (digits.length === 0) return "";
@@ -140,25 +144,89 @@
       });
     }
 
-    function fillForm(profile) {
-      document.getElementById("edit_id").value = profile.id || "";
-      document.getElementById("edit_first_name").value = profile.first_name || "";
-      document.getElementById("edit_last_name").value = profile.last_name || "";
-      document.getElementById("edit_email").value = profile.email || "";
-      document.getElementById("edit_phone").value = profile.phone || "";
-      document.getElementById("edit_location").value = profile.location || "";
-      document.getElementById("edit_years_experience").value = profile.years_experience || "";
-      document.getElementById("edit_availability").value = profile.availability || "";
-      document.getElementById("edit_bio").value = profile.bio || "";
+    function fillForm(versionRow, parentRow) {
+      existingParentProfile = parentRow;
+      existingWorkingVersion = versionRow;
 
-      document.getElementById("edit_drivers_license").checked = !!profile.has_drivers_license;
-      document.getElementById("edit_cpr_certified").checked = !!profile.cpr_certified;
-      document.getElementById("edit_non_smoker").checked = !!profile.non_smoker;
-      document.getElementById("edit_non_vaper").checked = !!profile.non_vaper;
-      document.getElementById("edit_comfortable_with_cats").checked = !!profile.comfortable_with_cats;
-      document.getElementById("edit_comfortable_with_dogs").checked = !!profile.comfortable_with_dogs;
+      document.getElementById("edit_id").value = parentRow?.id || "";
+      document.getElementById("edit_version_id").value = versionRow?.id || "";
 
-      setSelectedCareTypes(profile.care_types || []);
+      document.getElementById("edit_first_name").value = versionRow?.first_name || "";
+      document.getElementById("edit_last_name").value = versionRow?.last_name || "";
+      document.getElementById("edit_email").value = versionRow?.email || "";
+      document.getElementById("edit_phone").value = versionRow?.phone || "";
+      document.getElementById("edit_location").value = versionRow?.location || "";
+      document.getElementById("edit_years_experience").value = versionRow?.years_experience || "";
+      document.getElementById("edit_availability").value = versionRow?.availability || "";
+      document.getElementById("edit_bio").value = versionRow?.bio || "";
+
+      document.getElementById("edit_drivers_license").checked = !!versionRow?.has_drivers_license;
+      document.getElementById("edit_cpr_certified").checked = !!versionRow?.cpr_certified;
+      document.getElementById("edit_non_smoker").checked = !!versionRow?.non_smoker;
+      document.getElementById("edit_non_vaper").checked = !!versionRow?.non_vaper;
+      document.getElementById("edit_comfortable_with_cats").checked = !!versionRow?.comfortable_with_cats;
+      document.getElementById("edit_comfortable_with_dogs").checked = !!versionRow?.comfortable_with_dogs;
+
+      setSelectedCareTypes(versionRow?.care_types || []);
+    }
+
+    async function loadProfileParentByLookup(email, phone) {
+      const { data, error } = await window.db
+        .from("caregiver_profiles")
+        .select("*")
+        .eq("email", email)
+        .eq("phone", phone)
+        .limit(1);
+
+      if (error) {
+        handleError(error, "Lookup failed");
+        return null;
+      }
+
+      return data && data.length ? data[0] : null;
+    }
+
+    async function loadProfileVersion(versionId) {
+      if (!versionId) return null;
+
+      const { data, error } = await window.db
+        .from("caregiver_profile_versions")
+        .select("*")
+        .eq("id", versionId)
+        .maybeSingle();
+
+      if (error) {
+        handleError(error, "Profile version load failed");
+        return null;
+      }
+
+      return data || null;
+    }
+
+    async function getDisplayVersionForParent(parentProfile) {
+      if (!parentProfile) return null;
+
+      const preferredVersionId =
+        parentProfile.current_pending_version_id || parentProfile.current_visible_version_id;
+
+      return await loadProfileVersion(preferredVersionId);
+    }
+
+    async function getNextVersionNumber(caregiverProfileId) {
+      const { data, error } = await window.db
+        .from("caregiver_profile_versions")
+        .select("version_number")
+        .eq("caregiver_profile_id", caregiverProfileId)
+        .order("version_number", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (error) {
+        handleError(error, "Unable to determine next profile version");
+        return null;
+      }
+
+      return (data?.version_number || 0) + 1;
     }
 
     async function wireLookup() {
@@ -176,24 +244,22 @@
         const email = document.getElementById("lookup_email").value.trim();
         const phone = document.getElementById("lookup_phone").value.trim();
 
-        const { data, error } = await window.db
-          .from("caregiver_profiles")
-          .select("*")
-          .eq("email", email)
-          .eq("phone", phone)
-          .limit(1);
+        const parentProfile = await loadProfileParentByLookup(email, phone);
 
-        if (error) {
-          handleError(error, "Lookup failed");
-          return;
-        }
-
-        if (!data || data.length === 0) {
+        if (!parentProfile) {
           alert("No caregiver profile matched that email and phone number.");
           return;
         }
 
-        fillForm(data[0]);
+        const version = await getDisplayVersionForParent(parentProfile);
+
+        if (!version) {
+          alert("This caregiver profile does not have a visible or pending version yet.");
+          return;
+        }
+
+        fillForm(version, parentProfile);
+        document.getElementById("editSuccess").style.display = "none";
         document.getElementById("editCard").style.display = "block";
         document.getElementById("editCard").scrollIntoView({ behavior: "smooth" });
       });
@@ -211,8 +277,13 @@
       form.addEventListener("submit", async (e) => {
         e.preventDefault();
 
-        const id = document.getElementById("edit_id").value;
+        const caregiverProfileId = document.getElementById("edit_id").value;
         const careTypes = getSelectedCareTypes();
+
+        if (!caregiverProfileId) {
+          alert("Profile not loaded.");
+          return;
+        }
 
         if (!careTypes.length) {
           alert("Please select at least one type of care.");
@@ -222,10 +293,16 @@
         const firstName = document.getElementById("edit_first_name").value.trim();
         const lastName = document.getElementById("edit_last_name").value.trim();
 
+        const nextVersionNumber = await getNextVersionNumber(caregiverProfileId);
+        if (nextVersionNumber === null) return;
+
         const payload = {
+          caregiver_profile_id: caregiverProfileId,
+          version_number: nextVersionNumber,
+          submitted_at: new Date().toISOString(),
+          name_display: `${firstName} ${lastName}`.trim(),
           first_name: firstName,
           last_name: lastName,
-          name_display: `${firstName} ${lastName}`.trim(),
           email: document.getElementById("edit_email").value.trim(),
           phone: document.getElementById("edit_phone").value.trim(),
           location: document.getElementById("edit_location").value.trim(),
@@ -239,19 +316,40 @@
           non_vaper: document.getElementById("edit_non_vaper").checked,
           comfortable_with_cats: document.getElementById("edit_comfortable_with_cats").checked,
           comfortable_with_dogs: document.getElementById("edit_comfortable_with_dogs").checked,
-          bio: document.getElementById("edit_bio").value.trim()
+          bio: document.getElementById("edit_bio").value.trim(),
+          photo_urls: existingWorkingVersion?.photo_urls || [],
+          photo_url: existingWorkingVersion?.photo_url || null,
+          content_status: "queued",
+          moderation_reason: null,
+          moderation_details: {},
+          flag_trigger_type: "none",
+          is_live: false
         };
 
-        const { error } = await window.db
-          .from("caregiver_profiles")
-          .update(payload)
-          .eq("id", id);
+        const { data: newVersion, error: versionError } = await window.db
+          .from("caregiver_profile_versions")
+          .insert([payload])
+          .select("*")
+          .single();
 
-        if (error) {
-          handleError(error, "Update failed");
+        if (versionError || !newVersion) {
+          handleError(versionError, "Update failed");
           return;
         }
 
+        const { error: parentUpdateError } = await window.db
+          .from("caregiver_profiles")
+          .update({
+            current_pending_version_id: newVersion.id
+          })
+          .eq("id", caregiverProfileId);
+
+        if (parentUpdateError) {
+          handleError(parentUpdateError, "Update failed");
+          return;
+        }
+
+        existingWorkingVersion = newVersion;
         document.getElementById("editSuccess").style.display = "block";
         document.getElementById("editSuccess").scrollIntoView({ behavior: "smooth" });
       });
