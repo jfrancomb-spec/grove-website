@@ -363,11 +363,14 @@ function isConversationUnread(conversationId) {
       }
 
       async function loadConversations() {
-        const { data: myParticipants, error: participantError } = await window.db
-          .from("conversation_participants")
-          .select("*")
-          .eq("user_id", currentUser.id)
-          .eq("is_archived", false);
+const { data: allMessages, error: messageError } = await window.db
+  .from("messages")
+  .select("*")
+  .in("conversation_id", conversationIds)
+  .or(
+    `and(sender_user_id.eq.${currentUser.id},visible_to_sender.eq.true),and(sender_user_id.neq.${currentUser.id},visible_to_recipient.eq.true)`
+  )
+  .order("created_at", { ascending: true });
 
         if (participantError) {
           console.error(participantError);
@@ -561,45 +564,6 @@ function renderConversationList() {
   });
 }
 
-        conversations.forEach((conversation) => {
-          const thread = messagesByConversationId[conversation.id] || [];
-          const lastMessage = thread.length ? thread[thread.length - 1] : null;
-
-          const button = document.createElement("button");
-          button.type = "button";
-          button.className = "conversation-item";
-
-          if (selectedConversationId === conversation.id) {
-            button.classList.add("active");
-          }
-
-          button.innerHTML = `
-            <div class="conversation-row">
-              ${getConversationAvatar(conversation.id)}
-              <div class="conversation-main">
-                <div class="conversation-top">
-                  <span><strong>${getDisplayNameForConversation(conversation.id)}</strong></span>
-                </div>
-                <div class="conversation-preview">${lastMessage?.message_text || "No messages yet"}</div>
-                <div class="conversation-time">${lastMessage ? formatMessageTime(lastMessage.created_at) : ""}</div>
-              </div>
-            </div>
-          `;
-
-          button.addEventListener("click", () => {
-            selectedConversationId = conversation.id;
-            const url = new URL(window.location.href);
-            url.search = "";
-            url.searchParams.set("conversation", conversation.id);
-            window.history.replaceState({}, "", url);
-            renderConversationList();
-            renderSelectedThread();
-          });
-
-          container.appendChild(button);
-        });
-      }
-
       function renderSelectedThread() {
         const threadHeader = document.getElementById("threadHeader");
         const threadEl = document.getElementById("messageThread");
@@ -633,20 +597,25 @@ function renderConversationList() {
           return;
         }
 
-        thread.forEach((message) => {
-          const div = document.createElement("div");
-          div.className =
-            message.sender_user_id === currentUser.id
-              ? "message-bubble sent"
-              : "message-bubble received";
+thread.forEach((message) => {
+  const isSentByMe = message.sender_user_id === currentUser.id;
+  const timeLabel = isSentByMe ? "Sent" : "Received";
+  const displayTime = isSentByMe
+    ? (message.sent_at || message.created_at)
+    : (message.received_at || message.created_at);
 
-          div.innerHTML = `
-            <div>${message.message_text}</div>
-            <div class="message-time">${formatMessageTime(message.created_at)}</div>
-          `;
+  const div = document.createElement("div");
+  div.className = isSentByMe
+    ? "message-bubble sent"
+    : "message-bubble received";
 
-          threadEl.appendChild(div);
-        });
+  div.innerHTML = `
+    <div>${message.message_text}</div>
+    <div class="message-time">${timeLabel} ${formatMessageTime(displayTime)}</div>
+  `;
+
+  threadEl.appendChild(div);
+});
 
         threadEl.scrollTop = threadEl.scrollHeight;
 markConversationRead(selectedConversationId);
