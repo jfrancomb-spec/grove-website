@@ -181,27 +181,27 @@
           return buildCaregiverBadges(profile);
         },
 
-getActions(profile) {
-  const actions = [
-    {
-      label: "View Profile",
-      href: `./caregiver-profile.html?id=${profile.id}`,
-      className: "button button-caregiver"
-    }
-  ];
+        getActions(profile) {
+          const actions = [
+            {
+              label: "View Profile",
+              href: `./caregiver-profile.html?id=${profile.id}`,
+              className: "button button-caregiver"
+            }
+          ];
 
-  if (profile.user_id) {
-    actions.push({
-      action: "message",
-      label: "Message",
-      targetUserId: profile.user_id,
-      caregiverProfileId: profile.id,
-      className: "button"
-    });
-  }
+          if (profile.user_id) {
+            actions.push({
+              action: "message",
+              label: "Message",
+              targetUserId: profile.user_id,
+              caregiverProfileId: profile.id,
+              className: "button"
+            });
+          }
 
-  return actions;
-},
+          return actions;
+        },
 
         getReviewSummary(profile) {
           const reviews = caregiverReviewsByProfileId[profile.id] || [];
@@ -225,20 +225,26 @@ getActions(profile) {
         }
       };
 
-      function normalizeCaregiverProfile(row) {
+      function normalizeCaregiverProfile(parentRow, versionRow) {
         return {
-          ...row,
-          profile_type: "caregiver"
+          ...parentRow,
+          ...versionRow,
+          id: parentRow.id,
+          caregiver_profile_id: parentRow.id,
+          current_visible_version_id: parentRow.current_visible_version_id,
+          profile_type: "caregiver",
+          user_id: parentRow.user_id,
+          average_response_minutes: parentRow.average_response_minutes,
+          confirmed_encounters: parentRow.confirmed_encounters
         };
       }
 
       function renderCaregiverResults(rows) {
-        const normalized = rows.map(normalizeCaregiverProfile);
         const container = document.querySelector("#caregiver-results");
         const countEl = document.querySelector("#browse-count");
 
-        renderBrowseCards(container, normalized, caregiverBrowseConfig);
-        setBrowseCount(countEl, normalized.length, "caregivers");
+        renderBrowseCards(container, rows, caregiverBrowseConfig);
+        setBrowseCount(countEl, rows.length, "caregivers");
       }
 
       function applyFilters() {
@@ -287,6 +293,7 @@ getActions(profile) {
           .from("caregiver_reviews")
           .select("*")
           .eq("is_visible", true)
+          .in("content_status", ["visible", "approved"])
           .order("created_at", { ascending: false });
 
         if (reviewError) {
@@ -327,22 +334,59 @@ getActions(profile) {
           return;
         }
 
-        const { data, error } = await window.db
+        const { data: parentRows, error: parentError } = await window.db
           .from("caregiver_profiles")
-          .select("*")
-          .eq("is_active", true)
-          .eq("approval_status", "approved")
+          .select("id, user_id, current_visible_version_id, average_response_minutes, confirmed_encounters")
+          .not("current_visible_version_id", "is", null)
           .order("created_at", { ascending: false });
 
-        if (error) {
-          console.error(error);
+        if (parentError) {
+          console.error(parentError);
           if (resultsContainer) {
             resultsContainer.innerHTML = "<div class='empty-state'><p>Unable to load caregivers right now.</p></div>";
           }
           return;
         }
 
-        allCaregivers = data || [];
+        const versionIds = (parentRows || [])
+          .map((row) => row.current_visible_version_id)
+          .filter(Boolean);
+
+        if (!versionIds.length) {
+          allCaregivers = [];
+          await loadReviews();
+          applyFilters();
+          return;
+        }
+
+        const { data: versionRows, error: versionError } = await window.db
+          .from("caregiver_profile_versions")
+          .select("*")
+          .in("id", versionIds)
+          .eq("is_live", true)
+          .in("content_status", ["visible", "approved"]);
+
+        if (versionError) {
+          console.error(versionError);
+          if (resultsContainer) {
+            resultsContainer.innerHTML = "<div class='empty-state'><p>Unable to load caregivers right now.</p></div>";
+          }
+          return;
+        }
+
+        const versionMap = {};
+        (versionRows || []).forEach((version) => {
+          versionMap[version.id] = version;
+        });
+
+        allCaregivers = (parentRows || [])
+          .map((parent) => {
+            const version = versionMap[parent.current_visible_version_id];
+            if (!version) return null;
+            return normalizeCaregiverProfile(parent, version);
+          })
+          .filter(Boolean);
+
         await loadReviews();
         applyFilters();
       }
