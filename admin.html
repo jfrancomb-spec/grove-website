@@ -10,479 +10,573 @@
 </head>
 
 <body>
-  <!-- Shared header -->
   <div id="header-placeholder"></div>
 
-<main class="admin-page">
-  <section class="admin-section">
-    <h1>Admin Dashboard</h1>
-    <p class="admin-subtext">Review caregiver and family profiles.</p>
-  </section>
+  <main class="admin-page">
+    <section class="admin-section">
+      <h1>Admin Moderation Dashboard</h1>
+      <p class="admin-subtext">Review held and queued content, investigate flagged users, and resolve moderation decisions.</p>
+    </section>
 
-  <section class="admin-section">
-    <h2>Approval Needed</h2>
-    <div id="pending-list" class="admin-list"></div>
-  </section>
+    <section class="admin-section">
+      <div class="form-card" id="loginCard" style="display:none;">
+        <h2 class="mt-0">Admin Sign In</h2>
 
-  <section class="admin-section">
-    <h2>Approved</h2>
-    <div id="approved-list" class="admin-list"></div>
-  </section>
+        <form id="loginForm">
+          <div class="row">
+            <input id="adminEmail" type="email" placeholder="Admin Email" required />
+          </div>
 
-  <section class="admin-section">
-    <h2>Denied</h2>
-    <div id="denied-list" class="admin-list"></div>
-  </section>
-</main>
-  
-  <!-- Shared footer -->
-  <div id="footer-placeholder"></div>
+          <div class="row">
+            <input id="adminPassword" type="password" placeholder="Password" required />
+          </div>
 
-  <!-- Scripts -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-  <script src="./app.js"></script>
+          <button class="button" type="submit">Sign In</button>
+        </form>
 
-  <!-- Page script -->
-  <script>
-    // =====================================================
-    // Utility helpers
-    // =====================================================
-    function fmtDate(ts) {
-      try {
-        return new Date(ts).toLocaleString();
-      } catch {
-        return ts;
-      }
-    }
+        <p id="loginMsg" class="success" style="display:none;"></p>
+      </div>
 
-    function cardRow(title, lines) {
-      const div = document.createElement("div");
-      div.className = "card";
-      div.innerHTML = `<h3>${title}</h3>` + lines.map(line => `<p>${line}</p>`).join("");
-      return div;
-    }
-
-    function renderEmptyOrError(box, error, emptyText, items) {
-      box.innerHTML = "";
-
-      if (error) {
-        box.innerHTML = "<p>Unable to load right now.</p>";
-        console.error(error);
-        return true;
-      }
-
-      if (!items || items.length === 0) {
-        box.innerHTML = `<p>${emptyText}</p>`;
-        return true;
-      }
-
-      return false;
-    }
-
-    // =====================================================
-    // Approve / Deny listing actions
-    // =====================================================
-    async function setJobPostStatus(id, approve) {
-      const patch = approve
-        ? { status: "approved", is_active: true }
-        : { status: "denied", is_active: false };
-
-      const { error } = await window.db
-        .from("job_posts")
-        .update(patch)
-        .eq("id", id);
-
-      if (error) {
-        handleError(error, "Update failed");
-        return;
-      }
-
-      await loadAdminData();
-    }
-
-async function setCaregiverPostStatus(id, approve) {
-  const patch = approve
-    ? { status: "approved", is_active: true }
-    : { status: "denied", is_active: false };
-
-  const { error } = await window.db
-    .from("caregiver_profiles")
-    .update(patch)
-    .eq("id", id);
-
-      if (error) {
-        handleError(error, "Update failed");
-        return;
-      }
-
-      await loadAdminData();
-    }
-
-    // =====================================================
-    // Load all admin data
-    // =====================================================
-function renderAdminSection(container, profiles, sectionType) {
-  if (!container) return;
-
-  if (!profiles.length) {
-    container.innerHTML = `<div class="admin-empty">No profiles in this section.</div>`;
-    return;
-  }
-
-  container.innerHTML = profiles
-    .map((profile) => {
-      const roleLabel = profile.profile_type === "family" ? "Family" : "Caregiver";
-      const badges = getAdminBadges(profile);
-
-      const photoList =
-        Array.isArray(profile.photo_urls) && profile.photo_urls.length
-          ? profile.photo_urls.filter(Boolean)
-          : profile.photo_url
-            ? [profile.photo_url]
-            : [];
-
-      const mainPhoto = photoList.length
-        ? `<img src="${escapeHtml(photoList[0])}" alt="${escapeHtml(profile.name_display || "Profile photo")}" class="admin-photo-main">`
-        : `<div class="admin-photo-placeholder">No Photo</div>`;
-
-      const photoStrip =
-        photoList.length > 1
-          ? `
-            <div class="admin-photo-strip">
-              ${photoList
-                .slice(0, 5)
-                .map(
-                  (url) => `
-                    <img
-                      src="${escapeHtml(url)}"
-                      alt="Profile photo"
-                      class="admin-photo-thumb"
-                    >
-                  `
-                )
-                .join("")}
+      <div id="dashboard" style="display:none;">
+        <div class="form-card">
+          <div class="flex-between">
+            <div>
+              <h2 class="mb-0">Moderation Queue</h2>
+              <p class="admin-subtext">Open items are newest moderation cases. Resolve with care.</p>
             </div>
-          `
-          : "";
+            <button class="button" type="button" id="signOutBtn">Sign Out</button>
+          </div>
 
-      const caregiverDetails = `
-        ${profile.location ? `<div class="admin-meta">${escapeHtml(profile.location)}</div>` : ""}
-        ${
-          Array.isArray(profile.care_types) && profile.care_types.length
-            ? `<div class="admin-meta"><strong>Care Types:</strong> ${escapeHtml(profile.care_types.join(", "))}</div>`
-            : ""
-        }
-        ${
-          profile.years_experience
-            ? `<div class="admin-meta"><strong>Experience:</strong> ${escapeHtml(profile.years_experience)}</div>`
-            : ""
-        }
-        ${profile.email ? `<div class="admin-meta"><strong>Email:</strong> ${escapeHtml(profile.email)}</div>` : ""}
-        ${profile.phone ? `<div class="admin-meta"><strong>Phone:</strong> ${escapeHtml(profile.phone)}</div>` : ""}
-        ${profile.bio ? `<div><strong>Bio:</strong> ${escapeHtml(profile.bio)}</div>` : ""}
-      `;
-
-      const familyDetails = `
-        ${profile.location ? `<div class="admin-meta">${escapeHtml(profile.location)}</div>` : ""}
-        ${
-          Array.isArray(profile.care_types_needed) && profile.care_types_needed.length
-            ? `<div class="admin-meta"><strong>Care Needed:</strong> ${escapeHtml(profile.care_types_needed.join(", "))}</div>`
-            : ""
-        }
-        ${
-          profile.household_description
-            ? `<div><strong>Household:</strong> ${escapeHtml(profile.household_description)}</div>`
-            : ""
-        }
-        ${
-          profile.children_description
-            ? `<div><strong>Children:</strong> ${escapeHtml(profile.children_description)}</div>`
-            : ""
-        }
-        ${
-          profile.pets_description
-            ? `<div><strong>Pets:</strong> ${escapeHtml(profile.pets_description)}</div>`
-            : ""
-        }
-        ${profile.bio ? `<div><strong>Bio:</strong> ${escapeHtml(profile.bio)}</div>` : ""}
-        ${profile.email ? `<div class="admin-meta"><strong>Email:</strong> ${escapeHtml(profile.email)}</div>` : ""}
-        ${profile.phone ? `<div class="admin-meta"><strong>Phone:</strong> ${escapeHtml(profile.phone)}</div>` : ""}
-      `;
-
-      return `
-        <div class="admin-card">
-          <div class="admin-card-layout">
-            <div class="admin-photo-column">
-              ${mainPhoto}
-              ${photoStrip}
+          <div class="dashboard-stats mt-22">
+            <div class="dashboard-stat">
+              <div class="dashboard-label">Open</div>
+              <div class="dashboard-value" id="statOpen">0</div>
             </div>
 
-            <div class="admin-card-top">
-              <div>
-                <h3>${escapeHtml(profile.name_display || "Unnamed Profile")}</h3>
-                <div class="admin-meta">${roleLabel}</div>
+            <div class="dashboard-stat">
+              <div class="dashboard-label">In Review</div>
+              <div class="dashboard-value" id="statInReview">0</div>
+            </div>
 
-                ${profile.profile_type === "family" ? familyDetails : caregiverDetails}
+            <div class="dashboard-stat">
+              <div class="dashboard-label">Resolved</div>
+              <div class="dashboard-value" id="statResolved">0</div>
+            </div>
 
-                ${
-                  badges.length
-                    ? `<div class="admin-badges">
-                        ${badges.map((badge) => `<span class="admin-badge">${escapeHtml(badge)}</span>`).join("")}
-                      </div>`
-                    : ""
-                }
-              </div>
-
-              <div class="admin-actions">
-                ${
-                  sectionType !== "approved"
-                    ? `<button class="button-admin button-approve" onclick="updateApprovalStatus('${profile.table_name}', '${profile.id}', 'approved')">Approve</button>`
-                    : ""
-                }
-                ${
-                  sectionType !== "denied"
-                    ? `<button class="button-admin button-deny" onclick="updateApprovalStatus('${profile.table_name}', '${profile.id}', 'denied')">Deny</button>`
-                    : ""
-                }
-                ${
-                  sectionType !== "pending"
-                    ? `<button class="button-admin" onclick="updateApprovalStatus('${profile.table_name}', '${profile.id}', 'pending')">Move to Pending</button>`
-                    : ""
-                }
-                <button class="button-admin button-delete" onclick="deleteProfile('${profile.table_name}', '${profile.id}')">Delete</button>
-              </div>
+            <div class="dashboard-stat">
+              <div class="dashboard-label">Flagged Users</div>
+              <div class="dashboard-value" id="statFlaggedUsers">0</div>
             </div>
           </div>
         </div>
-      `;
-    })
-    .join("");
-}
-    
-    async function loadAdminData() {
-      // ---------------------------------
-      // Care Requests
-      // ---------------------------------
-      const crBox = document.getElementById("careRequests");
-      const { data: cr, error: crErr } = await window.db
-        .from("care_requests")
-        .select("*")
-        .order("created_at", { ascending: false });
 
-      if (!renderEmptyOrError(crBox, crErr, "No care requests yet.", cr)) {
-        cr.forEach((x) => {
-          crBox.appendChild(
-            cardRow(`${x.name} (${fmtDate(x.created_at)})`, [
-              `<strong>Email:</strong> ${x.email}`,
-              `<strong>Type:</strong> ${x.care_type}`,
-              `<strong>Location:</strong> ${x.location}`,
-              `<strong>Schedule:</strong> ${x.schedule || ""}`,
-              `${x.details || ""}`
-            ])
-          );
-        });
+        <section class="admin-section">
+          <h2>Open Queue</h2>
+          <div id="open-list" class="admin-list"></div>
+        </section>
+
+        <section class="admin-section">
+          <h2>In Review</h2>
+          <div id="in-review-list" class="admin-list"></div>
+        </section>
+
+        <section class="admin-section">
+          <h2>Resolved</h2>
+          <div id="resolved-list" class="admin-list"></div>
+        </section>
+      </div>
+    </section>
+  </main>
+
+  <div id="footer-placeholder"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script src="./app.js"></script>
+
+  <script>
+    (function () {
+      let adminUser = null;
+      let queueItems = [];
+      let userRiskMap = {};
+
+      function escapeHtml(value) {
+        if (value === null || value === undefined) return "";
+        return String(value)
+          .replaceAll("&", "&amp;")
+          .replaceAll("<", "&lt;")
+          .replaceAll(">", "&gt;")
+          .replaceAll('"', "&quot;")
+          .replaceAll("'", "&#39;");
       }
 
-      // ---------------------------------
-      // Job Listings
-      // ---------------------------------
-      const jpBox = document.getElementById("jobPostsAdmin");
-      const { data: jp, error: jpErr } = await window.db
-        .from("job_posts")
-        .select("*")
-        .order("created_at", { ascending: false });
-
-      if (!renderEmptyOrError(jpBox, jpErr, "No job posts yet.", jp)) {
-        jp.forEach((job) => {
-          const card = document.createElement("div");
-          card.className = "card";
-
-          card.innerHTML = `
-            <h3>${job.title}</h3>
-            <p><strong>Status:</strong> ${job.status || "(none)"}</p>
-            <p><strong>Type:</strong> ${job.care_type}</p>
-            <p><strong>Location:</strong> ${job.location}</p>
-            <p><strong>Schedule:</strong> ${job.schedule}</p>
-            ${job.pay_range ? `<p><strong>Pay:</strong> ${job.pay_range}</p>` : ``}
-            <p>${job.description || ""}</p>
-            <p style="font-size:13px;color:#777;">Posted ${fmtDate(job.created_at)}</p>
-
-            <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:12px;">
-              <button class="button" type="button" data-approve="1">Approve</button>
-              <button class="button" type="button" data-deny="1">Deny</button>
-            </div>
-          `;
-
-          card.querySelector('[data-approve="1"]').addEventListener("click", () => {
-            setJobPostStatus(job.id, true);
-          });
-
-          card.querySelector('[data-deny="1"]').addEventListener("click", () => {
-            setJobPostStatus(job.id, false);
-          });
-
-          jpBox.appendChild(card);
-        });
+      function fmtDate(ts) {
+        try {
+          return new Date(ts).toLocaleString();
+        } catch {
+          return ts || "";
+        }
       }
 
-      // ---------------------------------
-      // Caregiver Listings
-      // ---------------------------------
-const cpBox = document.getElementById("caregiverPostsAdmin");
-const { data: cp, error: cpErr } = await window.db
-  .from("caregiver_profiles")
-  .select("*")
-  .order("created_at", { ascending: false });
-
-      if (!renderEmptyOrError(cpBox, cpErr, "No caregiver posts yet.", cp)) {
-        cp.forEach((cg) => {
-          const card = document.createElement("div");
-          card.className = "card";
-
-          card.innerHTML = `
-${cg.photo_url ? `<img class="admin-photo" src="${cg.photo_url}" alt="${cg.name_display}">` : ``}
-<h3>${cg.name_display} — ${cg.care_type}</h3>
-<p><strong>Status:</strong> ${cg.status || "(none)"}</p>
-<p><strong>Location:</strong> ${cg.location}</p>
-${cg.availability ? `<p><strong>Availability:</strong> ${cg.availability}</p>` : ``}
-<p>${cg.bio || ""}</p>
-            <p style="font-size:13px;color:#777;">Posted ${fmtDate(cg.created_at)}</p>
-
-            <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:12px;">
-              <button class="button" type="button" data-approve="1">Approve</button>
-              <button class="button" type="button" data-deny="1">Deny</button>
-            </div>
-          `;
-
-          card.querySelector('[data-approve="1"]').addEventListener("click", () => {
-            setCaregiverPostStatus(cg.id, true);
-          });
-
-          card.querySelector('[data-deny="1"]').addEventListener("click", () => {
-            setCaregiverPostStatus(cg.id, false);
-          });
-
-          cpBox.appendChild(card);
-        });
+      function truncateText(value, max = 220) {
+        const text = (value || "").trim();
+        if (!text) return "";
+        return text.length <= max ? text : `${text.slice(0, max - 1)}…`;
       }
 
-      // ---------------------------------
-      // Caregiver Applications
-      // ---------------------------------
-      const caBox = document.getElementById("caregiverApps");
-      const { data: ca, error: caErr } = await window.db
-        .from("caregiver_applications")
-        .select("*")
-        .order("created_at", { ascending: false });
+      function statusBadge(status) {
+        const normalized = (status || "").toLowerCase();
 
-      if (!renderEmptyOrError(caBox, caErr, "No caregiver applications yet.", ca)) {
-        ca.forEach((x) => {
-          caBox.appendChild(
-            cardRow(`${x.name} (${fmtDate(x.created_at)})`, [
-              `<strong>Email:</strong> ${x.email}`,
-              `<strong>Phone:</strong> ${x.phone}`,
-              `<strong>Type:</strong> ${x.care_type}`,
-              `<strong>Location:</strong> ${x.location}`,
-              `${(x.experience || "").replace(/\n/g, "<br>")}`
-            ])
-          );
-        });
+        if (normalized === "open") return `<span class="badge badge-pending">Open</span>`;
+        if (normalized === "in_review") return `<span class="badge badge-pending">In Review</span>`;
+        if (normalized === "resolved") return `<span class="badge badge-approved">Resolved</span>`;
+
+        if (normalized === "flagged") return `<span class="badge badge-pending">Flagged</span>`;
+        if (normalized === "normal") return `<span class="badge badge-approved">Normal</span>`;
+        if (normalized === "frozen") return `<span class="badge badge-denied">Frozen</span>`;
+        if (normalized === "banned") return `<span class="badge badge-denied">Banned</span>`;
+
+        if (normalized === "held") return `<span class="badge badge-pending">Held</span>`;
+        if (normalized === "queued") return `<span class="badge badge-pending">Queued</span>`;
+        if (normalized === "visible") return `<span class="badge badge-approved">Visible</span>`;
+        if (normalized === "approved") return `<span class="badge badge-approved">Approved</span>`;
+        if (normalized === "rejected") return `<span class="badge badge-denied">Rejected</span>`;
+
+        return `<span class="badge badge-pending">${escapeHtml(status || "Unknown")}</span>`;
       }
 
-      // ---------------------------------
-      // Job Applications
-      // ---------------------------------
-      const jaBox = document.getElementById("jobApps");
-      const { data: ja, error: jaErr } = await window.db
-        .from("job_applications")
-        .select("*")
-        .order("created_at", { ascending: false });
-
-      if (!renderEmptyOrError(jaBox, jaErr, "No job applications yet.", ja)) {
-        ja.forEach((x) => {
-          jaBox.appendChild(
-            cardRow(`${x.applicant_name} (${fmtDate(x.created_at)})`, [
-              `<strong>Email:</strong> ${x.applicant_email}`,
-              `<strong>Phone:</strong> ${x.applicant_phone}`,
-              `<strong>Location:</strong> ${x.applicant_location}`,
-              `<strong>Job ID:</strong> ${x.job_id}`,
-              `${(x.message || "").replace(/\n/g, "<br>")}`
-            ])
-          );
-        });
+      function priorityBadge(priority) {
+        const normalized = (priority || "").toLowerCase();
+        if (normalized === "urgent") return `<span class="badge badge-denied">Urgent</span>`;
+        if (normalized === "high") return `<span class="badge badge-pending">High</span>`;
+        if (normalized === "normal") return `<span class="badge badge-approved">Normal</span>`;
+        if (normalized === "low") return `<span class="badge">Low</span>`;
+        return `<span class="badge">${escapeHtml(priority || "Unknown")}</span>`;
       }
 
-      // ---------------------------------
-      // Caregiver Requests
-      // ---------------------------------
-      const rqBox = document.getElementById("caregiverReqs");
-      const { data: rq, error: rqErr } = await window.db
-        .from("caregiver_requests")
-        .select("*")
-        .order("created_at", { ascending: false });
+      function getQueueTitle(item) {
+        const type = item.queue_type || "account";
+        const labelMap = {
+          message: "Message Review",
+          caregiver_profile: "Caregiver Profile Review",
+          family_profile: "Family Profile Review",
+          job_listing: "Job Listing Review",
+          caregiver_review: "Caregiver Review",
+          family_review: "Family Review",
+          account: "Account Review"
+        };
 
-      if (!renderEmptyOrError(rqBox, rqErr, "No caregiver requests yet.", rq)) {
-        rq.forEach((x) => {
-          rqBox.appendChild(
-            cardRow(`${x.requester_name} (${fmtDate(x.created_at)})`, [
-              `<strong>Email:</strong> ${x.requester_email}`,
-              `<strong>Phone:</strong> ${x.requester_phone}`,
-              `<strong>Location:</strong> ${x.requester_location}`,
-              `<strong>Schedule:</strong> ${x.schedule || ""}`,
-              `<strong>Caregiver ID:</strong> ${x.caregiver_id}`,
-              `${(x.message || "").replace(/\n/g, "<br>")}`
-            ])
-          );
-        });
+        return labelMap[type] || "Moderation Review";
       }
-    }
 
-    // =====================================================
-    // Auth / Init
-    // =====================================================
-    async function showDashboardIfLoggedIn() {
-      const { data } = await window.db.auth.getSession();
-      const session = data?.session;
+      async function loadSession() {
+        const { data } = await window.db.auth.getSession();
+        adminUser = data?.session?.user || null;
 
-      if (session) {
-        document.getElementById("loginCard").style.display = "none";
-        document.getElementById("dashboard").style.display = "block";
-        await loadAdminData();
+        const loginCard = document.getElementById("loginCard");
+        const dashboard = document.getElementById("dashboard");
+
+        if (!adminUser) {
+          loginCard.style.display = "block";
+          dashboard.style.display = "none";
+          return false;
+        }
+
+        loginCard.style.display = "none";
+        dashboard.style.display = "block";
+        return true;
       }
-    }
 
-    window.addEventListener("DOMContentLoaded", () => {
-      const loginForm = document.getElementById("loginForm");
-      const loginMsg = document.getElementById("loginMsg");
-
-      loginForm.addEventListener("submit", async (e) => {
-        e.preventDefault();
-        loginMsg.style.display = "none";
-
-        const email = document.getElementById("adminEmail").value;
-        const password = document.getElementById("adminPassword").value;
-
-        const { error } = await window.db.auth.signInWithPassword({ email, password });
-        if (error) {
-          handleError(error, "Login failed");
+      async function fetchUserRiskProfiles(userIds) {
+        if (!userIds.length) {
+          userRiskMap = {};
           return;
         }
 
-        await showDashboardIfLoggedIn();
-      });
+        const { data, error } = await window.db
+          .from("user_risk_profiles")
+          .select("*")
+          .in("user_id", userIds);
 
-      document.getElementById("signOutBtn")?.addEventListener("click", async () => {
-        const { error } = await window.db.auth.signOut();
         if (error) {
-          handleError(error, "Sign out failed");
+          console.error(error);
+          userRiskMap = {};
           return;
         }
 
-        location.reload();
-      });
+        userRiskMap = {};
+        (data || []).forEach((row) => {
+          userRiskMap[row.user_id] = row;
+        });
+      }
 
-      showDashboardIfLoggedIn();
-    });
+      async function loadRelatedItem(item) {
+        if (!item.related_table || !item.related_id) return null;
+
+        const table = item.related_table;
+        const id = item.related_id;
+
+        const { data, error } = await window.db
+          .from(table)
+          .select("*")
+          .eq("id", id)
+          .maybeSingle();
+
+        if (error) {
+          console.error(`Failed to load related item from ${table}`, error);
+          return null;
+        }
+
+        return data || null;
+      }
+
+      async function loadQueueData() {
+        const { data, error } = await window.db
+          .from("admin_review_queue")
+          .select("*")
+          .order("created_at", { ascending: false });
+
+        if (error) {
+          console.error(error);
+          document.getElementById("open-list").innerHTML = "<p>Unable to load moderation queue.</p>";
+          document.getElementById("in-review-list").innerHTML = "<p>Unable to load moderation queue.</p>";
+          document.getElementById("resolved-list").innerHTML = "<p>Unable to load moderation queue.</p>";
+          return;
+        }
+
+        queueItems = data || [];
+
+        const userIds = Array.from(new Set(queueItems.map((item) => item.user_id).filter(Boolean)));
+        await fetchUserRiskProfiles(userIds);
+
+        for (const item of queueItems) {
+          item._related = await loadRelatedItem(item);
+          item._risk = userRiskMap[item.user_id] || null;
+        }
+
+        renderDashboard();
+      }
+
+      function setStats() {
+        const openItems = queueItems.filter((item) => item.status === "open");
+        const inReviewItems = queueItems.filter((item) => item.status === "in_review");
+        const resolvedItems = queueItems.filter((item) => item.status === "resolved");
+
+        const flaggedUsers = Object.values(userRiskMap).filter((risk) => risk.account_status === "flagged");
+
+        document.getElementById("statOpen").textContent = openItems.length;
+        document.getElementById("statInReview").textContent = inReviewItems.length;
+        document.getElementById("statResolved").textContent = resolvedItems.length;
+        document.getElementById("statFlaggedUsers").textContent = flaggedUsers.length;
+      }
+
+      function buildRelatedContentHtml(item) {
+        const related = item._related;
+        if (!related) {
+          return `<div class="admin-meta"><strong>Related Content:</strong> Not found</div>`;
+        }
+
+        if (item.related_table === "messages") {
+          return `
+            <div class="admin-meta"><strong>Message Status:</strong> ${statusBadge(related.moderation_status)}</div>
+            <div class="admin-meta"><strong>Delivery:</strong> ${escapeHtml(related.delivery_status || "")}</div>
+            <div class="admin-meta"><strong>Risk Score:</strong> ${related.risk_score ?? 0}</div>
+            ${related.moderation_reason ? `<div><strong>Reason:</strong> ${escapeHtml(related.moderation_reason)}</div>` : ""}
+            <div><strong>Message:</strong> ${escapeHtml(related.message_text || "")}</div>
+          `;
+        }
+
+        if (item.related_table === "caregiver_profile_versions") {
+          return `
+            <div class="admin-meta"><strong>Version Status:</strong> ${statusBadge(related.content_status)}</div>
+            <div class="admin-meta"><strong>Name:</strong> ${escapeHtml(related.name_display || "")}</div>
+            <div class="admin-meta"><strong>Location:</strong> ${escapeHtml(related.location || "")}</div>
+            <div class="admin-meta"><strong>Care Types:</strong> ${escapeHtml(Array.isArray(related.care_types) ? related.care_types.join(", ") : "")}</div>
+            ${related.bio ? `<div><strong>Bio:</strong> ${escapeHtml(truncateText(related.bio, 300))}</div>` : ""}
+          `;
+        }
+
+        if (item.related_table === "family_profile_versions") {
+          return `
+            <div class="admin-meta"><strong>Version Status:</strong> ${statusBadge(related.content_status)}</div>
+            <div class="admin-meta"><strong>Name:</strong> ${escapeHtml(related.name_display || "")}</div>
+            <div class="admin-meta"><strong>Location:</strong> ${escapeHtml(related.location || "")}</div>
+            <div class="admin-meta"><strong>Care Needed:</strong> ${escapeHtml(Array.isArray(related.care_types_needed) ? related.care_types_needed.join(", ") : "")}</div>
+            ${related.household_description ? `<div><strong>Household:</strong> ${escapeHtml(truncateText(related.household_description, 300))}</div>` : ""}
+          `;
+        }
+
+        if (item.related_table === "caregiver_reviews" || item.related_table === "family_reviews") {
+          return `
+            <div class="admin-meta"><strong>Review Status:</strong> ${statusBadge(related.content_status)}</div>
+            <div class="admin-meta"><strong>Rating:</strong> ${escapeHtml(related.rating || "")}</div>
+            <div><strong>Review Text:</strong> ${escapeHtml(related.review_text || "")}</div>
+          `;
+        }
+
+        if (item.related_table === "job_post_versions") {
+          return `
+            <div class="admin-meta"><strong>Job Status:</strong> ${statusBadge(related.content_status)}</div>
+            <div class="admin-meta"><strong>Title:</strong> ${escapeHtml(related.title || "")}</div>
+            <div class="admin-meta"><strong>Care Type:</strong> ${escapeHtml(related.care_type || "")}</div>
+            <div class="admin-meta"><strong>Location:</strong> ${escapeHtml(related.location || "")}</div>
+            ${related.description ? `<div><strong>Description:</strong> ${escapeHtml(truncateText(related.description, 300))}</div>` : ""}
+          `;
+        }
+
+        if (item.related_table === "user_risk_profiles") {
+          return `
+            <div class="admin-meta"><strong>Account Status:</strong> ${statusBadge(related.account_status)}</div>
+            <div class="admin-meta"><strong>Risk Score:</strong> ${related.risk_score ?? 0}</div>
+            <div class="admin-meta"><strong>Risk Level:</strong> ${escapeHtml(related.risk_level || "")}</div>
+            ${related.flag_reason ? `<div><strong>Flag Reason:</strong> ${escapeHtml(related.flag_reason)}</div>` : ""}
+          `;
+        }
+
+        return `<pre style="white-space:pre-wrap;">${escapeHtml(JSON.stringify(related, null, 2))}</pre>`;
+      }
+
+      function buildUserRiskHtml(item) {
+        const risk = item._risk;
+
+        if (!risk) {
+          return `<div class="admin-meta"><strong>User Risk:</strong> No user risk profile found</div>`;
+        }
+
+        return `
+          <div class="admin-meta"><strong>Account:</strong> ${statusBadge(risk.account_status)}</div>
+          <div class="admin-meta"><strong>Risk Score:</strong> ${risk.risk_score ?? 0}</div>
+          <div class="admin-meta"><strong>Risk Level:</strong> ${escapeHtml(risk.risk_level || "")}</div>
+          ${risk.flag_reason ? `<div><strong>Flag Reason:</strong> ${escapeHtml(risk.flag_reason)}</div>` : ""}
+          ${risk.flag_source_type ? `<div><strong>Flag Source:</strong> ${escapeHtml(risk.flag_source_type)}</div>` : ""}
+        `;
+      }
+
+      function buildActionButtons(item) {
+        const canAssign = item.status === "open";
+        const canMoveInReview = item.status === "open";
+        const canResolve = item.status === "open" || item.status === "in_review";
+
+        return `
+          <div class="admin-actions">
+            ${canAssign ? `<button class="button-admin" data-action="assign" data-id="${item.id}">Assign to Me</button>` : ""}
+            ${canMoveInReview ? `<button class="button-admin" data-action="in_review" data-id="${item.id}">Mark In Review</button>` : ""}
+            ${canResolve ? `<button class="button-admin button-approve" data-action="resolve_approved" data-id="${item.id}">Approve</button>` : ""}
+            ${canResolve ? `<button class="button-admin button-deny" data-action="resolve_rejected" data-id="${item.id}">Reject</button>` : ""}
+            ${canResolve ? `<button class="button-admin" data-action="resolve_kept_flagged" data-id="${item.id}">Keep Flagged</button>` : ""}
+            ${canResolve ? `<button class="button-admin" data-action="resolve_restored_account" data-id="${item.id}">Restore Account</button>` : ""}
+            ${canResolve ? `<button class="button-admin button-deny" data-action="resolve_frozen_account" data-id="${item.id}">Freeze</button>` : ""}
+            ${canResolve ? `<button class="button-admin button-delete" data-action="resolve_banned_account" data-id="${item.id}">Ban</button>` : ""}
+            ${canResolve ? `<button class="button-admin" data-action="resolve_dismissed" data-id="${item.id}">Dismiss</button>` : ""}
+          </div>
+        `;
+      }
+
+      function renderQueueSection(containerId, items, emptyText) {
+        const container = document.getElementById(containerId);
+        if (!container) return;
+
+        if (!items.length) {
+          container.innerHTML = `<div class="admin-empty">${escapeHtml(emptyText)}</div>`;
+          return;
+        }
+
+        container.innerHTML = items.map((item) => {
+          const assignedLabel = item.assigned_to
+            ? `Assigned`
+            : `Unassigned`;
+
+          return `
+            <div class="admin-card">
+              <div class="admin-card-top">
+                <div>
+                  <h3>${escapeHtml(getQueueTitle(item))}</h3>
+                  <div class="admin-meta">
+                    ${priorityBadge(item.priority)}
+                    ${statusBadge(item.status)}
+                  </div>
+                  <div class="admin-meta"><strong>Created:</strong> ${escapeHtml(fmtDate(item.created_at))}</div>
+                  <div class="admin-meta"><strong>Queue Type:</strong> ${escapeHtml(item.queue_type || "")}</div>
+                  <div class="admin-meta"><strong>Assigned:</strong> ${escapeHtml(assignedLabel)}</div>
+                  <div class="admin-meta"><strong>Summary:</strong> ${escapeHtml(item.summary || "")}</div>
+                  <div class="admin-meta"><strong>User ID:</strong> ${escapeHtml(item.user_id || "")}</div>
+                  ${buildUserRiskHtml(item)}
+                  <div class="mt-16"><strong>Related Content</strong></div>
+                  ${buildRelatedContentHtml(item)}
+                  ${item.resolution ? `<div class="mt-16"><strong>Resolution:</strong> ${escapeHtml(item.resolution)}</div>` : ""}
+                  ${item.review_notes ? `<div><strong>Notes:</strong> ${escapeHtml(item.review_notes)}</div>` : ""}
+                </div>
+
+                <div>
+                  ${buildActionButtons(item)}
+                </div>
+              </div>
+            </div>
+          `;
+        }).join("");
+
+        container.querySelectorAll("[data-action]").forEach((button) => {
+          button.addEventListener("click", async () => {
+            const action = button.dataset.action;
+            const id = button.dataset.id;
+            if (!action || !id) return;
+            await handleQueueAction(action, id);
+          });
+        });
+      }
+
+      function renderDashboard() {
+        setStats();
+
+        const openItems = queueItems.filter((item) => item.status === "open");
+        const inReviewItems = queueItems.filter((item) => item.status === "in_review");
+        const resolvedItems = queueItems.filter((item) => item.status === "resolved");
+
+        renderQueueSection("open-list", openItems, "No open moderation items.");
+        renderQueueSection("in-review-list", inReviewItems, "No items currently in review.");
+        renderQueueSection("resolved-list", resolvedItems, "No resolved moderation items yet.");
+      }
+
+      async function updateQueueItem(id, patch) {
+        const { error } = await window.db
+          .from("admin_review_queue")
+          .update(patch)
+          .eq("id", id);
+
+        if (error) {
+          handleError(error, "Queue update failed");
+          return false;
+        }
+
+        return true;
+      }
+
+      async function updateUserAccountStatus(userId, accountStatus) {
+        const patch = {
+          account_status: accountStatus,
+          updated_at: new Date().toISOString()
+        };
+
+        if (accountStatus === "normal") {
+          patch.flagged_at = null;
+          patch.flag_reason = null;
+          patch.flag_source_type = null;
+          patch.flag_source_id = null;
+        }
+
+        const { error } = await window.db
+          .from("user_risk_profiles")
+          .update(patch)
+          .eq("user_id", userId);
+
+        if (error) {
+          handleError(error, "Account status update failed");
+          return false;
+        }
+
+        return true;
+      }
+
+      async function handleQueueAction(action, queueId) {
+        const item = queueItems.find((x) => x.id === queueId);
+        if (!item) return;
+
+        if (action === "assign") {
+          const ok = await updateQueueItem(queueId, {
+            assigned_to: adminUser.id
+          });
+          if (ok) await loadQueueData();
+          return;
+        }
+
+        if (action === "in_review") {
+          const ok = await updateQueueItem(queueId, {
+            status: "in_review",
+            assigned_to: item.assigned_to || adminUser.id
+          });
+          if (ok) await loadQueueData();
+          return;
+        }
+
+        const resolutionMap = {
+          resolve_approved: "approved",
+          resolve_rejected: "rejected",
+          resolve_kept_flagged: "kept_flagged",
+          resolve_restored_account: "restored_account",
+          resolve_frozen_account: "frozen_account",
+          resolve_banned_account: "banned_account",
+          resolve_dismissed: "dismissed"
+        };
+
+        const resolution = resolutionMap[action];
+        if (!resolution) return;
+
+        let accountStatus = null;
+        if (resolution === "restored_account" || resolution === "approved" || resolution === "dismissed") {
+          accountStatus = "normal";
+        } else if (resolution === "kept_flagged" || resolution === "rejected") {
+          accountStatus = "flagged";
+        } else if (resolution === "frozen_account") {
+          accountStatus = "frozen";
+        } else if (resolution === "banned_account") {
+          accountStatus = "banned";
+        }
+
+        if (accountStatus) {
+          const okStatus = await updateUserAccountStatus(item.user_id, accountStatus);
+          if (!okStatus) return;
+        }
+
+        const okQueue = await updateQueueItem(queueId, {
+          status: "resolved",
+          assigned_to: item.assigned_to || adminUser.id,
+          resolved_at: new Date().toISOString(),
+          resolution
+        });
+
+        if (okQueue) {
+          await loadQueueData();
+        }
+      }
+
+      async function showDashboardIfLoggedIn() {
+        const ok = await loadSession();
+        if (!ok) return;
+        await loadQueueData();
+      }
+
+      window.addEventListener("DOMContentLoaded", () => {
+        const loginForm = document.getElementById("loginForm");
+        const loginMsg = document.getElementById("loginMsg");
+
+        loginForm?.addEventListener("submit", async (e) => {
+          e.preventDefault();
+          loginMsg.style.display = "none";
+
+          const email = document.getElementById("adminEmail").value;
+          const password = document.getElementById("adminPassword").value;
+
+          const { error } = await window.db.auth.signInWithPassword({ email, password });
+          if (error) {
+            handleError(error, "Login failed");
+            return;
+          }
+
+          await showDashboardIfLoggedIn();
+        });
+
+        document.getElementById("signOutBtn")?.addEventListener("click", async () => {
+          const { error } = await window.db.auth.signOut();
+          if (error) {
+            handleError(error, "Sign out failed");
+            return;
+          }
+
+          location.reload();
+        });
+
+        showDashboardIfLoggedIn();
+      });
+    })();
   </script>
 </body>
 </html>
