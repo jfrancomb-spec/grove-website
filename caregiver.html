@@ -31,7 +31,6 @@
         </div>
 
         <button class="button" type="button" id="sendLinkBtn">Send Sign-In Link</button>
-
         <p id="authMessage" class="success"></p>
       </div>
 
@@ -142,9 +141,7 @@
           <button class="button" type="submit" id="saveProfileBtn">Save Profile</button>
         </form>
 
-        <p id="caregiverProfileSuccess" class="success">
-          ✅ Profile saved successfully.
-        </p>
+        <p id="caregiverProfileSuccess" class="success">✅ Profile saved successfully.</p>
       </div>
     </section>
   </main>
@@ -153,355 +150,221 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
   <script src="./app.js"></script>
+  <script src="./grove-profiles.js"></script>
 
   <script>
-    let currentUser = null;
-    let existingProfileParent = null;
-    let currentVisibleVersion = null;
-    let currentPendingVersion = null;
+    (function () {
+      let currentUser = null;
+      let bundle = {
+        parent: null,
+        visibleVersion: null,
+        pendingVersion: null,
+        workingVersion: null
+      };
 
-    function formatPhoneNumber(value) {
-      const digits = value.replace(/\D/g, "").slice(0, 10);
-      if (digits.length === 0) return "";
-      if (digits.length < 4) return digits;
-      if (digits.length < 7) return `(${digits.slice(0, 3)}) ${digits.slice(3)}`;
-      return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
-    }
+      function renderPhotoPreview(urls) {
+        const wrap = document.getElementById("photoPreviewWrap");
+        const list = document.getElementById("photoPreviewList");
+        if (!wrap || !list) return;
 
-    function getSelectedCareTypes() {
-      return Array.from(document.querySelectorAll('input[name="cg_care_types"]:checked'))
-        .map(cb => cb.value);
-    }
+        list.innerHTML = "";
 
-    function setSelectedCareTypes(careTypes) {
-      const values = Array.isArray(careTypes) ? careTypes : [];
-      document.querySelectorAll('input[name="cg_care_types"]').forEach(cb => {
-        cb.checked = values.includes(cb.value);
-      });
-    }
-
-    function renderPhotoPreview(urls) {
-      const wrap = document.getElementById("photoPreviewWrap");
-      const list = document.getElementById("photoPreviewList");
-      if (!wrap || !list) return;
-
-      list.innerHTML = "";
-      if (!Array.isArray(urls) || urls.length === 0) {
-        wrap.style.display = "none";
-        return;
-      }
-
-      urls.forEach((url) => {
-        const img = document.createElement("img");
-        img.src = url;
-        img.alt = "Profile photo";
-        img.className = "preview-photo";
-        list.appendChild(img);
-      });
-
-      wrap.style.display = "block";
-    }
-
-    function getWorkingProfileVersion() {
-      return currentPendingVersion || currentVisibleVersion || null;
-    }
-
-    function getProfileStatusBadgeHtml() {
-      if (currentPendingVersion) {
-        return `<span class="badge badge-pending">Pending Review</span>`;
-      }
-
-      if (currentVisibleVersion) {
-        return `<span class="badge badge-approved">Approved</span>`;
-      }
-
-      return `<span class="badge badge-pending">Not Submitted</span>`;
-    }
-
-    async function sendMagicLink() {
-      const email = document.getElementById("cg_auth_email").value.trim();
-      const msg = document.getElementById("authMessage");
-
-      if (!email) {
-        alert("Please enter your email first.");
-        return;
-      }
-
-      const { error } = await window.db.auth.signInWithOtp({
-        email,
-        options: {
-          emailRedirectTo: "https://jfrancomb-spec.github.io/grove-website/caregiver.html"
-        }
-      });
-
-      if (error) {
-        handleError(error, "Sign-in link failed");
-        return;
-      }
-
-      if (msg) {
-        msg.textContent = "Check your email for a sign-in link.";
-        msg.style.display = "block";
-      }
-    }
-
-    async function loadOwnProfileParent() {
-      if (!currentUser) return null;
-
-      const { data, error } = await window.db
-        .from("caregiver_profiles")
-        .select("*")
-        .eq("user_id", currentUser.id)
-        .maybeSingle();
-
-      if (error) {
-        handleError(error, "Profile load failed");
-        return null;
-      }
-
-      return data || null;
-    }
-
-    async function loadProfileVersion(versionId) {
-      if (!versionId) return null;
-
-      const { data, error } = await window.db
-        .from("caregiver_profile_versions")
-        .select("*")
-        .eq("id", versionId)
-        .maybeSingle();
-
-      if (error) {
-        handleError(error, "Profile version load failed");
-        return null;
-      }
-
-      return data || null;
-    }
-
-    async function loadOwnProfileBundle() {
-      existingProfileParent = await loadOwnProfileParent();
-
-      if (!existingProfileParent) {
-        currentVisibleVersion = null;
-        currentPendingVersion = null;
-        return;
-      }
-
-      currentVisibleVersion = await loadProfileVersion(existingProfileParent.current_visible_version_id);
-      currentPendingVersion = await loadProfileVersion(existingProfileParent.current_pending_version_id);
-    }
-
-    async function loadMessageCount() {
-      if (!currentUser) return 0;
-
-      const { count, error } = await window.db
-        .from("conversation_participants")
-        .select("*", { count: "exact", head: true })
-        .eq("user_id", currentUser.id)
-        .eq("is_archived", false);
-
-      if (error) {
-        console.error(error);
-        return 0;
-      }
-
-      return count || 0;
-    }
-
-    function fillProfileForm() {
-      const profile = getWorkingProfileVersion();
-
-      document.getElementById("dashProfileStatus").innerHTML = getProfileStatusBadgeHtml();
-
-      document.getElementById("dashConfirmedEncounters").textContent =
-        existingProfileParent?.confirmed_encounters != null ? existingProfileParent.confirmed_encounters : 0;
-
-      document.getElementById("dashResponseTime").textContent =
-        existingProfileParent?.average_response_minutes != null
-          ? `${existingProfileParent.average_response_minutes} min`
-          : "—";
-
-      document.getElementById("cg_first_name").value = profile?.first_name || "";
-      document.getElementById("cg_last_name").value = profile?.last_name || "";
-      document.getElementById("cg_email").value = currentUser?.email || profile?.email || "";
-      document.getElementById("cg_phone").value = profile?.phone || "";
-      document.getElementById("cg_location").value = profile?.location || "";
-      document.getElementById("cg_years_experience").value = profile?.years_experience || "";
-      document.getElementById("cg_availability").value = profile?.availability || "";
-      document.getElementById("cg_bio").value = profile?.bio || "";
-
-      document.getElementById("cg_drivers_license").checked = !!profile?.has_drivers_license;
-      document.getElementById("cg_cpr_certified").checked = !!profile?.cpr_certified;
-      document.getElementById("cg_non_smoker").checked = !!profile?.non_smoker;
-      document.getElementById("cg_non_vaper").checked = !!profile?.non_vaper;
-      document.getElementById("cg_comfortable_with_cats").checked = !!profile?.comfortable_with_cats;
-      document.getElementById("cg_comfortable_with_dogs").checked = !!profile?.comfortable_with_dogs;
-
-      setSelectedCareTypes(profile?.care_types || []);
-      renderPhotoPreview(profile?.photo_urls || (profile?.photo_url ? [profile.photo_url] : []));
-    }
-
-    async function uploadCaregiverPhotos(userId) {
-      const photoInput = document.getElementById("cg_photos");
-      const files = Array.from(photoInput?.files || []).slice(0, 5);
-
-      if (!files.length) {
-        const existingUrls = getWorkingProfileVersion()?.photo_urls
-          || (getWorkingProfileVersion()?.photo_url ? [getWorkingProfileVersion().photo_url] : []);
-        return existingUrls;
-      }
-
-      const photoUrls = [];
-
-      for (const file of files) {
-        const safeName = file.name.replace(/\s+/g, "_");
-        const filePath = `caregivers/${userId}/${Date.now()}_${Math.random().toString(36).slice(2)}_${safeName}`;
-
-        const { error: uploadError } = await window.db
-          .storage
-          .from("profile-photos")
-          .upload(filePath, file);
-
-        if (uploadError) {
-          handleError(uploadError, "Photo upload failed");
-          return null;
+        if (!Array.isArray(urls) || !urls.length) {
+          wrap.style.display = "none";
+          return;
         }
 
-        const { data: publicData } = window.db
-          .storage
-          .from("profile-photos")
-          .getPublicUrl(filePath);
+        urls.forEach((url) => {
+          const img = document.createElement("img");
+          img.src = url;
+          img.alt = "Profile photo";
+          img.className = "preview-photo";
+          list.appendChild(img);
+        });
 
-        if (publicData?.publicUrl) {
-          photoUrls.push(publicData.publicUrl);
+        wrap.style.display = "block";
+      }
+
+      function fillProfileForm() {
+        const profile = bundle.workingVersion;
+
+        document.getElementById("dashProfileStatus").innerHTML =
+          window.GroveProfiles.getProfileStatusHtml(bundle);
+
+        document.getElementById("dashConfirmedEncounters").textContent =
+          bundle.parent?.confirmed_encounters != null ? bundle.parent.confirmed_encounters : 0;
+
+        document.getElementById("dashResponseTime").textContent =
+          bundle.parent?.average_response_minutes != null
+            ? `${bundle.parent.average_response_minutes} min`
+            : "—";
+
+        document.getElementById("cg_first_name").value = profile?.first_name || "";
+        document.getElementById("cg_last_name").value = profile?.last_name || "";
+        document.getElementById("cg_email").value = currentUser?.email || profile?.email || "";
+        document.getElementById("cg_phone").value = profile?.phone || "";
+        document.getElementById("cg_location").value = profile?.location || "";
+        document.getElementById("cg_years_experience").value = profile?.years_experience || "";
+        document.getElementById("cg_availability").value = profile?.availability || "";
+        document.getElementById("cg_bio").value = profile?.bio || "";
+
+        document.getElementById("cg_drivers_license").checked = !!profile?.has_drivers_license;
+        document.getElementById("cg_cpr_certified").checked = !!profile?.cpr_certified;
+        document.getElementById("cg_non_smoker").checked = !!profile?.non_smoker;
+        document.getElementById("cg_non_vaper").checked = !!profile?.non_vaper;
+        document.getElementById("cg_comfortable_with_cats").checked = !!profile?.comfortable_with_cats;
+        document.getElementById("cg_comfortable_with_dogs").checked = !!profile?.comfortable_with_dogs;
+
+        window.GroveProfiles.setCheckedValues('input[name="cg_care_types"]', profile?.care_types || []);
+        renderPhotoPreview(window.GroveProfiles.getExistingPhotoUrls(profile));
+      }
+
+      async function refreshBundle() {
+        bundle = await window.GroveProfiles.loadProfileBundle({
+          parentTable: "caregiver_profiles",
+          versionTable: "caregiver_profile_versions",
+          userId: currentUser.id
+        });
+
+        fillProfileForm();
+
+        const messageCount = await window.GroveProfiles.loadMessageCount(currentUser.id);
+        document.getElementById("dashMessages").textContent = messageCount;
+      }
+
+      async function sendMagicLink() {
+        const email = document.getElementById("cg_auth_email").value.trim();
+        const msg = document.getElementById("authMessage");
+
+        if (!email) {
+          alert("Please enter your email first.");
+          return;
         }
-      }
 
-      return photoUrls;
-    }
-
-    async function saveProfile(e) {
-      e.preventDefault();
-
-      if (!currentUser) {
-        alert("Please sign in first.");
-        return;
-      }
-
-      const careTypes = getSelectedCareTypes();
-      if (!careTypes.length) {
-        alert("Please select at least one type of care.");
-        return;
-      }
-
-      const photoUrls = await uploadCaregiverPhotos(currentUser.id);
-      if (photoUrls === null) return;
-
-      const firstName = document.getElementById("cg_first_name").value.trim();
-      const lastName = document.getElementById("cg_last_name").value.trim();
-      const saveButton = document.getElementById("saveProfileBtn");
-      const originalButtonText = saveButton?.textContent || "Save Profile";
-
-      try {
-        if (saveButton) {
-          saveButton.disabled = true;
-          saveButton.textContent = "Saving...";
-        }
-
-        const { data, error } = await window.db.functions.invoke("submit-caregiver-profile-version", {
-          body: {
-            first_name: firstName,
-            last_name: lastName,
-            phone: document.getElementById("cg_phone").value.trim(),
-            location: document.getElementById("cg_location").value.trim(),
-            care_types: careTypes,
-            years_experience: document.getElementById("cg_years_experience").value,
-            availability: document.getElementById("cg_availability").value.trim(),
-            has_drivers_license: document.getElementById("cg_drivers_license").checked,
-            cpr_certified: document.getElementById("cg_cpr_certified").checked,
-            non_smoker: document.getElementById("cg_non_smoker").checked,
-            non_vaper: document.getElementById("cg_non_vaper").checked,
-            comfortable_with_cats: document.getElementById("cg_comfortable_with_cats").checked,
-            comfortable_with_dogs: document.getElementById("cg_comfortable_with_dogs").checked,
-            bio: document.getElementById("cg_bio").value.trim(),
-            photo_urls: photoUrls
+        const { error } = await window.db.auth.signInWithOtp({
+          email,
+          options: {
+            emailRedirectTo: "https://jfrancomb-spec.github.io/grove-website/caregiver.html"
           }
         });
 
         if (error) {
+          handleError(error, "Sign-in link failed");
+          return;
+        }
+
+        if (msg) {
+          msg.textContent = "Check your email for a sign-in link.";
+          msg.style.display = "block";
+        }
+      }
+
+      async function saveProfile(e) {
+        e.preventDefault();
+
+        if (!currentUser) {
+          alert("Please sign in first.");
+          return;
+        }
+
+        const careTypes = window.GroveProfiles.getCheckedValues('input[name="cg_care_types"]');
+        if (!careTypes.length) {
+          alert("Please select at least one type of care.");
+          return;
+        }
+
+        const saveButton = document.getElementById("saveProfileBtn");
+        const originalButtonText = saveButton?.textContent || "Save Profile";
+
+        try {
+          if (saveButton) {
+            saveButton.disabled = true;
+            saveButton.textContent = "Saving...";
+          }
+
+          const photoUrls = await window.GroveProfiles.resolvePhotoUrls({
+            folder: "caregivers",
+            userId: currentUser.id,
+            files: document.getElementById("cg_photos")?.files,
+            existingVersion: bundle.workingVersion
+          });
+
+          await window.GroveProfiles.submitCaregiverProfile({
+            values: {
+              first_name: document.getElementById("cg_first_name").value.trim(),
+              last_name: document.getElementById("cg_last_name").value.trim(),
+              phone: document.getElementById("cg_phone").value.trim(),
+              location: document.getElementById("cg_location").value.trim(),
+              care_types: careTypes,
+              years_experience: document.getElementById("cg_years_experience").value,
+              availability: document.getElementById("cg_availability").value.trim(),
+              has_drivers_license: document.getElementById("cg_drivers_license").checked,
+              cpr_certified: document.getElementById("cg_cpr_certified").checked,
+              non_smoker: document.getElementById("cg_non_smoker").checked,
+              non_vaper: document.getElementById("cg_non_vaper").checked,
+              comfortable_with_cats: document.getElementById("cg_comfortable_with_cats").checked,
+              comfortable_with_dogs: document.getElementById("cg_comfortable_with_dogs").checked,
+              bio: document.getElementById("cg_bio").value.trim(),
+              photo_urls: photoUrls
+            }
+          });
+
+          document.getElementById("caregiverProfileSuccess").style.display = "block";
+          await refreshBundle();
+        } catch (error) {
+          console.error(error);
           handleError(error, "Profile save failed");
+        } finally {
+          if (saveButton) {
+            saveButton.disabled = false;
+            saveButton.textContent = originalButtonText;
+          }
+        }
+      }
+
+      async function signOut() {
+        const { error } = await window.db.auth.signOut();
+        if (error) {
+          handleError(error, "Sign out failed");
+          return;
+        }
+        window.location.href = "./caregiver.html";
+      }
+
+      async function checkSessionAndSetup() {
+        currentUser = await window.GroveProfiles.getCurrentUser();
+
+        const authCard = document.getElementById("authCard");
+        const profileCard = document.getElementById("profileCard");
+        const signedInText = document.getElementById("signedInText");
+        const phoneInput = document.getElementById("cg_phone");
+        const emailInput = document.getElementById("cg_email");
+
+        phoneInput?.addEventListener("input", (e) => {
+          e.target.value = window.GroveProfiles.formatPhoneNumber(e.target.value);
+        });
+
+        if (!currentUser) {
+          authCard.style.display = "block";
+          profileCard.style.display = "none";
           return;
         }
 
-        if (!data?.success) {
-          alert("Profile save failed.");
-          console.error("submit-caregiver-profile-version unexpected response:", data);
-          return;
-        }
+        authCard.style.display = "none";
+        profileCard.style.display = "block";
+        signedInText.textContent = `Signed in as ${currentUser.email}. You can review and update your caregiver profile below.`;
+        emailInput.value = currentUser.email || "";
 
-        document.getElementById("caregiverProfileSuccess").style.display = "block";
-
-        await loadOwnProfileBundle();
-        fillProfileForm();
-      } catch (err) {
-        console.error("Caregiver profile save error:", err);
-        alert("Profile save failed.");
-      } finally {
-        if (saveButton) {
-          saveButton.disabled = false;
-          saveButton.textContent = originalButtonText;
-        }
+        await refreshBundle();
       }
-    }
 
-    async function signOut() {
-      const { error } = await window.db.auth.signOut();
-      if (error) {
-        handleError(error, "Sign out failed");
-        return;
-      }
-      window.location.href = "./caregiver.html";
-    }
-
-    async function checkSessionAndSetup() {
-      const { data } = await window.db.auth.getSession();
-      currentUser = data?.session?.user || null;
-
-      const authCard = document.getElementById("authCard");
-      const profileCard = document.getElementById("profileCard");
-      const signedInText = document.getElementById("signedInText");
-      const emailInput = document.getElementById("cg_email");
-      const phoneInput = document.getElementById("cg_phone");
-
-      phoneInput?.addEventListener("input", (e) => {
-        e.target.value = formatPhoneNumber(e.target.value);
+      window.addEventListener("DOMContentLoaded", () => {
+        document.getElementById("sendLinkBtn")?.addEventListener("click", sendMagicLink);
+        document.getElementById("signOutBtn")?.addEventListener("click", signOut);
+        document.getElementById("caregiverProfileForm")?.addEventListener("submit", saveProfile);
+        checkSessionAndSetup();
       });
-
-      if (!currentUser) {
-        authCard.style.display = "block";
-        profileCard.style.display = "none";
-        return;
-      }
-
-      authCard.style.display = "none";
-      profileCard.style.display = "block";
-      signedInText.textContent = `Signed in as ${currentUser.email}. You can review and update your caregiver profile below.`;
-      emailInput.value = currentUser.email || "";
-
-      await loadOwnProfileBundle();
-      fillProfileForm();
-
-      const messageCount = await loadMessageCount();
-      document.getElementById("dashMessages").textContent = messageCount;
-    }
-
-    window.addEventListener("DOMContentLoaded", () => {
-      document.getElementById("sendLinkBtn")?.addEventListener("click", sendMagicLink);
-      document.getElementById("signOutBtn")?.addEventListener("click", signOut);
-      document.getElementById("caregiverProfileForm")?.addEventListener("submit", saveProfile);
-      checkSessionAndSetup();
-    });
+    })();
   </script>
 </body>
 </html>
