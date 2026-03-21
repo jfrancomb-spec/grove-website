@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Grove | Edit Caregiver Profile</title>
+  <title>Grove | Family Profile</title>
   <link rel="stylesheet" href="./styles.css" />
   <link rel="icon" type="image/png" href="./MainIcon.png" />
 </head>
@@ -13,104 +13,130 @@
 
   <main>
     <div class="hero">
-      <h1>Edit Caregiver Profile</h1>
+      <h1>Family Profile</h1>
       <div class="subtitle">
-        Find your profile and make updates.
+        Sign in to create, review, and update your family profile.
       </div>
     </div>
 
     <section>
-      <div class="form-card" id="lookupCard">
-        <h2 class="mt-0">Find Your Profile</h2>
+      <div class="form-card" id="authCard">
+        <h2 class="mt-0">Sign In</h2>
+        <p class="mt-0">Enter your email and we’ll send you a secure sign-in link.</p>
 
-        <form id="lookupForm">
-          <div class="row">
-            <input id="lookup_email" type="email" placeholder="Email Address" required />
-          </div>
+        <div class="row">
+          <input id="fam_auth_email" type="email" placeholder="Email Address" />
+        </div>
 
-          <div class="row">
-            <input id="lookup_phone" type="text" placeholder="Phone Number" required />
-          </div>
-
-          <button class="button" type="submit">Find My Profile</button>
-        </form>
+        <button class="button" type="button" id="sendLinkBtn">Send Sign-In Link</button>
+        <p id="authMessage" class="success"></p>
       </div>
 
-      <div class="form-card" id="editCard" style="display:none;">
-        <h2 class="mt-0">Update Profile</h2>
+      <div class="form-card" id="profileCard" style="display:none;">
+        <div class="flex-between">
+          <h2 class="mb-0">Your Family Dashboard</h2>
+          <button class="button" type="button" id="signOutBtn">Sign Out</button>
+        </div>
 
-        <form id="editCaregiverForm">
-          <input id="edit_id" type="hidden" />
-          <input id="edit_version_id" type="hidden" />
+        <p class="mt-10" id="signedInText"></p>
 
+        <div class="dashboard-stats">
+          <div class="dashboard-stat">
+            <div class="dashboard-label">Profile Status</div>
+            <div class="dashboard-value" id="dashProfileStatus">—</div>
+          </div>
+
+          <div class="dashboard-stat">
+            <div class="dashboard-label">Confirmed Encounters</div>
+            <div class="dashboard-value" id="dashConfirmedEncounters">0</div>
+          </div>
+
+          <div class="dashboard-stat">
+            <div class="dashboard-label">Average Response Time</div>
+            <div class="dashboard-value" id="dashResponseTime">—</div>
+          </div>
+
+          <div class="dashboard-stat">
+            <div class="dashboard-label">Messages</div>
+            <div class="dashboard-value" id="dashMessages">0</div>
+          </div>
+        </div>
+
+        <h3 class="mt-22">Your Profile</h3>
+
+        <form id="familyProfileForm">
           <div class="row">
-            <input id="edit_first_name" type="text" placeholder="First Name" required />
+            <input id="fam_first_name" type="text" placeholder="First Name" required />
           </div>
 
           <div class="row">
-            <input id="edit_last_name" type="text" placeholder="Last Name" required />
+            <input id="fam_last_name" type="text" placeholder="Last Name" required />
           </div>
 
           <div class="row">
-            <input id="edit_email" type="email" placeholder="Email Address" required />
+            <input id="fam_email" type="email" placeholder="Email Address" required disabled />
           </div>
 
           <div class="row">
-            <input id="edit_phone" type="text" placeholder="Phone Number" required />
+            <input id="fam_phone" type="text" placeholder="Phone Number" inputmode="numeric" />
           </div>
 
           <div class="row">
-            <input id="edit_location" type="text" placeholder="City or Neighborhood" required />
+            <input id="fam_location" type="text" placeholder="City or Neighborhood" required />
           </div>
 
           <div class="row">
-            <label class="mb-6"><strong>Types of Care You Provide</strong></label>
+            <label class="mb-6"><strong>Types of Care Needed</strong></label>
             <div class="checkbox-group">
-              <label><input type="checkbox" name="edit_care_types" value="Childcare" /> Childcare</label>
-              <label><input type="checkbox" name="edit_care_types" value="Senior Care" /> Senior Care</label>
-              <label><input type="checkbox" name="edit_care_types" value="Pet Care" /> Pet Care</label>
-              <label><input type="checkbox" name="edit_care_types" value="Household Help" /> Household Help</label>
-              <label><input type="checkbox" name="edit_care_types" value="Other" /> Other</label>
+              <label><input type="checkbox" name="fam_care_types_needed" value="Childcare" /> Childcare</label>
+              <label><input type="checkbox" name="fam_care_types_needed" value="Senior Care" /> Senior Care</label>
+              <label><input type="checkbox" name="fam_care_types_needed" value="Pet Care" /> Pet Care</label>
+              <label><input type="checkbox" name="fam_care_types_needed" value="Household Help" /> Household Help</label>
+              <label><input type="checkbox" name="fam_care_types_needed" value="Other" /> Other</label>
             </div>
           </div>
 
           <div class="row">
-            <select id="edit_years_experience" required>
-              <option value="">Years of Experience</option>
-              <option value="none">None</option>
-              <option value="1-2">1–2</option>
-              <option value="2-5">2–5</option>
-              <option value="5-10">5–10</option>
-              <option value="10+">10+</option>
-            </select>
-          </div>
-
-          <div class="row">
-            <input id="edit_availability" type="text" placeholder="Availability (days/times)" />
-          </div>
-
-          <div class="row">
-            <label class="mb-6"><strong>Profile Details</strong></label>
+            <label class="mb-6"><strong>Home Details</strong></label>
             <div class="checkbox-group">
-              <label><input id="edit_drivers_license" type="checkbox" /> Driver’s License</label>
-              <label><input id="edit_cpr_certified" type="checkbox" /> CPR Certified</label>
-              <label><input id="edit_non_smoker" type="checkbox" /> Non-Smoker</label>
-              <label><input id="edit_non_vaper" type="checkbox" /> Non-Vaper</label>
-              <label><input id="edit_comfortable_with_cats" type="checkbox" /> Comfortable with Cats</label>
-              <label><input id="edit_comfortable_with_dogs" type="checkbox" /> Comfortable with Dogs</label>
+              <label><input id="fam_has_cats" type="checkbox" /> Cats in Home</label>
+              <label><input id="fam_has_dogs" type="checkbox" /> Dogs in Home</label>
+              <label><input id="fam_smoking_in_home" type="checkbox" /> Smoking in Home</label>
+              <label><input id="fam_driving_needed" type="checkbox" /> Driving Needed</label>
             </div>
           </div>
 
           <div class="row">
-            <textarea id="edit_bio" placeholder="Tell families about your experience" required></textarea>
+            <label for="fam_household_description"><strong>Household Description</strong></label>
+            <textarea id="fam_household_description" placeholder="Tell caregivers a little about your household"></textarea>
           </div>
 
-          <button class="button" type="submit" id="saveChangesBtn">Save Changes</button>
+          <div class="row">
+            <label for="fam_children_description"><strong>Children</strong></label>
+            <textarea id="fam_children_description" placeholder="Ages, routines, interests, anything helpful"></textarea>
+          </div>
+
+          <div class="row">
+            <label for="fam_pets_description"><strong>Pets</strong></label>
+            <textarea id="fam_pets_description" placeholder="Tell caregivers about any pets in the home"></textarea>
+          </div>
+
+          <div class="row">
+            <label for="fam_photos"><strong>Profile Photos (up to 5)</strong></label>
+            <input id="fam_photos" type="file" accept="image/*" multiple />
+          </div>
+
+          <div class="row" id="photoPreviewWrap" style="display:none;">
+            <div class="family-photo-gallery">
+              <img id="family-main-photo" class="family-main-photo" src="" alt="Family photo" />
+              <div id="photoPreviewList" class="family-thumbnails"></div>
+            </div>
+          </div>
+
+          <button class="button" type="submit" id="saveProfileBtn">Save Profile</button>
         </form>
 
-        <p id="editSuccess" class="success">
-          ✅ Profile updated successfully.
-        </p>
+        <p id="familyProfileSuccess" class="success">✅ Profile saved successfully.</p>
       </div>
     </section>
   </main>
@@ -119,164 +145,154 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
   <script src="./app.js"></script>
+  <script src="./grove-profiles.js"></script>
 
   <script>
-    let existingParentProfile = null;
-    let existingWorkingVersion = null;
+    (function () {
+      let currentUser = null;
+      let bundle = {
+        parent: null,
+        visibleVersion: null,
+        pendingVersion: null,
+        workingVersion: null
+      };
 
-    function formatPhoneNumber(value) {
-      const digits = value.replace(/\D/g, "").slice(0, 10);
-      if (digits.length === 0) return "";
-      if (digits.length < 4) return digits;
-      if (digits.length < 7) return `(${digits.slice(0, 3)}) ${digits.slice(3)}`;
-      return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
-    }
+      function renderPhotoPreview(urls) {
+        const wrap = document.getElementById("photoPreviewWrap");
+        const list = document.getElementById("photoPreviewList");
+        const mainImage = document.getElementById("family-main-photo");
 
-    function getSelectedCareTypes() {
-      return Array.from(document.querySelectorAll('input[name="edit_care_types"]:checked'))
-        .map(cb => cb.value);
-    }
+        if (!wrap || !list || !mainImage) return;
 
-    function setSelectedCareTypes(careTypes) {
-      const values = Array.isArray(careTypes) ? careTypes : [];
-      document.querySelectorAll('input[name="edit_care_types"]').forEach(cb => {
-        cb.checked = values.includes(cb.value);
-      });
-    }
+        const photos = Array.isArray(urls) ? urls.filter(Boolean) : [];
 
-    function fillForm(versionRow, parentRow) {
-      existingParentProfile = parentRow;
-      existingWorkingVersion = versionRow;
+        if (!photos.length) {
+          wrap.style.display = "none";
+          list.innerHTML = "";
+          mainImage.removeAttribute("src");
+          return;
+        }
 
-      document.getElementById("edit_id").value = parentRow?.id || "";
-      document.getElementById("edit_version_id").value = versionRow?.id || "";
+        let activeIndex = 0;
 
-      document.getElementById("edit_first_name").value = versionRow?.first_name || "";
-      document.getElementById("edit_last_name").value = versionRow?.last_name || "";
-      document.getElementById("edit_email").value = versionRow?.email || "";
-      document.getElementById("edit_phone").value = versionRow?.phone || "";
-      document.getElementById("edit_location").value = versionRow?.location || "";
-      document.getElementById("edit_years_experience").value = versionRow?.years_experience || "";
-      document.getElementById("edit_availability").value = versionRow?.availability || "";
-      document.getElementById("edit_bio").value = versionRow?.bio || "";
+        function drawGallery() {
+          mainImage.src = photos[activeIndex];
+          mainImage.alt = `Family photo ${activeIndex + 1}`;
 
-      document.getElementById("edit_drivers_license").checked = !!versionRow?.has_drivers_license;
-      document.getElementById("edit_cpr_certified").checked = !!versionRow?.cpr_certified;
-      document.getElementById("edit_non_smoker").checked = !!versionRow?.non_smoker;
-      document.getElementById("edit_non_vaper").checked = !!versionRow?.non_vaper;
-      document.getElementById("edit_comfortable_with_cats").checked = !!versionRow?.comfortable_with_cats;
-      document.getElementById("edit_comfortable_with_dogs").checked = !!versionRow?.comfortable_with_dogs;
+          list.innerHTML = photos
+            .map((url, index) => {
+              const activeClass = index === activeIndex ? " active" : "";
+              return `
+                <button
+                  type="button"
+                  class="gallery-thumb${activeClass}"
+                  data-index="${index}"
+                  aria-label="View photo ${index + 1}"
+                >
+                  <img src="${url}" alt="Family photo ${index + 1}" />
+                </button>
+              `;
+            })
+            .join("");
 
-      setSelectedCareTypes(versionRow?.care_types || []);
-    }
+          list.querySelectorAll(".gallery-thumb").forEach((button) => {
+            button.addEventListener("click", () => {
+              activeIndex = Number(button.dataset.index);
+              drawGallery();
+            });
+          });
+        }
 
-    async function loadProfileParentByLookup(email, phone) {
-      const { data, error } = await window.db
-        .from("caregiver_profiles")
-        .select("*")
-        .eq("email", email)
-        .eq("phone", phone)
-        .limit(1);
-
-      if (error) {
-        handleError(error, "Lookup failed");
-        return null;
+        wrap.style.display = "block";
+        drawGallery();
       }
 
-      return data && data.length ? data[0] : null;
-    }
+      function fillProfileForm() {
+        const profile = bundle.workingVersion;
 
-    async function loadProfileVersion(versionId) {
-      if (!versionId) return null;
+        document.getElementById("dashProfileStatus").innerHTML =
+          window.GroveProfiles.getProfileStatusHtml(bundle);
 
-      const { data, error } = await window.db
-        .from("caregiver_profile_versions")
-        .select("*")
-        .eq("id", versionId)
-        .maybeSingle();
+        document.getElementById("dashConfirmedEncounters").textContent =
+          bundle.parent?.confirmed_encounters != null ? bundle.parent.confirmed_encounters : 0;
 
-      if (error) {
-        handleError(error, "Profile version load failed");
-        return null;
+        document.getElementById("dashResponseTime").textContent =
+          bundle.parent?.average_response_minutes != null
+            ? `${bundle.parent.average_response_minutes} min`
+            : "—";
+
+        document.getElementById("fam_first_name").value = profile?.first_name || "";
+        document.getElementById("fam_last_name").value = profile?.last_name || "";
+        document.getElementById("fam_email").value = currentUser?.email || profile?.email || "";
+        document.getElementById("fam_phone").value = profile?.phone || "";
+        document.getElementById("fam_location").value = profile?.location || "";
+        document.getElementById("fam_household_description").value = profile?.household_description || "";
+        document.getElementById("fam_children_description").value = profile?.children_description || "";
+        document.getElementById("fam_pets_description").value = profile?.pets_description || "";
+
+        document.getElementById("fam_has_cats").checked = !!profile?.has_cats;
+        document.getElementById("fam_has_dogs").checked = !!profile?.has_dogs;
+        document.getElementById("fam_smoking_in_home").checked = !!profile?.smoking_in_home;
+        document.getElementById("fam_driving_needed").checked = !!profile?.driving_needed;
+
+        window.GroveProfiles.setCheckedValues(
+          'input[name="fam_care_types_needed"]',
+          profile?.care_types_needed || []
+        );
+
+        renderPhotoPreview(window.GroveProfiles.getExistingPhotoUrls(profile));
       }
 
-      return data || null;
-    }
+      async function refreshBundle() {
+        bundle = await window.GroveProfiles.loadProfileBundle({
+          parentTable: "family_profiles",
+          versionTable: "family_profile_versions",
+          userId: currentUser.id
+        });
 
-    async function getDisplayVersionForParent(parentProfile) {
-      if (!parentProfile) return null;
+        fillProfileForm();
 
-      const preferredVersionId =
-        parentProfile.current_pending_version_id || parentProfile.current_visible_version_id;
+        const messageCount = await window.GroveProfiles.loadMessageCount(currentUser.id);
+        document.getElementById("dashMessages").textContent = messageCount;
+      }
 
-      return await loadProfileVersion(preferredVersionId);
-    }
+      async function sendMagicLink() {
+        const email = document.getElementById("fam_auth_email").value.trim();
+        const msg = document.getElementById("authMessage");
 
-    async function wireLookup() {
-      const lookupForm = document.getElementById("lookupForm");
-      if (!lookupForm) return;
+        if (!email) {
+          alert("Please enter your email first.");
+          return;
+        }
 
-      const lookupPhone = document.getElementById("lookup_phone");
-      lookupPhone?.addEventListener("input", (e) => {
-        e.target.value = formatPhoneNumber(e.target.value);
-      });
+        const { error } = await window.db.auth.signInWithOtp({
+          email,
+          options: {
+            emailRedirectTo: "https://jfrancomb-spec.github.io/grove-website/family.html"
+          }
+        });
 
-      lookupForm.addEventListener("submit", async (e) => {
+        if (error) {
+          handleError(error, "Sign-in link failed");
+          return;
+        }
+
+        if (msg) {
+          msg.textContent = "Check your email for a sign-in link.";
+          msg.style.display = "block";
+        }
+      }
+
+      async function saveProfile(e) {
         e.preventDefault();
 
-        const email = document.getElementById("lookup_email").value.trim();
-        const phone = document.getElementById("lookup_phone").value.trim();
-
-        const parentProfile = await loadProfileParentByLookup(email, phone);
-
-        if (!parentProfile) {
-          alert("No caregiver profile matched that email and phone number.");
+        if (!currentUser) {
+          alert("Please sign in first.");
           return;
         }
 
-        const version = await getDisplayVersionForParent(parentProfile);
-
-        if (!version) {
-          alert("This caregiver profile does not have a visible or pending version yet.");
-          return;
-        }
-
-        fillForm(version, parentProfile);
-        document.getElementById("editSuccess").style.display = "none";
-        document.getElementById("editCard").style.display = "block";
-        document.getElementById("editCard").scrollIntoView({ behavior: "smooth" });
-      });
-    }
-
-    async function wireEditForm() {
-      const form = document.getElementById("editCaregiverForm");
-      if (!form) return;
-
-      const editPhone = document.getElementById("edit_phone");
-      editPhone?.addEventListener("input", (e) => {
-        e.target.value = formatPhoneNumber(e.target.value);
-      });
-
-      form.addEventListener("submit", async (e) => {
-        e.preventDefault();
-
-        const caregiverProfileId = document.getElementById("edit_id").value;
-        const careTypes = getSelectedCareTypes();
-
-        if (!caregiverProfileId) {
-          alert("Profile not loaded.");
-          return;
-        }
-
-        if (!careTypes.length) {
-          alert("Please select at least one type of care.");
-          return;
-        }
-
-        const firstName = document.getElementById("edit_first_name").value.trim();
-        const lastName = document.getElementById("edit_last_name").value.trim();
-        const saveButton = document.getElementById("saveChangesBtn");
-        const originalButtonText = saveButton?.textContent || "Save Changes";
+        const saveButton = document.getElementById("saveProfileBtn");
+        const originalButtonText = saveButton?.textContent || "Save Profile";
 
         try {
           if (saveButton) {
@@ -284,68 +300,87 @@
             saveButton.textContent = "Saving...";
           }
 
-          const { data, error } = await window.db.functions.invoke("submit-caregiver-profile-version", {
-            body: {
-              first_name: firstName,
-              last_name: lastName,
-              phone: document.getElementById("edit_phone").value.trim(),
-              location: document.getElementById("edit_location").value.trim(),
-              care_types: careTypes,
-              years_experience: document.getElementById("edit_years_experience").value,
-              availability: document.getElementById("edit_availability").value.trim(),
-              has_drivers_license: document.getElementById("edit_drivers_license").checked,
-              cpr_certified: document.getElementById("edit_cpr_certified").checked,
-              non_smoker: document.getElementById("edit_non_smoker").checked,
-              non_vaper: document.getElementById("edit_non_vaper").checked,
-              comfortable_with_cats: document.getElementById("edit_comfortable_with_cats").checked,
-              comfortable_with_dogs: document.getElementById("edit_comfortable_with_dogs").checked,
-              bio: document.getElementById("edit_bio").value.trim(),
-              photo_urls: existingWorkingVersion?.photo_urls || [],
-              caregiver_profile_id: caregiverProfileId
+          const photoUrls = await window.GroveProfiles.resolvePhotoUrls({
+            folder: "families",
+            userId: currentUser.id,
+            files: document.getElementById("fam_photos")?.files,
+            existingVersion: bundle.workingVersion
+          });
+
+          await window.GroveProfiles.submitFamilyProfile({
+            values: {
+              first_name: document.getElementById("fam_first_name").value.trim(),
+              last_name: document.getElementById("fam_last_name").value.trim(),
+              phone: document.getElementById("fam_phone").value.trim(),
+              location: document.getElementById("fam_location").value.trim(),
+              care_types_needed: window.GroveProfiles.getCheckedValues('input[name="fam_care_types_needed"]'),
+              has_cats: document.getElementById("fam_has_cats").checked,
+              has_dogs: document.getElementById("fam_has_dogs").checked,
+              smoking_in_home: document.getElementById("fam_smoking_in_home").checked,
+              driving_needed: document.getElementById("fam_driving_needed").checked,
+              household_description: document.getElementById("fam_household_description").value.trim(),
+              children_description: document.getElementById("fam_children_description").value.trim(),
+              pets_description: document.getElementById("fam_pets_description").value.trim(),
+              photo_urls: photoUrls
             }
           });
 
-          if (error) {
-            handleError(error, "Update failed");
-            return;
-          }
-
-          if (!data?.success) {
-            console.error("submit-caregiver-profile-version unexpected response:", data);
-            alert("Update failed.");
-            return;
-          }
-
-          const refreshedParent = await loadProfileParentByLookup(
-            document.getElementById("edit_email").value.trim(),
-            document.getElementById("edit_phone").value.trim()
-          );
-
-          if (refreshedParent) {
-            const refreshedVersion = await getDisplayVersionForParent(refreshedParent);
-            if (refreshedVersion) {
-              fillForm(refreshedVersion, refreshedParent);
-            }
-          }
-
-          document.getElementById("editSuccess").style.display = "block";
-          document.getElementById("editSuccess").scrollIntoView({ behavior: "smooth" });
-        } catch (err) {
-          console.error("Edit caregiver save error:", err);
-          alert("Update failed.");
+          document.getElementById("familyProfileSuccess").style.display = "block";
+          await refreshBundle();
+        } catch (error) {
+          console.error(error);
+          handleError(error, "Profile save failed");
         } finally {
           if (saveButton) {
             saveButton.disabled = false;
             saveButton.textContent = originalButtonText;
           }
         }
-      });
-    }
+      }
 
-    window.addEventListener("DOMContentLoaded", () => {
-      wireLookup();
-      wireEditForm();
-    });
+      async function signOut() {
+        const { error } = await window.db.auth.signOut();
+        if (error) {
+          handleError(error, "Sign out failed");
+          return;
+        }
+        window.location.href = "./family.html";
+      }
+
+      async function checkSessionAndSetup() {
+        currentUser = await window.GroveProfiles.getCurrentUser();
+
+        const authCard = document.getElementById("authCard");
+        const profileCard = document.getElementById("profileCard");
+        const signedInText = document.getElementById("signedInText");
+        const emailInput = document.getElementById("fam_email");
+        const phoneInput = document.getElementById("fam_phone");
+
+        phoneInput?.addEventListener("input", (e) => {
+          e.target.value = window.GroveProfiles.formatPhoneNumber(e.target.value);
+        });
+
+        if (!currentUser) {
+          authCard.style.display = "block";
+          profileCard.style.display = "none";
+          return;
+        }
+
+        authCard.style.display = "none";
+        profileCard.style.display = "block";
+        signedInText.textContent = `Signed in as ${currentUser.email}. You can review and update your family profile below.`;
+        emailInput.value = currentUser.email || "";
+
+        await refreshBundle();
+      }
+
+      window.addEventListener("DOMContentLoaded", () => {
+        document.getElementById("sendLinkBtn")?.addEventListener("click", sendMagicLink);
+        document.getElementById("signOutBtn")?.addEventListener("click", signOut);
+        document.getElementById("familyProfileForm")?.addEventListener("submit", saveProfile);
+        checkSessionAndSetup();
+      });
+    })();
   </script>
 </body>
 </html>
