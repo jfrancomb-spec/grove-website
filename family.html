@@ -518,6 +518,16 @@
         return;
       }
 
+const queueCreated = await createAdminQueueItem({
+  userId: currentUser.id,
+  queueType: "family_profile",
+  summary: `Pending family profile: ${newVersion.name_display || "Unnamed family"}`,
+  relatedTable: "family_profile_versions",
+  relatedId: newVersion.id
+});
+
+if (!queueCreated) return;
+      
       document.getElementById("familyProfileSuccess").style.display = "block";
 
       await loadOwnProfileBundle();
