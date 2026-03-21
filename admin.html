@@ -351,6 +351,22 @@
         `;
       }
 
+      function canInvokeFunctionForApprove(item) {
+        return [
+          "messages",
+          "caregiver_profile_versions",
+          "family_profile_versions"
+        ].includes(item.related_table);
+      }
+
+      function canInvokeFunctionForReject(item) {
+        return [
+          "messages",
+          "caregiver_profile_versions",
+          "family_profile_versions"
+        ].includes(item.related_table);
+      }
+
       function buildActionButtons(item) {
         const canAssign = item.status === "open";
         const canMoveInReview = item.status === "open";
@@ -360,8 +376,8 @@
           <div class="admin-actions">
             ${canAssign ? `<button class="button-admin" data-action="assign" data-id="${item.id}">Assign to Me</button>` : ""}
             ${canMoveInReview ? `<button class="button-admin" data-action="in_review" data-id="${item.id}">Mark In Review</button>` : ""}
-            ${canResolve ? `<button class="button-admin button-approve" data-action="resolve_approved" data-id="${item.id}">Approve</button>` : ""}
-            ${canResolve ? `<button class="button-admin button-deny" data-action="resolve_rejected" data-id="${item.id}">Reject</button>` : ""}
+            ${canResolve && canInvokeFunctionForApprove(item) ? `<button class="button-admin button-approve" data-action="approve_content" data-id="${item.id}">Approve</button>` : ""}
+            ${canResolve && canInvokeFunctionForReject(item) ? `<button class="button-admin button-deny" data-action="reject_content" data-id="${item.id}">Reject</button>` : ""}
             ${canResolve ? `<button class="button-admin" data-action="resolve_kept_flagged" data-id="${item.id}">Keep Flagged</button>` : ""}
             ${canResolve ? `<button class="button-admin" data-action="resolve_restored_account" data-id="${item.id}">Restore Account</button>` : ""}
             ${canResolve ? `<button class="button-admin button-deny" data-action="resolve_frozen_account" data-id="${item.id}">Freeze</button>` : ""}
@@ -381,9 +397,7 @@
         }
 
         container.innerHTML = items.map((item) => {
-          const assignedLabel = item.assigned_to
-            ? `Assigned`
-            : `Unassigned`;
+          const assignedLabel = item.assigned_to ? `Assigned` : `Unassigned`;
 
           return `
             <div class="admin-card">
@@ -476,6 +490,76 @@
         return true;
       }
 
+      async function invokeModerationFunction(functionName, body) {
+        const { data, error } = await window.db.functions.invoke(functionName, { body });
+
+        if (error) {
+          console.error(`${functionName} failed`, error);
+          handleError(error, `${functionName} failed`);
+          return false;
+        }
+
+        if (!data?.success) {
+          console.error(`${functionName} unexpected response`, data);
+          alert(`${functionName} failed.`);
+          return false;
+        }
+
+        return true;
+      }
+
+      async function approveContent(item) {
+        if (item.related_table === "messages") {
+          return await invokeModerationFunction("approve-held-message", {
+            messageId: item.related_id,
+            notes: "Approved from admin dashboard"
+          });
+        }
+
+        if (item.related_table === "caregiver_profile_versions") {
+          return await invokeModerationFunction("approve-caregiver-profile-version", {
+            versionId: item.related_id,
+            notes: "Approved from admin dashboard"
+          });
+        }
+
+        if (item.related_table === "family_profile_versions") {
+          return await invokeModerationFunction("approve-family-profile-version", {
+            versionId: item.related_id,
+            notes: "Approved from admin dashboard"
+          });
+        }
+
+        alert("Approve is not wired yet for this content type.");
+        return false;
+      }
+
+      async function rejectContent(item) {
+        if (item.related_table === "messages") {
+          return await invokeModerationFunction("reject-held-message", {
+            messageId: item.related_id,
+            notes: "Rejected from admin dashboard"
+          });
+        }
+
+        if (item.related_table === "caregiver_profile_versions") {
+          return await invokeModerationFunction("reject-caregiver-profile-version", {
+            versionId: item.related_id,
+            notes: "Rejected from admin dashboard"
+          });
+        }
+
+        if (item.related_table === "family_profile_versions") {
+          return await invokeModerationFunction("reject-family-profile-version", {
+            versionId: item.related_id,
+            notes: "Rejected from admin dashboard"
+          });
+        }
+
+        alert("Reject is not wired yet for this content type.");
+        return false;
+      }
+
       async function handleQueueAction(action, queueId) {
         const item = queueItems.find((x) => x.id === queueId);
         if (!item) return;
@@ -497,9 +581,19 @@
           return;
         }
 
+        if (action === "approve_content") {
+          const ok = await approveContent(item);
+          if (ok) await loadQueueData();
+          return;
+        }
+
+        if (action === "reject_content") {
+          const ok = await rejectContent(item);
+          if (ok) await loadQueueData();
+          return;
+        }
+
         const resolutionMap = {
-          resolve_approved: "approved",
-          resolve_rejected: "rejected",
           resolve_kept_flagged: "kept_flagged",
           resolve_restored_account: "restored_account",
           resolve_frozen_account: "frozen_account",
@@ -511,9 +605,9 @@
         if (!resolution) return;
 
         let accountStatus = null;
-        if (resolution === "restored_account" || resolution === "approved" || resolution === "dismissed") {
+        if (resolution === "restored_account" || resolution === "dismissed") {
           accountStatus = "normal";
-        } else if (resolution === "kept_flagged" || resolution === "rejected") {
+        } else if (resolution === "kept_flagged") {
           accountStatus = "flagged";
         } else if (resolution === "frozen_account") {
           accountStatus = "frozen";
