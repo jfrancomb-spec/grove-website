@@ -499,12 +499,24 @@
         return;
       }
 
+      const queueCreated = await createAdminQueueItem({
+  userId: currentUser.id,
+  queueType: "caregiver_profile",
+  summary: `Pending caregiver profile: ${newVersion.name_display || "Unnamed caregiver"}`,
+  relatedTable: "caregiver_profile_versions",
+  relatedId: newVersion.id
+});
+
+if (!queueCreated) return;
+
       document.getElementById("caregiverProfileSuccess").style.display = "block";
 
       await loadOwnProfileBundle();
       fillProfileForm();
     }
 
+
+    
     async function signOut() {
       const { error } = await window.db.auth.signOut();
       if (error) {
