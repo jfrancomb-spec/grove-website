@@ -349,6 +349,16 @@
           return;
         }
 
+const queueCreated = await createAdminQueueItem({
+  userId: existingParentProfile?.user_id,
+  queueType: "caregiver_profile",
+  summary: `Pending caregiver profile update: ${newVersion.name_display || "Unnamed caregiver"}`,
+  relatedTable: "caregiver_profile_versions",
+  relatedId: newVersion.id
+});
+
+if (!queueCreated) return;
+        
         existingWorkingVersion = newVersion;
         document.getElementById("editSuccess").style.display = "block";
         document.getElementById("editSuccess").scrollIntoView({ behavior: "smooth" });
