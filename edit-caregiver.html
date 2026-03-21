@@ -105,7 +105,7 @@
             <textarea id="edit_bio" placeholder="Tell families about your experience" required></textarea>
           </div>
 
-          <button class="button" type="submit">Save Changes</button>
+          <button class="button" type="submit" id="saveChangesBtn">Save Changes</button>
         </form>
 
         <p id="editSuccess" class="success">
@@ -212,23 +212,6 @@
       return await loadProfileVersion(preferredVersionId);
     }
 
-    async function getNextVersionNumber(caregiverProfileId) {
-      const { data, error } = await window.db
-        .from("caregiver_profile_versions")
-        .select("version_number")
-        .eq("caregiver_profile_id", caregiverProfileId)
-        .order("version_number", { ascending: false })
-        .limit(1)
-        .maybeSingle();
-
-      if (error) {
-        handleError(error, "Unable to determine next profile version");
-        return null;
-      }
-
-      return (data?.version_number || 0) + 1;
-    }
-
     async function wireLookup() {
       const lookupForm = document.getElementById("lookupForm");
       if (!lookupForm) return;
@@ -292,76 +275,70 @@
 
         const firstName = document.getElementById("edit_first_name").value.trim();
         const lastName = document.getElementById("edit_last_name").value.trim();
+        const saveButton = document.getElementById("saveChangesBtn");
+        const originalButtonText = saveButton?.textContent || "Save Changes";
 
-        const nextVersionNumber = await getNextVersionNumber(caregiverProfileId);
-        if (nextVersionNumber === null) return;
+        try {
+          if (saveButton) {
+            saveButton.disabled = true;
+            saveButton.textContent = "Saving...";
+          }
 
-        const payload = {
-          caregiver_profile_id: caregiverProfileId,
-          version_number: nextVersionNumber,
-          submitted_at: new Date().toISOString(),
-          name_display: `${firstName} ${lastName}`.trim(),
-          first_name: firstName,
-          last_name: lastName,
-          email: document.getElementById("edit_email").value.trim(),
-          phone: document.getElementById("edit_phone").value.trim(),
-          location: document.getElementById("edit_location").value.trim(),
-          care_types: careTypes,
-          care_type: careTypes[0] || "",
-          years_experience: document.getElementById("edit_years_experience").value,
-          availability: document.getElementById("edit_availability").value.trim(),
-          has_drivers_license: document.getElementById("edit_drivers_license").checked,
-          cpr_certified: document.getElementById("edit_cpr_certified").checked,
-          non_smoker: document.getElementById("edit_non_smoker").checked,
-          non_vaper: document.getElementById("edit_non_vaper").checked,
-          comfortable_with_cats: document.getElementById("edit_comfortable_with_cats").checked,
-          comfortable_with_dogs: document.getElementById("edit_comfortable_with_dogs").checked,
-          bio: document.getElementById("edit_bio").value.trim(),
-          photo_urls: existingWorkingVersion?.photo_urls || [],
-          photo_url: existingWorkingVersion?.photo_url || null,
-          content_status: "queued",
-          moderation_reason: null,
-          moderation_details: {},
-          flag_trigger_type: "none",
-          is_live: false
-        };
+          const { data, error } = await window.db.functions.invoke("submit-caregiver-profile-version", {
+            body: {
+              first_name: firstName,
+              last_name: lastName,
+              phone: document.getElementById("edit_phone").value.trim(),
+              location: document.getElementById("edit_location").value.trim(),
+              care_types: careTypes,
+              years_experience: document.getElementById("edit_years_experience").value,
+              availability: document.getElementById("edit_availability").value.trim(),
+              has_drivers_license: document.getElementById("edit_drivers_license").checked,
+              cpr_certified: document.getElementById("edit_cpr_certified").checked,
+              non_smoker: document.getElementById("edit_non_smoker").checked,
+              non_vaper: document.getElementById("edit_non_vaper").checked,
+              comfortable_with_cats: document.getElementById("edit_comfortable_with_cats").checked,
+              comfortable_with_dogs: document.getElementById("edit_comfortable_with_dogs").checked,
+              bio: document.getElementById("edit_bio").value.trim(),
+              photo_urls: existingWorkingVersion?.photo_urls || [],
+              caregiver_profile_id: caregiverProfileId
+            }
+          });
 
-        const { data: newVersion, error: versionError } = await window.db
-          .from("caregiver_profile_versions")
-          .insert([payload])
-          .select("*")
-          .single();
+          if (error) {
+            handleError(error, "Update failed");
+            return;
+          }
 
-        if (versionError || !newVersion) {
-          handleError(versionError, "Update failed");
-          return;
+          if (!data?.success) {
+            console.error("submit-caregiver-profile-version unexpected response:", data);
+            alert("Update failed.");
+            return;
+          }
+
+          const refreshedParent = await loadProfileParentByLookup(
+            document.getElementById("edit_email").value.trim(),
+            document.getElementById("edit_phone").value.trim()
+          );
+
+          if (refreshedParent) {
+            const refreshedVersion = await getDisplayVersionForParent(refreshedParent);
+            if (refreshedVersion) {
+              fillForm(refreshedVersion, refreshedParent);
+            }
+          }
+
+          document.getElementById("editSuccess").style.display = "block";
+          document.getElementById("editSuccess").scrollIntoView({ behavior: "smooth" });
+        } catch (err) {
+          console.error("Edit caregiver save error:", err);
+          alert("Update failed.");
+        } finally {
+          if (saveButton) {
+            saveButton.disabled = false;
+            saveButton.textContent = originalButtonText;
+          }
         }
-
-        const { error: parentUpdateError } = await window.db
-          .from("caregiver_profiles")
-          .update({
-            current_pending_version_id: newVersion.id
-          })
-          .eq("id", caregiverProfileId);
-
-        if (parentUpdateError) {
-          handleError(parentUpdateError, "Update failed");
-          return;
-        }
-
-const queueCreated = await createAdminQueueItem({
-  userId: existingParentProfile?.user_id,
-  queueType: "caregiver_profile",
-  summary: `Pending caregiver profile update: ${newVersion.name_display || "Unnamed caregiver"}`,
-  relatedTable: "caregiver_profile_versions",
-  relatedId: newVersion.id
-});
-
-if (!queueCreated) return;
-        
-        existingWorkingVersion = newVersion;
-        document.getElementById("editSuccess").style.display = "block";
-        document.getElementById("editSuccess").scrollIntoView({ behavior: "smooth" });
       });
     }
 
