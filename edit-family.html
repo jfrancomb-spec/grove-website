@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Grove | Edit Family Profile</title>
+  <link rel="stylesheet" href="./styles.css" />
+  <link rel="icon" type="image/png" href="./MainIcon.png" />
+</head>
+
+<body>
+  <div id="header-placeholder"></div>
+
+  <main>
+    <div class="hero">
+      <h1>Edit Family Profile</h1>
+      <div class="subtitle">
+        Find your profile and make updates.
+      </div>
+    </div>
+
+    <section>
+      <div class="form-card" id="lookupCard">
+        <h2 class="mt-0">Find Your Profile</h2>
+
+        <form id="lookupForm">
+          <div class="row">
+            <input id="lookup_email" type="email" placeholder="Email Address" required />
+          </div>
+
+          <div class="row">
+            <input id="lookup_phone" type="text" placeholder="Phone Number" required />
+          </div>
+
+          <button class="button" type="submit">Find My Profile</button>
+        </form>
+      </div>
+
+      <div class="form-card" id="editCard" style="display:none;">
+        <h2 class="mt-0">Update Profile</h2>
+
+        <form id="editFamilyForm">
+          <input id="edit_id" type="hidden" />
+          <input id="edit_version_id" type="hidden" />
+
+          <div class="row">
+            <input id="edit_first_name" type="text" placeholder="First Name" required />
+          </div>
+
+          <div class="row">
+            <input id="edit_last_name" type="text" placeholder="Last Name" required />
+          </div>
+
+          <div class="row">
+            <input id="edit_email" type="email" placeholder="Email Address" required />
+          </div>
+
+          <div class="row">
+            <input id="edit_phone" type="text" placeholder="Phone Number" required />
+          </div>
+
+          <div class="row">
+            <input id="edit_location" type="text" placeholder="City or Neighborhood" required />
+          </div>
+
+          <div class="row">
+            <label class="mb-6"><strong>Types of Care Needed</strong></label>
+            <div class="checkbox-group">
+              <label><input type="checkbox" name="edit_care_types_needed" value="Childcare" /> Childcare</label>
+              <label><input type="checkbox" name="edit_care_types_needed" value="Senior Care" /> Senior Care</label>
+              <label><input type="checkbox" name="edit_care_types_needed" value="Pet Care" /> Pet Care</label>
+              <label><input type="checkbox" name="edit_care_types_needed" value="Household Help" /> Household Help</label>
+              <label><input type="checkbox" name="edit_care_types_needed" value="Other" /> Other</label>
+            </div>
+          </div>
+
+          <div class="row">
+            <label class="mb-6"><strong>Home Details</strong></label>
+            <div class="checkbox-group">
+              <label><input id="edit_has_cats" type="checkbox" /> Cats in Home</label>
+              <label><input id="edit_has_dogs" type="checkbox" /> Dogs in Home</label>
+              <label><input id="edit_smoking_in_home" type="checkbox" /> Smoking in Home</label>
+              <label><input id="edit_driving_needed" type="checkbox" /> Driving Needed</label>
+            </div>
+          </div>
+
+          <div class="row">
+            <label for="edit_household_description"><strong>Household Description</strong></label>
+            <textarea id="edit_household_description" placeholder="Tell caregivers a little about your household"></textarea>
+          </div>
+
+          <div class="row">
+            <label for="edit_children_description"><strong>Children</strong></label>
+            <textarea id="edit_children_description" placeholder="Ages, routines, interests, anything helpful"></textarea>
+          </div>
+
+          <div class="row">
+            <label for="edit_pets_description"><strong>Pets</strong></label>
+            <textarea id="edit_pets_description" placeholder="Tell caregivers about any pets in the home"></textarea>
+          </div>
+
+          <button class="button" type="submit">Save Changes</button>
+        </form>
+
+        <p id="editSuccess" class="success">
+          ✅ Profile updated successfully.
+        </p>
+      </div>
+    </section>
+  </main>
+
+  <div id="footer-placeholder"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script src="./app.js"></script>
+
+  <script>
+    let existingParentProfile = null;
+    let existingWorkingVersion = null;
+
+    function formatPhoneNumber(value) {
+      const digits = value.replace(/\D/g, "").slice(0, 10);
+      if (digits.length === 0) return "";
+      if (digits.length < 4) return digits;
+      if (digits.length < 7) return `(${digits.slice(0, 3)}) ${digits.slice(3)}`;
+      return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
+    }
+
+    function getSelectedCareTypesNeeded() {
+      return Array.from(document.querySelectorAll('input[name="edit_care_types_needed"]:checked'))
+        .map(cb => cb.value);
+    }
+
+    function setSelectedCareTypesNeeded(values) {
+      const selected = Array.isArray(values) ? values : [];
+      document.querySelectorAll('input[name="edit_care_types_needed"]').forEach(cb => {
+        cb.checked = selected.includes(cb.value);
+      });
+    }
+
+    function fillForm(versionRow, parentRow) {
+      existingParentProfile = parentRow;
+      existingWorkingVersion = versionRow;
+
+      document.getElementById("edit_id").value = parentRow?.id || "";
+      document.getElementById("edit_version_id").value = versionRow?.id || "";
+
+      document.getElementById("edit_first_name").value = versionRow?.first_name || "";
+      document.getElementById("edit_last_name").value = versionRow?.last_name || "";
+      document.getElementById("edit_email").value = versionRow?.email || "";
+      document.getElementById("edit_phone").value = versionRow?.phone || "";
+      document.getElementById("edit_location").value = versionRow?.location || "";
+      document.getElementById("edit_household_description").value = versionRow?.household_description || "";
+      document.getElementById("edit_children_description").value = versionRow?.children_description || "";
+      document.getElementById("edit_pets_description").value = versionRow?.pets_description || "";
+
+      document.getElementById("edit_has_cats").checked = !!versionRow?.has_cats;
+      document.getElementById("edit_has_dogs").checked = !!versionRow?.has_dogs;
+      document.getElementById("edit_smoking_in_home").checked = !!versionRow?.smoking_in_home;
+      document.getElementById("edit_driving_needed").checked = !!versionRow?.driving_needed;
+
+      setSelectedCareTypesNeeded(versionRow?.care_types_needed || []);
+    }
+
+    async function loadProfileParentByLookup(email, phone) {
+      const { data, error } = await window.db
+        .from("family_profiles")
+        .select("*")
+        .eq("email", email)
+        .eq("phone", phone)
+        .limit(1);
+
+      if (error) {
+        handleError(error, "Lookup failed");
+        return null;
+      }
+
+      return data && data.length ? data[0] : null;
+    }
+
+    async function loadProfileVersion(versionId) {
+      if (!versionId) return null;
+
+      const { data, error } = await window.db
+        .from("family_profile_versions")
+        .select("*")
+        .eq("id", versionId)
+        .maybeSingle();
+
+      if (error) {
+        handleError(error, "Profile version load failed");
+        return null;
+      }
+
+      return data || null;
+    }
+
+    async function getDisplayVersionForParent(parentProfile) {
+      if (!parentProfile) return null;
+
+      const preferredVersionId =
+        parentProfile.current_pending_version_id || parentProfile.current_visible_version_id;
+
+      return await loadProfileVersion(preferredVersionId);
+    }
+
+    async function getNextVersionNumber(familyProfileId) {
+      const { data, error } = await window.db
+        .from("family_profile_versions")
+        .select("version_number")
+        .eq("family_profile_id", familyProfileId)
+        .order("version_number", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (error) {
+        handleError(error, "Unable to determine next profile version");
+        return null;
+      }
+
+      return (data?.version_number || 0) + 1;
+    }
+
+    async function createAdminQueueItem({
+      userId,
+      queueType,
+      summary,
+      relatedTable,
+      relatedId,
+      priority = "normal"
+    }) {
+      const { data: existing, error: existingError } = await window.db
+        .from("admin_review_queue")
+        .select("id")
+        .eq("related_table", relatedTable)
+        .eq("related_id", relatedId)
+        .in("status", ["open", "in_review"])
+        .maybeSingle();
+
+      if (existingError) {
+        handleError(existingError, "Unable to check admin review queue");
+        return false;
+      }
+
+      if (existing?.id) {
+        return true;
+      }
+
+      const { error } = await window.db
+        .from("admin_review_queue")
+        .insert([{
+          user_id: userId,
+          queue_type: queueType,
+          priority,
+          status: "open",
+          summary,
+          related_table: relatedTable,
+          related_id: relatedId
+        }]);
+
+      if (error) {
+        handleError(error, "Unable to create admin review queue item");
+        return false;
+      }
+
+      return true;
+    }
+
+    async function wireLookup() {
+      const lookupForm = document.getElementById("lookupForm");
+      if (!lookupForm) return;
+
+      const lookupPhone = document.getElementById("lookup_phone");
+      lookupPhone?.addEventListener("input", (e) => {
+        e.target.value = formatPhoneNumber(e.target.value);
+      });
+
+      lookupForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+
+        const email = document.getElementById("lookup_email").value.trim();
+        const phone = document.getElementById("lookup_phone").value.trim();
+
+        const parentProfile = await loadProfileParentByLookup(email, phone);
+
+        if (!parentProfile) {
+          alert("No family profile matched that email and phone number.");
+          return;
+        }
+
+        const version = await getDisplayVersionForParent(parentProfile);
+
+        if (!version) {
+          alert("This family profile does not have a visible or pending version yet.");
+          return;
+        }
+
+        fillForm(version, parentProfile);
+        document.getElementById("editSuccess").style.display = "none";
+        document.getElementById("editCard").style.display = "block";
+        document.getElementById("editCard").scrollIntoView({ behavior: "smooth" });
+      });
+    }
+
+    async function wireEditForm() {
+      const form = document.getElementById("editFamilyForm");
+      if (!form) return;
+
+      const editPhone = document.getElementById("edit_phone");
+      editPhone?.addEventListener("input", (e) => {
+        e.target.value = formatPhoneNumber(e.target.value);
+      });
+
+      form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+
+        const familyProfileId = document.getElementById("edit_id").value;
+
+        if (!familyProfileId) {
+          alert("Profile not loaded.");
+          return;
+        }
+
+        const firstName = document.getElementById("edit_first_name").value.trim();
+        const lastName = document.getElementById("edit_last_name").value.trim();
+
+        const nextVersionNumber = await getNextVersionNumber(familyProfileId);
+        if (nextVersionNumber === null) return;
+
+        const payload = {
+          family_profile_id: familyProfileId,
+          version_number: nextVersionNumber,
+          submitted_at: new Date().toISOString(),
+          name_display: `${firstName} ${lastName}`.trim(),
+          first_name: firstName,
+          last_name: lastName,
+          email: document.getElementById("edit_email").value.trim(),
+          phone: document.getElementById("edit_phone").value.trim(),
+          location: document.getElementById("edit_location").value.trim(),
+          care_types_needed: getSelectedCareTypesNeeded(),
+          has_cats: document.getElementById("edit_has_cats").checked,
+          has_dogs: document.getElementById("edit_has_dogs").checked,
+          smoking_in_home: document.getElementById("edit_smoking_in_home").checked,
+          driving_needed: document.getElementById("edit_driving_needed").checked,
+          household_description: document.getElementById("edit_household_description").value.trim(),
+          children_description: document.getElementById("edit_children_description").value.trim(),
+          pets_description: document.getElementById("edit_pets_description").value.trim(),
+          photo_urls: existingWorkingVersion?.photo_urls || [],
+          photo_url: existingWorkingVersion?.photo_url || null,
+          content_status: "queued",
+          moderation_reason: null,
+          moderation_details: {},
+          flag_trigger_type: "none",
+          is_live: false
+        };
+
+        const { data: newVersion, error: versionError } = await window.db
+          .from("family_profile_versions")
+          .insert([payload])
+          .select("*")
+          .single();
+
+        if (versionError || !newVersion) {
+          handleError(versionError, "Update failed");
+          return;
+        }
+
+        const { error: parentUpdateError } = await window.db
+          .from("family_profiles")
+          .update({
+            current_pending_version_id: newVersion.id
+          })
+          .eq("id", familyProfileId);
+
+        if (parentUpdateError) {
+          handleError(parentUpdateError, "Update failed");
+          return;
+        }
+
+        const queueCreated = await createAdminQueueItem({
+          userId: existingParentProfile?.user_id,
+          queueType: "family_profile",
+          summary: `Pending family profile update: ${newVersion.name_display || "Unnamed family"}`,
+          relatedTable: "family_profile_versions",
+          relatedId: newVersion.id
+        });
+
+        if (!queueCreated) return;
+
+        existingWorkingVersion = newVersion;
+        document.getElementById("editSuccess").style.display = "block";
+        document.getElementById("editSuccess").scrollIntoView({ behavior: "smooth" });
+      });
+    }
+
+    window.addEventListener("DOMContentLoaded", () => {
+      wireLookup();
+      wireEditForm();
+    });
+  </script>
+</body>
+</html>
