@@ -99,7 +99,7 @@
             <textarea id="edit_pets_description" placeholder="Tell caregivers about any pets in the home"></textarea>
           </div>
 
-          <button class="button" type="submit">Save Changes</button>
+          <button class="button" type="submit" id="saveChangesBtn">Save Changes</button>
         </form>
 
         <p id="editSuccess" class="success">
@@ -204,68 +204,6 @@
       return await loadProfileVersion(preferredVersionId);
     }
 
-    async function getNextVersionNumber(familyProfileId) {
-      const { data, error } = await window.db
-        .from("family_profile_versions")
-        .select("version_number")
-        .eq("family_profile_id", familyProfileId)
-        .order("version_number", { ascending: false })
-        .limit(1)
-        .maybeSingle();
-
-      if (error) {
-        handleError(error, "Unable to determine next profile version");
-        return null;
-      }
-
-      return (data?.version_number || 0) + 1;
-    }
-
-    async function createAdminQueueItem({
-      userId,
-      queueType,
-      summary,
-      relatedTable,
-      relatedId,
-      priority = "normal"
-    }) {
-      const { data: existing, error: existingError } = await window.db
-        .from("admin_review_queue")
-        .select("id")
-        .eq("related_table", relatedTable)
-        .eq("related_id", relatedId)
-        .in("status", ["open", "in_review"])
-        .maybeSingle();
-
-      if (existingError) {
-        handleError(existingError, "Unable to check admin review queue");
-        return false;
-      }
-
-      if (existing?.id) {
-        return true;
-      }
-
-      const { error } = await window.db
-        .from("admin_review_queue")
-        .insert([{
-          user_id: userId,
-          queue_type: queueType,
-          priority,
-          status: "open",
-          summary,
-          related_table: relatedTable,
-          related_id: relatedId
-        }]);
-
-      if (error) {
-        handleError(error, "Unable to create admin review queue item");
-        return false;
-      }
-
-      return true;
-    }
-
     async function wireLookup() {
       const lookupForm = document.getElementById("lookupForm");
       if (!lookupForm) return;
@@ -323,73 +261,68 @@
 
         const firstName = document.getElementById("edit_first_name").value.trim();
         const lastName = document.getElementById("edit_last_name").value.trim();
+        const saveButton = document.getElementById("saveChangesBtn");
+        const originalButtonText = saveButton?.textContent || "Save Changes";
 
-        const nextVersionNumber = await getNextVersionNumber(familyProfileId);
-        if (nextVersionNumber === null) return;
+        try {
+          if (saveButton) {
+            saveButton.disabled = true;
+            saveButton.textContent = "Saving...";
+          }
 
-        const payload = {
-          family_profile_id: familyProfileId,
-          version_number: nextVersionNumber,
-          submitted_at: new Date().toISOString(),
-          name_display: `${firstName} ${lastName}`.trim(),
-          first_name: firstName,
-          last_name: lastName,
-          email: document.getElementById("edit_email").value.trim(),
-          phone: document.getElementById("edit_phone").value.trim(),
-          location: document.getElementById("edit_location").value.trim(),
-          care_types_needed: getSelectedCareTypesNeeded(),
-          has_cats: document.getElementById("edit_has_cats").checked,
-          has_dogs: document.getElementById("edit_has_dogs").checked,
-          smoking_in_home: document.getElementById("edit_smoking_in_home").checked,
-          driving_needed: document.getElementById("edit_driving_needed").checked,
-          household_description: document.getElementById("edit_household_description").value.trim(),
-          children_description: document.getElementById("edit_children_description").value.trim(),
-          pets_description: document.getElementById("edit_pets_description").value.trim(),
-          photo_urls: existingWorkingVersion?.photo_urls || [],
-          photo_url: existingWorkingVersion?.photo_url || null,
-          content_status: "queued",
-          moderation_reason: null,
-          moderation_details: {},
-          flag_trigger_type: "none",
-          is_live: false
-        };
+          const { data, error } = await window.db.functions.invoke("submit-family-profile-version", {
+            body: {
+              first_name: firstName,
+              last_name: lastName,
+              phone: document.getElementById("edit_phone").value.trim(),
+              location: document.getElementById("edit_location").value.trim(),
+              care_types_needed: getSelectedCareTypesNeeded(),
+              has_cats: document.getElementById("edit_has_cats").checked,
+              has_dogs: document.getElementById("edit_has_dogs").checked,
+              smoking_in_home: document.getElementById("edit_smoking_in_home").checked,
+              driving_needed: document.getElementById("edit_driving_needed").checked,
+              household_description: document.getElementById("edit_household_description").value.trim(),
+              children_description: document.getElementById("edit_children_description").value.trim(),
+              pets_description: document.getElementById("edit_pets_description").value.trim(),
+              photo_urls: existingWorkingVersion?.photo_urls || [],
+              family_profile_id: familyProfileId
+            }
+          });
 
-        const { data: newVersion, error: versionError } = await window.db
-          .from("family_profile_versions")
-          .insert([payload])
-          .select("*")
-          .single();
+          if (error) {
+            handleError(error, "Update failed");
+            return;
+          }
 
-        if (versionError || !newVersion) {
-          handleError(versionError, "Update failed");
-          return;
+          if (!data?.success) {
+            console.error("submit-family-profile-version unexpected response:", data);
+            alert("Update failed.");
+            return;
+          }
+
+          const refreshedParent = await loadProfileParentByLookup(
+            document.getElementById("edit_email").value.trim(),
+            document.getElementById("edit_phone").value.trim()
+          );
+
+          if (refreshedParent) {
+            const refreshedVersion = await getDisplayVersionForParent(refreshedParent);
+            if (refreshedVersion) {
+              fillForm(refreshedVersion, refreshedParent);
+            }
+          }
+
+          document.getElementById("editSuccess").style.display = "block";
+          document.getElementById("editSuccess").scrollIntoView({ behavior: "smooth" });
+        } catch (err) {
+          console.error("Edit family save error:", err);
+          alert("Update failed.");
+        } finally {
+          if (saveButton) {
+            saveButton.disabled = false;
+            saveButton.textContent = originalButtonText;
+          }
         }
-
-        const { error: parentUpdateError } = await window.db
-          .from("family_profiles")
-          .update({
-            current_pending_version_id: newVersion.id
-          })
-          .eq("id", familyProfileId);
-
-        if (parentUpdateError) {
-          handleError(parentUpdateError, "Update failed");
-          return;
-        }
-
-        const queueCreated = await createAdminQueueItem({
-          userId: existingParentProfile?.user_id,
-          queueType: "family_profile",
-          summary: `Pending family profile update: ${newVersion.name_display || "Unnamed family"}`,
-          relatedTable: "family_profile_versions",
-          relatedId: newVersion.id
-        });
-
-        if (!queueCreated) return;
-
-        existingWorkingVersion = newVersion;
-        document.getElementById("editSuccess").style.display = "block";
-        document.getElementById("editSuccess").scrollIntoView({ behavior: "smooth" });
       });
     }
 
