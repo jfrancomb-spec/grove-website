@@ -145,374 +145,242 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
   <script src="./app.js"></script>
+  <script src="./grove-profiles.js"></script>
 
   <script>
-    let currentUser = null;
-    let existingProfileParent = null;
-    let currentVisibleVersion = null;
-    let currentPendingVersion = null;
+    (function () {
+      let currentUser = null;
+      let bundle = {
+        parent: null,
+        visibleVersion: null,
+        pendingVersion: null,
+        workingVersion: null
+      };
 
-    function formatPhoneNumber(value) {
-      const digits = value.replace(/\D/g, "").slice(0, 10);
-      if (digits.length === 0) return "";
-      if (digits.length < 4) return digits;
-      if (digits.length < 7) return `(${digits.slice(0, 3)}) ${digits.slice(3)}`;
-      return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
-    }
+      function renderPhotoPreview(urls) {
+        const wrap = document.getElementById("photoPreviewWrap");
+        const list = document.getElementById("photoPreviewList");
+        const mainImage = document.getElementById("family-main-photo");
 
-    function getSelectedCareTypesNeeded() {
-      return Array.from(document.querySelectorAll('input[name="fam_care_types_needed"]:checked'))
-        .map(cb => cb.value);
-    }
+        if (!wrap || !list || !mainImage) return;
 
-    function setSelectedCareTypesNeeded(values) {
-      const selected = Array.isArray(values) ? values : [];
-      document.querySelectorAll('input[name="fam_care_types_needed"]').forEach(cb => {
-        cb.checked = selected.includes(cb.value);
-      });
-    }
+        const photos = Array.isArray(urls) ? urls.filter(Boolean) : [];
 
-    function renderPhotoPreview(urls) {
-      const wrap = document.getElementById("photoPreviewWrap");
-      const list = document.getElementById("photoPreviewList");
-      const mainImage = document.getElementById("family-main-photo");
+        if (!photos.length) {
+          wrap.style.display = "none";
+          list.innerHTML = "";
+          mainImage.removeAttribute("src");
+          return;
+        }
 
-      if (!wrap || !list || !mainImage) return;
+        let activeIndex = 0;
 
-      const photos = Array.isArray(urls) ? urls.filter(Boolean) : [];
+        function drawGallery() {
+          mainImage.src = photos[activeIndex];
+          mainImage.alt = `Family photo ${activeIndex + 1}`;
 
-      if (!photos.length) {
-        wrap.style.display = "none";
-        list.innerHTML = "";
-        mainImage.removeAttribute("src");
-        return;
-      }
+          list.innerHTML = photos
+            .map((url, index) => {
+              const activeClass = index === activeIndex ? " active" : "";
+              return `
+                <button
+                  type="button"
+                  class="gallery-thumb${activeClass}"
+                  data-index="${index}"
+                  aria-label="View photo ${index + 1}"
+                >
+                  <img src="${url}" alt="Family photo ${index + 1}" />
+                </button>
+              `;
+            })
+            .join("");
 
-      let activeIndex = 0;
-
-      function drawGallery() {
-        mainImage.src = photos[activeIndex];
-        mainImage.alt = `Family photo ${activeIndex + 1}`;
-
-        list.innerHTML = photos
-          .map((url, index) => {
-            const activeClass = index === activeIndex ? " active" : "";
-            return `
-              <button
-                type="button"
-                class="gallery-thumb${activeClass}"
-                data-index="${index}"
-                aria-label="View photo ${index + 1}"
-              >
-                <img src="${url}" alt="Family photo ${index + 1}" />
-              </button>
-            `;
-          })
-          .join("");
-
-        list.querySelectorAll(".gallery-thumb").forEach((button) => {
-          button.addEventListener("click", () => {
-            activeIndex = Number(button.dataset.index);
-            drawGallery();
+          list.querySelectorAll(".gallery-thumb").forEach((button) => {
+            button.addEventListener("click", () => {
+              activeIndex = Number(button.dataset.index);
+              drawGallery();
+            });
           });
+        }
+
+        wrap.style.display = "block";
+        drawGallery();
+      }
+
+      function fillProfileForm() {
+        const profile = bundle.workingVersion;
+
+        document.getElementById("dashProfileStatus").innerHTML =
+          window.GroveProfiles.getProfileStatusHtml(bundle);
+
+        document.getElementById("dashConfirmedEncounters").textContent =
+          bundle.parent?.confirmed_encounters != null ? bundle.parent.confirmed_encounters : 0;
+
+        document.getElementById("dashResponseTime").textContent =
+          bundle.parent?.average_response_minutes != null
+            ? `${bundle.parent.average_response_minutes} min`
+            : "—";
+
+        document.getElementById("fam_first_name").value = profile?.first_name || "";
+        document.getElementById("fam_last_name").value = profile?.last_name || "";
+        document.getElementById("fam_email").value = currentUser?.email || profile?.email || "";
+        document.getElementById("fam_phone").value = profile?.phone || "";
+        document.getElementById("fam_location").value = profile?.location || "";
+        document.getElementById("fam_household_description").value = profile?.household_description || "";
+        document.getElementById("fam_children_description").value = profile?.children_description || "";
+        document.getElementById("fam_pets_description").value = profile?.pets_description || "";
+
+        document.getElementById("fam_has_cats").checked = !!profile?.has_cats;
+        document.getElementById("fam_has_dogs").checked = !!profile?.has_dogs;
+        document.getElementById("fam_smoking_in_home").checked = !!profile?.smoking_in_home;
+        document.getElementById("fam_driving_needed").checked = !!profile?.driving_needed;
+
+        window.GroveProfiles.setCheckedValues(
+          'input[name="fam_care_types_needed"]',
+          profile?.care_types_needed || []
+        );
+
+        renderPhotoPreview(window.GroveProfiles.getExistingPhotoUrls(profile));
+      }
+
+      async function refreshBundle() {
+        bundle = await window.GroveProfiles.loadProfileBundle({
+          parentTable: "family_profiles",
+          versionTable: "family_profile_versions",
+          userId: currentUser.id
         });
+
+        fillProfileForm();
+
+        const messageCount = await window.GroveProfiles.loadMessageCount(currentUser.id);
+        document.getElementById("dashMessages").textContent = messageCount;
       }
 
-      wrap.style.display = "block";
-      drawGallery();
-    }
+      async function sendMagicLink() {
+        const email = document.getElementById("fam_auth_email").value.trim();
+        const msg = document.getElementById("authMessage");
 
-    function getWorkingProfileVersion() {
-      return currentPendingVersion || currentVisibleVersion || null;
-    }
-
-    function getProfileStatusBadgeHtml() {
-      if (currentPendingVersion) {
-        return `<span class="badge badge-pending">Pending Review</span>`;
-      }
-
-      if (currentVisibleVersion) {
-        return `<span class="badge badge-approved">Approved</span>`;
-      }
-
-      return `<span class="badge badge-pending">Not Submitted</span>`;
-    }
-
-    async function sendMagicLink() {
-      const email = document.getElementById("fam_auth_email").value.trim();
-      const msg = document.getElementById("authMessage");
-
-      if (!email) {
-        alert("Please enter your email first.");
-        return;
-      }
-
-      const { error } = await window.db.auth.signInWithOtp({
-        email,
-        options: {
-          emailRedirectTo: "https://jfrancomb-spec.github.io/grove-website/family.html"
-        }
-      });
-
-      if (error) {
-        handleError(error, "Sign-in link failed");
-        return;
-      }
-
-      if (msg) {
-        msg.textContent = "Check your email for a sign-in link.";
-        msg.style.display = "block";
-      }
-    }
-
-    async function signOut() {
-      const { error } = await window.db.auth.signOut();
-      if (error) {
-        handleError(error, "Sign out failed");
-        return;
-      }
-      window.location.href = "./family.html";
-    }
-
-    async function loadOwnProfileParent() {
-      if (!currentUser) return null;
-
-      const { data, error } = await window.db
-        .from("family_profiles")
-        .select("*")
-        .eq("user_id", currentUser.id)
-        .maybeSingle();
-
-      if (error) {
-        handleError(error, "Profile load failed");
-        return null;
-      }
-
-      return data || null;
-    }
-
-    async function loadProfileVersion(versionId) {
-      if (!versionId) return null;
-
-      const { data, error } = await window.db
-        .from("family_profile_versions")
-        .select("*")
-        .eq("id", versionId)
-        .maybeSingle();
-
-      if (error) {
-        handleError(error, "Profile version load failed");
-        return null;
-      }
-
-      return data || null;
-    }
-
-    async function loadOwnProfileBundle() {
-      existingProfileParent = await loadOwnProfileParent();
-
-      if (!existingProfileParent) {
-        currentVisibleVersion = null;
-        currentPendingVersion = null;
-        return;
-      }
-
-      currentVisibleVersion = await loadProfileVersion(existingProfileParent.current_visible_version_id);
-      currentPendingVersion = await loadProfileVersion(existingProfileParent.current_pending_version_id);
-    }
-
-    async function loadMessageCount() {
-      if (!currentUser) return 0;
-
-      const { count, error } = await window.db
-        .from("conversation_participants")
-        .select("*", { count: "exact", head: true })
-        .eq("user_id", currentUser.id)
-        .eq("is_archived", false);
-
-      if (error) {
-        console.error(error);
-        return 0;
-      }
-
-      return count || 0;
-    }
-
-    function fillProfileForm() {
-      const profile = getWorkingProfileVersion();
-
-      document.getElementById("fam_first_name").value = profile?.first_name || "";
-      document.getElementById("fam_last_name").value = profile?.last_name || "";
-      document.getElementById("fam_email").value = currentUser?.email || profile?.email || "";
-      document.getElementById("fam_phone").value = profile?.phone || "";
-      document.getElementById("fam_location").value = profile?.location || "";
-      document.getElementById("fam_household_description").value = profile?.household_description || "";
-      document.getElementById("fam_children_description").value = profile?.children_description || "";
-      document.getElementById("fam_pets_description").value = profile?.pets_description || "";
-
-      document.getElementById("fam_has_cats").checked = !!profile?.has_cats;
-      document.getElementById("fam_has_dogs").checked = !!profile?.has_dogs;
-      document.getElementById("fam_smoking_in_home").checked = !!profile?.smoking_in_home;
-      document.getElementById("fam_driving_needed").checked = !!profile?.driving_needed;
-
-      setSelectedCareTypesNeeded(profile?.care_types_needed || []);
-
-      document.getElementById("dashProfileStatus").innerHTML = getProfileStatusBadgeHtml();
-
-      document.getElementById("dashConfirmedEncounters").textContent =
-        existingProfileParent?.confirmed_encounters != null ? existingProfileParent.confirmed_encounters : 0;
-
-      document.getElementById("dashResponseTime").textContent =
-        existingProfileParent?.average_response_minutes != null
-          ? `${existingProfileParent.average_response_minutes} min`
-          : "—";
-
-      renderPhotoPreview(profile?.photo_urls || (profile?.photo_url ? [profile.photo_url] : []));
-    }
-
-    async function uploadFamilyPhotos(userId) {
-      const photoInput = document.getElementById("fam_photos");
-      const files = Array.from(photoInput?.files || []).slice(0, 5);
-
-      if (!files.length) {
-        const existingUrls = getWorkingProfileVersion()?.photo_urls
-          || (getWorkingProfileVersion()?.photo_url ? [getWorkingProfileVersion().photo_url] : []);
-        return existingUrls;
-      }
-
-      const photoUrls = [];
-
-      for (const file of files) {
-        const safeName = file.name.replace(/\s+/g, "_");
-        const filePath = `families/${userId}/${Date.now()}_${Math.random().toString(36).slice(2)}_${safeName}`;
-
-        const { error: uploadError } = await window.db
-          .storage
-          .from("profile-photos")
-          .upload(filePath, file);
-
-        if (uploadError) {
-          handleError(uploadError, "Photo upload failed");
-          return null;
+        if (!email) {
+          alert("Please enter your email first.");
+          return;
         }
 
-        const { data: publicData } = window.db
-          .storage
-          .from("profile-photos")
-          .getPublicUrl(filePath);
-
-        if (publicData?.publicUrl) {
-          photoUrls.push(publicData.publicUrl);
-        }
-      }
-
-      return photoUrls;
-    }
-
-    async function saveProfile(e) {
-      e.preventDefault();
-
-      if (!currentUser) {
-        alert("Please sign in first.");
-        return;
-      }
-
-      const photoUrls = await uploadFamilyPhotos(currentUser.id);
-      if (photoUrls === null) return;
-
-      const firstName = document.getElementById("fam_first_name").value.trim();
-      const lastName = document.getElementById("fam_last_name").value.trim();
-      const saveButton = document.getElementById("saveProfileBtn");
-      const originalButtonText = saveButton?.textContent || "Save Profile";
-
-      try {
-        if (saveButton) {
-          saveButton.disabled = true;
-          saveButton.textContent = "Saving...";
-        }
-
-        const { data, error } = await window.db.functions.invoke("submit-family-profile-version", {
-          body: {
-            first_name: firstName,
-            last_name: lastName,
-            phone: document.getElementById("fam_phone").value.trim(),
-            location: document.getElementById("fam_location").value.trim(),
-            care_types_needed: getSelectedCareTypesNeeded(),
-            has_cats: document.getElementById("fam_has_cats").checked,
-            has_dogs: document.getElementById("fam_has_dogs").checked,
-            smoking_in_home: document.getElementById("fam_smoking_in_home").checked,
-            driving_needed: document.getElementById("fam_driving_needed").checked,
-            household_description: document.getElementById("fam_household_description").value.trim(),
-            children_description: document.getElementById("fam_children_description").value.trim(),
-            pets_description: document.getElementById("fam_pets_description").value.trim(),
-            photo_urls: photoUrls
+        const { error } = await window.db.auth.signInWithOtp({
+          email,
+          options: {
+            emailRedirectTo: "https://jfrancomb-spec.github.io/grove-website/family.html"
           }
         });
 
         if (error) {
+          handleError(error, "Sign-in link failed");
+          return;
+        }
+
+        if (msg) {
+          msg.textContent = "Check your email for a sign-in link.";
+          msg.style.display = "block";
+        }
+      }
+
+      async function saveProfile(e) {
+        e.preventDefault();
+
+        if (!currentUser) {
+          alert("Please sign in first.");
+          return;
+        }
+
+        const saveButton = document.getElementById("saveProfileBtn");
+        const originalButtonText = saveButton?.textContent || "Save Profile";
+
+        try {
+          if (saveButton) {
+            saveButton.disabled = true;
+            saveButton.textContent = "Saving...";
+          }
+
+          const photoUrls = await window.GroveProfiles.resolvePhotoUrls({
+            folder: "families",
+            userId: currentUser.id,
+            files: document.getElementById("fam_photos")?.files,
+            existingVersion: bundle.workingVersion
+          });
+
+          await window.GroveProfiles.submitFamilyProfile({
+            values: {
+              first_name: document.getElementById("fam_first_name").value.trim(),
+              last_name: document.getElementById("fam_last_name").value.trim(),
+              phone: document.getElementById("fam_phone").value.trim(),
+              location: document.getElementById("fam_location").value.trim(),
+              care_types_needed: window.GroveProfiles.getCheckedValues('input[name="fam_care_types_needed"]'),
+              has_cats: document.getElementById("fam_has_cats").checked,
+              has_dogs: document.getElementById("fam_has_dogs").checked,
+              smoking_in_home: document.getElementById("fam_smoking_in_home").checked,
+              driving_needed: document.getElementById("fam_driving_needed").checked,
+              household_description: document.getElementById("fam_household_description").value.trim(),
+              children_description: document.getElementById("fam_children_description").value.trim(),
+              pets_description: document.getElementById("fam_pets_description").value.trim(),
+              photo_urls: photoUrls
+            }
+          });
+
+          document.getElementById("familyProfileSuccess").style.display = "block";
+          await refreshBundle();
+        } catch (error) {
+          console.error(error);
           handleError(error, "Profile save failed");
-          return;
-        }
-
-        if (!data?.success) {
-          console.error("submit-family-profile-version unexpected response:", data);
-          alert("Profile save failed.");
-          return;
-        }
-
-        document.getElementById("familyProfileSuccess").style.display = "block";
-
-        await loadOwnProfileBundle();
-        fillProfileForm();
-      } catch (err) {
-        console.error("Family profile save error:", err);
-        alert("Profile save failed.");
-      } finally {
-        if (saveButton) {
-          saveButton.disabled = false;
-          saveButton.textContent = originalButtonText;
+        } finally {
+          if (saveButton) {
+            saveButton.disabled = false;
+            saveButton.textContent = originalButtonText;
+          }
         }
       }
-    }
 
-    async function checkSessionAndSetup() {
-      const { data } = await window.db.auth.getSession();
-      currentUser = data?.session?.user || null;
+      async function signOut() {
+        const { error } = await window.db.auth.signOut();
+        if (error) {
+          handleError(error, "Sign out failed");
+          return;
+        }
+        window.location.href = "./family.html";
+      }
 
-      const authCard = document.getElementById("authCard");
-      const profileCard = document.getElementById("profileCard");
-      const signedInText = document.getElementById("signedInText");
-      const emailInput = document.getElementById("fam_email");
-      const phoneInput = document.getElementById("fam_phone");
+      async function checkSessionAndSetup() {
+        currentUser = await window.GroveProfiles.getCurrentUser();
 
-      phoneInput?.addEventListener("input", (e) => {
-        e.target.value = formatPhoneNumber(e.target.value);
+        const authCard = document.getElementById("authCard");
+        const profileCard = document.getElementById("profileCard");
+        const signedInText = document.getElementById("signedInText");
+        const emailInput = document.getElementById("fam_email");
+        const phoneInput = document.getElementById("fam_phone");
+
+        phoneInput?.addEventListener("input", (e) => {
+          e.target.value = window.GroveProfiles.formatPhoneNumber(e.target.value);
+        });
+
+        if (!currentUser) {
+          authCard.style.display = "block";
+          profileCard.style.display = "none";
+          return;
+        }
+
+        authCard.style.display = "none";
+        profileCard.style.display = "block";
+        signedInText.textContent = `Signed in as ${currentUser.email}. You can review and update your family profile below.`;
+        emailInput.value = currentUser.email || "";
+
+        await refreshBundle();
+      }
+
+      window.addEventListener("DOMContentLoaded", () => {
+        document.getElementById("sendLinkBtn")?.addEventListener("click", sendMagicLink);
+        document.getElementById("signOutBtn")?.addEventListener("click", signOut);
+        document.getElementById("familyProfileForm")?.addEventListener("submit", saveProfile);
+        checkSessionAndSetup();
       });
-
-      if (!currentUser) {
-        authCard.style.display = "block";
-        profileCard.style.display = "none";
-        return;
-      }
-
-      authCard.style.display = "none";
-      profileCard.style.display = "block";
-      signedInText.textContent = `Signed in as ${currentUser.email}. You can review and update your family profile below.`;
-      emailInput.value = currentUser.email || "";
-
-      await loadOwnProfileBundle();
-      fillProfileForm();
-
-      const messageCount = await loadMessageCount();
-      document.getElementById("dashMessages").textContent = messageCount;
-    }
-
-    window.addEventListener("DOMContentLoaded", () => {
-      document.getElementById("sendLinkBtn")?.addEventListener("click", sendMagicLink);
-      document.getElementById("signOutBtn")?.addEventListener("click", signOut);
-      document.getElementById("familyProfileForm")?.addEventListener("submit", saveProfile);
-      checkSessionAndSetup();
-    });
+    })();
   </script>
 </body>
 </html>
