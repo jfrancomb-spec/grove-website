@@ -139,7 +139,7 @@
             <textarea id="cg_bio" placeholder="Tell families about your experience, personality, and the kind of care you provide" required></textarea>
           </div>
 
-          <button class="button" type="submit">Save Profile</button>
+          <button class="button" type="submit" id="saveProfileBtn">Save Profile</button>
         </form>
 
         <p id="caregiverProfileSuccess" class="success">
@@ -381,45 +381,6 @@
       return photoUrls;
     }
 
-    async function ensureParentProfile() {
-      if (existingProfileParent) return existingProfileParent;
-
-      const { data, error } = await window.db
-        .from("caregiver_profiles")
-        .insert([{
-          user_id: currentUser.id,
-          is_active: false,
-          confirmed_encounters: 0
-        }])
-        .select("*")
-        .single();
-
-      if (error) {
-        handleError(error, "Unable to create caregiver profile");
-        return null;
-      }
-
-      existingProfileParent = data;
-      return data;
-    }
-
-    async function getNextVersionNumber(caregiverProfileId) {
-      const { data, error } = await window.db
-        .from("caregiver_profile_versions")
-        .select("version_number")
-        .eq("caregiver_profile_id", caregiverProfileId)
-        .order("version_number", { ascending: false })
-        .limit(1)
-        .maybeSingle();
-
-      if (error) {
-        handleError(error, "Unable to determine next profile version");
-        return null;
-      }
-
-      return (data?.version_number || 0) + 1;
-    }
-
     async function saveProfile(e) {
       e.preventDefault();
 
@@ -434,89 +395,66 @@
         return;
       }
 
-      const parent = await ensureParentProfile();
-      if (!parent) return;
-
       const photoUrls = await uploadCaregiverPhotos(currentUser.id);
       if (photoUrls === null) return;
 
       const firstName = document.getElementById("cg_first_name").value.trim();
       const lastName = document.getElementById("cg_last_name").value.trim();
+      const saveButton = document.getElementById("saveProfileBtn");
+      const originalButtonText = saveButton?.textContent || "Save Profile";
 
-      const nextVersionNumber = await getNextVersionNumber(parent.id);
-      if (nextVersionNumber === null) return;
+      try {
+        if (saveButton) {
+          saveButton.disabled = true;
+          saveButton.textContent = "Saving...";
+        }
 
-      const payload = {
-        caregiver_profile_id: parent.id,
-        version_number: nextVersionNumber,
-        submitted_at: new Date().toISOString(),
-        name_display: `${firstName} ${lastName}`.trim(),
-        first_name: firstName,
-        last_name: lastName,
-        email: currentUser.email || "",
-        phone: document.getElementById("cg_phone").value.trim(),
-        location: document.getElementById("cg_location").value.trim(),
-        care_types: careTypes,
-        care_type: careTypes[0] || "",
-        years_experience: document.getElementById("cg_years_experience").value,
-        availability: document.getElementById("cg_availability").value.trim(),
-        has_drivers_license: document.getElementById("cg_drivers_license").checked,
-        cpr_certified: document.getElementById("cg_cpr_certified").checked,
-        non_smoker: document.getElementById("cg_non_smoker").checked,
-        non_vaper: document.getElementById("cg_non_vaper").checked,
-        comfortable_with_cats: document.getElementById("cg_comfortable_with_cats").checked,
-        comfortable_with_dogs: document.getElementById("cg_comfortable_with_dogs").checked,
-        bio: document.getElementById("cg_bio").value.trim(),
-        photo_urls: photoUrls,
-        photo_url: photoUrls[0] || null,
-        content_status: "queued",
-        moderation_reason: null,
-        moderation_details: {},
-        flag_trigger_type: "none",
-        is_live: false
-      };
+        const { data, error } = await window.db.functions.invoke("submit-caregiver-profile-version", {
+          body: {
+            first_name: firstName,
+            last_name: lastName,
+            phone: document.getElementById("cg_phone").value.trim(),
+            location: document.getElementById("cg_location").value.trim(),
+            care_types: careTypes,
+            years_experience: document.getElementById("cg_years_experience").value,
+            availability: document.getElementById("cg_availability").value.trim(),
+            has_drivers_license: document.getElementById("cg_drivers_license").checked,
+            cpr_certified: document.getElementById("cg_cpr_certified").checked,
+            non_smoker: document.getElementById("cg_non_smoker").checked,
+            non_vaper: document.getElementById("cg_non_vaper").checked,
+            comfortable_with_cats: document.getElementById("cg_comfortable_with_cats").checked,
+            comfortable_with_dogs: document.getElementById("cg_comfortable_with_dogs").checked,
+            bio: document.getElementById("cg_bio").value.trim(),
+            photo_urls: photoUrls
+          }
+        });
 
-      const { data: newVersion, error: versionError } = await window.db
-        .from("caregiver_profile_versions")
-        .insert([payload])
-        .select("*")
-        .single();
+        if (error) {
+          handleError(error, "Profile save failed");
+          return;
+        }
 
-      if (versionError || !newVersion) {
-        handleError(versionError, "Profile save failed");
-        return;
+        if (!data?.success) {
+          alert("Profile save failed.");
+          console.error("submit-caregiver-profile-version unexpected response:", data);
+          return;
+        }
+
+        document.getElementById("caregiverProfileSuccess").style.display = "block";
+
+        await loadOwnProfileBundle();
+        fillProfileForm();
+      } catch (err) {
+        console.error("Caregiver profile save error:", err);
+        alert("Profile save failed.");
+      } finally {
+        if (saveButton) {
+          saveButton.disabled = false;
+          saveButton.textContent = originalButtonText;
+        }
       }
-
-      const { error: parentUpdateError } = await window.db
-        .from("caregiver_profiles")
-        .update({
-          current_pending_version_id: newVersion.id
-        })
-        .eq("id", parent.id);
-
-      if (parentUpdateError) {
-        handleError(parentUpdateError, "Profile save failed");
-        return;
-      }
-
-      const queueCreated = await createAdminQueueItem({
-  userId: currentUser.id,
-  queueType: "caregiver_profile",
-  summary: `Pending caregiver profile: ${newVersion.name_display || "Unnamed caregiver"}`,
-  relatedTable: "caregiver_profile_versions",
-  relatedId: newVersion.id
-});
-
-if (!queueCreated) return;
-
-      document.getElementById("caregiverProfileSuccess").style.display = "block";
-
-      await loadOwnProfileBundle();
-      fillProfileForm();
     }
 
-
-    
     async function signOut() {
       const { error } = await window.db.auth.signOut();
       if (error) {
