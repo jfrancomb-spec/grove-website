@@ -5,9 +5,9 @@
 // - Shared header/footer loading
 // - Navigation highlighting
 // - Mobile hamburger menu
-// - Form submissions
+// - Public form submissions
 // - Prefilling caregiver forms from job links
-// - Admin approval dashboard
+// - Admin moderation dashboard
 // ======================================================
 
 // ======================================================
@@ -48,6 +48,36 @@ function escapeHtml(value) {
     .replaceAll(">", "&gt;")
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&#39;");
+}
+
+// ======================================================
+// Moderation engine helpers
+// ======================================================
+async function callModerationEngine(action, payload, actorUserId = null) {
+  const { data, error } = await window.db.rpc("moderation_engine", {
+    p_action: action,
+    p_payload: payload,
+    p_actor_user_id: actorUserId
+  });
+
+  if (error) throw error;
+  return data;
+}
+
+function getModerationMessage(result) {
+  switch (result?.content_status) {
+    case "posted":
+    case "approved":
+      return "Submitted successfully.";
+    case "queued":
+      return "Submitted successfully. It is queued and not visible yet.";
+    case "watched":
+      return "Submitted successfully. It is waiting for review.";
+    case "flagged":
+      return "Submitted successfully. It has been flagged for review.";
+    default:
+      return "Submitted successfully.";
+  }
 }
 
 // ======================================================
@@ -161,23 +191,44 @@ function wireFindCareForm() {
   careForm.addEventListener("submit", async (e) => {
     e.preventDefault();
 
-    const payload = {
-      name: document.getElementById("name")?.value || "",
-      email: document.getElementById("email")?.value || "",
-      care_type: document.getElementById("care_type")?.value || "",
-      location: document.getElementById("location")?.value || "",
-      schedule: document.getElementById("schedule")?.value || "Not specified",
-      details: document.getElementById("details")?.value || ""
-    };
+    try {
+      const payload = {
+        name: document.getElementById("name")?.value || "",
+        email: document.getElementById("email")?.value || "",
+        care_type: document.getElementById("care_type")?.value || "",
+        location: document.getElementById("location")?.value || "",
+        schedule: document.getElementById("schedule")?.value || "Not specified",
+        details: document.getElementById("details")?.value || "",
+        content_status: "draft"
+      };
 
-    const { error } = await window.db.from("care_requests").insert([payload]);
+      const { data: inserted, error: insertError } = await window.db
+        .from("care_requests")
+        .insert([payload])
+        .select()
+        .single();
 
-    if (error) {
+      if (insertError) throw insertError;
+
+      const modResult = await callModerationEngine("submit_content", {
+        related_table: "care_requests",
+        related_id: inserted.id,
+        user_id: null,
+        is_suspicious: false,
+        reason: null,
+        summary: "Care request submitted",
+        success_status: "posted"
+      });
+
+      const successEl = document.getElementById("careSuccess");
+      if (successEl) {
+        successEl.textContent = getModerationMessage(modResult);
+      }
+
+      showSuccess("careSuccess", careForm);
+    } catch (error) {
       handleError(error, "Request failed");
-      return;
     }
-
-    showSuccess("careSuccess", careForm);
   });
 }
 
@@ -211,62 +262,58 @@ function wireCaregiverForm() {
   caregiverForm.addEventListener("submit", async (e) => {
     e.preventDefault();
 
-    const payload = {
-      name: document.getElementById("cg_name")?.value || "",
-      phone: document.getElementById("cg_phone")?.value || "",
-      email: document.getElementById("cg_email")?.value || "",
-      location: document.getElementById("cg_location")?.value || "",
-      care_type: document.getElementById("cg_care_type")?.value || "",
-      experience: document.getElementById("cg_experience")?.value || ""
-    };
+    try {
+      const payload = {
+        name: document.getElementById("cg_name")?.value || "",
+        phone: document.getElementById("cg_phone")?.value || "",
+        email: document.getElementById("cg_email")?.value || "",
+        location: document.getElementById("cg_location")?.value || "",
+        care_type: document.getElementById("cg_care_type")?.value || "",
+        experience: document.getElementById("cg_experience")?.value || "",
+        content_status: "draft"
+      };
 
-    const { error } = await window.db.from("caregiver_applications").insert([payload]);
+      const { data: inserted, error: insertError } = await window.db
+        .from("caregiver_applications")
+        .insert([payload])
+        .select()
+        .single();
 
-    if (error) {
+      if (insertError) throw insertError;
+
+      const modResult = await callModerationEngine("submit_content", {
+        related_table: "caregiver_applications",
+        related_id: inserted.id,
+        user_id: null,
+        is_suspicious: false,
+        reason: null,
+        summary: "Caregiver application submitted",
+        success_status: "posted"
+      });
+
+      const successEl = document.getElementById("caregiverSuccess");
+      if (successEl) {
+        successEl.textContent = getModerationMessage(modResult);
+      }
+
+      showSuccess("caregiverSuccess", caregiverForm);
+    } catch (error) {
       handleError(error, "Application failed");
-      return;
     }
-
-    showSuccess("caregiverSuccess", caregiverForm);
   });
 }
 
 // ======================================================
 // Messaging helpers
 // ======================================================
-
 async function openOrStartMessageThread({
   targetUserId,
   caregiverProfileId = null,
   familyProfileId = null
 }) {
-  if (!window.db || !window.currentUser?.id || !targetUserId) return;
-
-  const currentUserId = window.currentUser.id;
-
-  const { data, error } = await window.db
-    .from("messages")
-    .select("id, sender_id, receiver_id, caregiver_profile_id, family_profile_id, created_at")
-    .or(
-      `and(sender_id.eq.${currentUserId},receiver_id.eq.${targetUserId}),and(sender_id.eq.${targetUserId},receiver_id.eq.${currentUserId})`
-    )
-    .eq("caregiver_profile_id", caregiverProfileId)
-    .eq("family_profile_id", familyProfileId)
-    .order("created_at", { ascending: true });
-
-  if (error) {
-    console.error(error);
-    return;
-  }
-
-  if (data && data.length) {
-    const firstMessage = data[0];
-    window.location.href = `./messages.html?thread=${firstMessage.id}`;
-    return;
-  }
+  if (!targetUserId) return;
 
   const params = new URLSearchParams();
-
   params.set("targetUser", targetUserId);
 
   if (caregiverProfileId) {
@@ -304,100 +351,47 @@ async function openGroveConversation({
 window.openGroveConversation = openGroveConversation;
 
 // ======================================================
-// Admin helpers
+// Admin queue rendering
 // ======================================================
-function getAdminBadges(profile) {
-  const badges = [];
+function renderQueueCard(item) {
+  return `
+    <div class="admin-card">
+      <div class="admin-card-top">
+        <div>
+          <h3>${escapeHtml(item.summary || "Queue item")}</h3>
+          <div class="admin-meta">
+            ${escapeHtml(item.queue_type || "")}
+            ${item.review_type ? ` • ${escapeHtml(item.review_type)}` : ""}
+          </div>
+          <div class="admin-meta">Status: ${escapeHtml(item.status || "")}</div>
+          ${item.related_table ? `<div class="admin-meta">Table: ${escapeHtml(item.related_table)}</div>` : ""}
+          ${item.created_at ? `<div class="admin-meta">Created: ${new Date(item.created_at).toLocaleString()}</div>` : ""}
+        </div>
 
-  if (profile.profile_type === "caregiver") {
-    if (profile.cpr_certified) badges.push("CPR");
-    if (profile.non_smoker) badges.push("Non-smoker");
-    if (profile.non_vaper) badges.push("Non-vaper");
-    if (profile.has_drivers_license) badges.push("Driver’s License");
-    if (profile.comfortable_with_cats) badges.push("Comfortable with Cats");
-    if (profile.comfortable_with_dogs) badges.push("Comfortable with Dogs");
-  }
-
-  if (profile.profile_type === "family") {
-    if (profile.has_cats) badges.push("Has Cats");
-    if (profile.has_dogs) badges.push("Has Dogs");
-    if (profile.smoking_in_home) badges.push("Smoking in Home");
-    if (profile.driving_needed) badges.push("Driving Needed");
-  }
-
-  return badges;
+        <div class="admin-actions">
+          <button class="button-admin button-approve" onclick="resolveQueueItem('${item.id}', 'approve_item')">Approve</button>
+          <button class="button-admin button-deny" onclick="resolveQueueItem('${item.id}', 'reject_only')">Reject</button>
+          <button class="button-admin" onclick="resolveQueueItem('${item.id}', 'reject_and_watch')">Reject + Watch</button>
+          <button class="button-admin button-delete" onclick="resolveQueueItem('${item.id}', 'reject_and_ban')">Reject + Ban</button>
+        </div>
+      </div>
+    </div>
+  `;
 }
 
-function renderAdminSection(container, profiles, sectionType) {
-  if (!container) return;
-
-  if (!profiles.length) {
-    container.innerHTML = `<div class="admin-empty">No profiles in this section.</div>`;
-    return;
-  }
-
-  container.innerHTML = profiles
-    .map((profile) => {
-      const roleLabel = profile.profile_type === "family" ? "Family" : "Caregiver";
-
-      const details =
-        profile.profile_type === "caregiver"
-          ? [
-              profile.location,
-              Array.isArray(profile.care_types) ? profile.care_types.join(", ") : "",
-              profile.years_experience ? `${profile.years_experience} experience` : ""
-            ]
-              .filter(Boolean)
-              .join(" • ")
-          : [
-              profile.location,
-              Array.isArray(profile.care_types_needed) ? profile.care_types_needed.join(", ") : ""
-            ]
-              .filter(Boolean)
-              .join(" • ");
-
-      const badges = getAdminBadges(profile);
-
-      return `
-        <div class="admin-card">
-          <div class="admin-card-top">
-            <div>
-              <h3>${escapeHtml(profile.name_display || "Unnamed Profile")}</h3>
-              <div class="admin-meta">${roleLabel}</div>
-              ${details ? `<div class="admin-meta">${escapeHtml(details)}</div>` : ""}
-              ${profile.bio ? `<div>${escapeHtml(profile.bio)}</div>` : ""}
-              ${
-                badges.length
-                  ? `<div class="admin-badges">
-                      ${badges.map((badge) => `<span class="admin-badge">${escapeHtml(badge)}</span>`).join("")}
-                    </div>`
-                  : ""
-              }
-            </div>
-
-            <div class="admin-actions">
-              ${
-                sectionType !== "approved"
-                  ? `<button class="button-admin button-approve" onclick="updateApprovalStatus('${profile.table_name}', '${profile.id}', 'approved')">Approve</button>`
-                  : ""
-              }
-              ${
-                sectionType !== "denied"
-                  ? `<button class="button-admin button-deny" onclick="updateApprovalStatus('${profile.table_name}', '${profile.id}', 'denied')">Deny</button>`
-                  : ""
-              }
-              ${
-                sectionType !== "pending"
-                  ? `<button class="button-admin" onclick="updateApprovalStatus('${profile.table_name}', '${profile.id}', 'pending')">Move to Pending</button>`
-                  : ""
-              }
-              <button class="button-admin button-delete" onclick="deleteProfile('${profile.table_name}', '${profile.id}')">Delete</button>
-            </div>
-          </div>
+function renderResolvedQueueCard(item) {
+  return `
+    <div class="admin-card">
+      <div class="admin-card-top">
+        <div>
+          <h3>${escapeHtml(item.summary || "Queue item")}</h3>
+          <div class="admin-meta">${escapeHtml(item.queue_type || "")}</div>
+          <div class="admin-meta">Resolved: ${escapeHtml(item.resolution_action || "")}</div>
+          ${item.resolved_at ? `<div class="admin-meta">Resolved: ${new Date(item.resolved_at).toLocaleString()}</div>` : ""}
         </div>
-      `;
-    })
-    .join("");
+      </div>
+    </div>
+  `;
 }
 
 // ======================================================
@@ -415,88 +409,83 @@ async function loadAdminDashboard() {
   deniedList.innerHTML = `<div class="admin-empty">Loading...</div>`;
 
   try {
-    const [
-      { data: caregiverData, error: caregiverError },
-      { data: familyData, error: familyError }
-    ] = await Promise.all([
-      window.db
-        .from("caregiver_profiles")
-        .select("*")
-        .order("created_at", { ascending: false }),
-      window.db
-        .from("family_profiles")
-        .select("*")
-        .order("created_at", { ascending: false })
-    ]);
+    const { data, error } = await window.db
+      .from("admin_review_queue")
+      .select("*")
+      .order("created_at", { ascending: false });
 
-    if (caregiverError || familyError) {
-      const errorMessage =
-        caregiverError?.message ||
-        familyError?.message ||
-        "Unknown error loading profiles.";
+    if (error) throw error;
 
-      console.error("Admin dashboard load error:", caregiverError || familyError);
+    const queueItems = data || [];
 
-      pendingList.innerHTML = `<div class="admin-empty">Error: ${escapeHtml(errorMessage)}</div>`;
-      approvedList.innerHTML = `<div class="admin-empty">Error loading profiles.</div>`;
-      deniedList.innerHTML = `<div class="admin-empty">Error loading profiles.</div>`;
-      return;
-    }
-
-    const caregivers = (caregiverData || []).map((profile) => ({
-      ...profile,
-      profile_type: "caregiver",
-      table_name: "caregiver_profiles"
-    }));
-
-    const families = (familyData || []).map((profile) => ({
-      ...profile,
-      profile_type: "family",
-      table_name: "family_profiles"
-    }));
-
-    const allProfiles = [...caregivers, ...families].sort(
-      (a, b) => new Date(b.created_at) - new Date(a.created_at)
+    const openItems = queueItems.filter(
+      (item) => item.status === "open" || item.status === "in_review"
     );
 
-    const pending = allProfiles.filter((profile) => profile.approval_status === "pending");
-    const approved = allProfiles.filter((profile) => profile.approval_status === "approved");
-    const denied = allProfiles.filter((profile) => profile.approval_status === "denied");
+    const resolvedApproved = queueItems.filter(
+      (item) => item.status === "resolved" && item.resolution_action === "approve_item"
+    );
 
-    renderAdminSection(pendingList, pending, "pending");
-    renderAdminSection(approvedList, approved, "approved");
-    renderAdminSection(deniedList, denied, "denied");
-  } catch (err) {
-    console.error("Unexpected admin dashboard error:", err);
-    pendingList.innerHTML = `<div class="admin-empty">Unexpected error: ${escapeHtml(err.message || "Unknown error")}</div>`;
-    approvedList.innerHTML = `<div class="admin-empty">Unexpected error.</div>`;
-    deniedList.innerHTML = `<div class="admin-empty">Unexpected error.</div>`;
+    const resolvedRejected = queueItems.filter(
+      (item) =>
+        item.status === "resolved" &&
+        ["reject_only", "reject_and_watch", "reject_and_ban"].includes(item.resolution_action)
+    );
+
+    pendingList.innerHTML = openItems.length
+      ? openItems.map(renderQueueCard).join("")
+      : `<div class="admin-empty">No queue items.</div>`;
+
+    approvedList.innerHTML = resolvedApproved.length
+      ? resolvedApproved.map(renderResolvedQueueCard).join("")
+      : `<div class="admin-empty">No approved items.</div>`;
+
+    deniedList.innerHTML = resolvedRejected.length
+      ? resolvedRejected.map(renderResolvedQueueCard).join("")
+      : `<div class="admin-empty">No rejected items.</div>`;
+  } catch (error) {
+    console.error("Admin dashboard load error:", error);
+    pendingList.innerHTML = `<div class="admin-empty">Error: ${escapeHtml(error.message || "Unknown error")}</div>`;
+    approvedList.innerHTML = `<div class="admin-empty">Error loading queue.</div>`;
+    deniedList.innerHTML = `<div class="admin-empty">Error loading queue.</div>`;
   }
 }
 
 // ======================================================
 // Admin actions
 // ======================================================
-async function updateApprovalStatus(tableName, profileId, newStatus) {
-  const updates = {
-    approval_status: newStatus,
-    is_active: newStatus === "approved"
-  };
+async function resolveQueueItem(queueId, resolutionAction, options = {}) {
+  try {
+    const adminUserId = window.currentUser?.id || null;
 
-  const { error } = await window.db
-    .from(tableName)
-    .update(updates)
-    .eq("id", profileId);
+    const payload = {
+      queue_id: queueId,
+      resolution_action: resolutionAction,
+      reason: options.reason || null,
+      rejection_reason: options.rejectionReason || null,
+      auto_approve_remaining: options.autoApproveRemaining || false,
+      approve_current_item: options.approveCurrentItem || false
+    };
 
-  if (error) {
-    console.error("Error updating approval status:", error);
-    alert(error.message || "Could not update approval status.");
-    return;
+    const { error } = await window.db.rpc("moderation_engine", {
+      p_action: "resolve_queue_item",
+      p_payload: payload,
+      p_actor_user_id: adminUserId
+    });
+
+    if (error) throw error;
+
+    await loadAdminDashboard();
+  } catch (error) {
+    handleError(error, "Could not resolve queue item");
   }
-
-  loadAdminDashboard();
 }
 
+window.resolveQueueItem = resolveQueueItem;
+
+// ======================================================
+// Legacy delete helper (kept for generic use if needed)
+// ======================================================
 async function deleteProfile(tableName, profileId) {
   const confirmed = confirm("Are you sure you want to permanently delete this profile?");
   if (!confirmed) return;
