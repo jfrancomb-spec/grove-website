@@ -136,6 +136,7 @@
       async function loadSession() {
         const { data } = await window.db.auth.getSession();
         currentUser = data?.session?.user || null;
+        window.currentUser = currentUser;
 
         if (!currentUser) {
           document.getElementById("conversationList").innerHTML = "<p>Please sign in first.</p>";
@@ -335,13 +336,6 @@
           caregiverProfileId = await getCurrentUserCaregiverProfileId();
         }
 
-        console.log("Messaging query debug", {
-          currentUserId: currentUser?.id,
-          targetUserId,
-          familyProfileId,
-          caregiverProfileId
-        });
-
         if (!familyProfileId || !caregiverProfileId) {
           document.getElementById("threadHeader").textContent =
             "Unable to start this conversation because the matching profile could not be found.";
@@ -357,7 +351,6 @@
           url.search = "";
           url.searchParams.set("conversation", selectedConversationId);
           window.history.replaceState({}, "", url);
-
           return;
         }
 
@@ -725,6 +718,22 @@
         myParticipant.has_unread_visible_messages = false;
       }
 
+      function getMessageSubmissionText(result) {
+        switch (result?.content_status) {
+          case "posted":
+          case "approved":
+            return null;
+          case "queued":
+            return "Message saved. It will be sent once account review is cleared.";
+          case "watched":
+            return "Message submitted for review.";
+          case "flagged":
+            return "Your message is under review.";
+          default:
+            return null;
+        }
+      }
+
       async function sendMessage() {
         const textEl = document.getElementById("messageText");
         const text = textEl.value.trim();
@@ -749,13 +758,6 @@
           if (!caregiverProfileId && familyProfileId) {
             caregiverProfileId = await getCurrentUserCaregiverProfileId();
           }
-
-          console.log("Send message debug", {
-            currentUserId: currentUser?.id,
-            targetUserId,
-            familyProfileId,
-            caregiverProfileId
-          });
 
           if (!familyProfileId || !caregiverProfileId) {
             alert("Unable to start this conversation because one of the required profiles could not be found.");
@@ -790,30 +792,56 @@
             sendButton.textContent = "Sending...";
           }
 
-          const { data, error } = await window.db.functions.invoke("send-message", {
-            body: {
-              conversationId: selectedConversationId,
-              messageText: text
-            }
-          });
+          // 1. Insert as draft
+          const { data: inserted, error: insertError } = await window.db
+            .from("messages")
+            .insert([{
+              conversation_id: selectedConversationId,
+              sender_user_id: currentUser.id,
+              message_text: text,
+              content_status: "draft",
+              visible_to_sender: true,
+              visible_to_recipient: false
+            }])
+            .select()
+            .single();
 
-          if (error) {
-            console.error("Edge function send-message failed:", error);
-            alert("Message send failed.");
-            return;
+          if (insertError) {
+            throw insertError;
           }
 
-          if (!data?.success) {
-            console.error("Unexpected send-message response:", data);
-            alert("Message send failed.");
-            return;
+          // 2. Let moderation engine decide what happens
+          const { data: modResult, error: modError } = await window.db.rpc("moderation_engine", {
+            p_action: "submit_content",
+            p_payload: {
+              related_table: "messages",
+              related_id: inserted.id,
+              user_id: currentUser.id,
+              is_suspicious: false,
+              reason: null,
+              summary: "Message submitted",
+              success_status: "posted"
+            },
+            p_actor_user_id: currentUser.id
+          });
+
+          if (modError) {
+            throw modError;
+          }
+
+          if (!modResult?.ok) {
+            throw new Error("Moderation failed.");
+          }
+
+          const statusMessage = getMessageSubmissionText(modResult);
+          if (statusMessage) {
+            alert(statusMessage);
           }
 
           textEl.value = "";
 
-          await markConversationRead(selectedConversationId);
-
           const keepConversationId = selectedConversationId;
+          await markConversationRead(selectedConversationId);
           await loadConversations();
           selectedConversationId = keepConversationId;
           renderConversationList();
