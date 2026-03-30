@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Grove | Caregiver Profile</title>
+  <title>Grove | Edit Caregiver Profile</title>
   <link rel="stylesheet" href="./styles.css" />
   <link rel="icon" type="image/png" href="./MainIcon.png" />
 </head>
@@ -13,29 +13,20 @@
 
   <main>
     <div class="hero">
-      <h1>Caregiver Profile</h1>
+      <h1>Edit Caregiver Profile</h1>
       <div class="subtitle">
-        Sign in to create, review, and update your caregiver profile.
+        Update your caregiver profile for your Grove account.
       </div>
     </div>
 
     <section>
-      <div class="form-card" id="authCard">
-        <h2 class="mt-0">Sign In</h2>
-        <p class="mt-0">Enter your email and we’ll send you a secure sign-in link.</p>
-
-        <div class="row">
-          <input id="cg_auth_email" type="email" placeholder="Email Address" />
-        </div>
-
-        <button class="button" type="button" id="sendLinkBtn">Send Sign-In Link</button>
-        <p id="authMessage" class="success"></p>
-      </div>
-
       <div class="form-card" id="profileCard" style="display:none;">
         <div class="flex-between">
-          <h2 class="mb-0">Your Caregiver Dashboard</h2>
-          <button class="button" type="button" id="signOutBtn">Sign Out</button>
+          <h2 class="mb-0">Your Caregiver Profile</h2>
+          <div class="button-row-inline">
+            <a class="button button-secondary" href="./account.html">Back to Account</a>
+            <button class="button" type="button" id="signOutBtn">Sign Out</button>
+          </div>
         </div>
 
         <p class="mt-10" id="signedInText"></p>
@@ -62,7 +53,7 @@
           </div>
         </div>
 
-        <h3 class="mt-22">Your Profile</h3>
+        <h3 class="mt-22">Profile Details</h3>
 
         <form id="caregiverProfileForm">
           <div class="row">
@@ -143,7 +134,7 @@
           <button class="button" type="submit" id="saveProfileBtn">Save Profile</button>
         </form>
 
-        <p id="caregiverProfileSuccess" class="success">✅ Profile saved successfully.</p>
+        <p id="caregiverProfileSuccess" class="success" style="display:none;">✅ Profile saved successfully.</p>
       </div>
     </section>
   </main>
@@ -215,7 +206,7 @@
       }
 
       function fillProfileForm() {
-        const profile = bundle.workingVersion;
+        const profile = bundle.workingVersion || {};
 
         document.getElementById("dashProfileStatus").innerHTML =
           window.GroveProfiles.getProfileStatusHtml(bundle);
@@ -228,25 +219,25 @@
             ? `${bundle.parent.average_response_minutes} min`
             : "—";
 
-        document.getElementById("cg_first_name").value = profile?.first_name || "";
-        document.getElementById("cg_last_name").value = profile?.last_name || "";
-        document.getElementById("cg_email").value = currentUser?.email || profile?.email || "";
-        document.getElementById("cg_phone").value = profile?.phone || "";
-        document.getElementById("cg_location").value = profile?.location || "";
-        document.getElementById("cg_years_experience").value = profile?.years_experience || "";
-        document.getElementById("cg_availability").value = profile?.availability || "";
-        document.getElementById("cg_bio").value = profile?.bio || "";
+        document.getElementById("cg_first_name").value = profile.first_name || "";
+        document.getElementById("cg_last_name").value = profile.last_name || "";
+        document.getElementById("cg_email").value = currentUser?.email || profile.email || "";
+        document.getElementById("cg_phone").value = profile.phone || "";
+        document.getElementById("cg_location").value = profile.location || "";
+        document.getElementById("cg_years_experience").value = profile.years_experience || "";
+        document.getElementById("cg_availability").value = profile.availability || "";
+        document.getElementById("cg_bio").value = profile.bio || "";
 
-        document.getElementById("cg_drivers_license").checked = !!profile?.has_drivers_license;
-        document.getElementById("cg_cpr_certified").checked = !!profile?.cpr_certified;
-        document.getElementById("cg_non_smoker").checked = !!profile?.non_smoker;
-        document.getElementById("cg_non_vaper").checked = !!profile?.non_vaper;
-        document.getElementById("cg_comfortable_with_cats").checked = !!profile?.comfortable_with_cats;
-        document.getElementById("cg_comfortable_with_dogs").checked = !!profile?.comfortable_with_dogs;
+        document.getElementById("cg_drivers_license").checked = !!profile.has_drivers_license;
+        document.getElementById("cg_cpr_certified").checked = !!profile.cpr_certified;
+        document.getElementById("cg_non_smoker").checked = !!profile.non_smoker;
+        document.getElementById("cg_non_vaper").checked = !!profile.non_vaper;
+        document.getElementById("cg_comfortable_with_cats").checked = !!profile.comfortable_with_cats;
+        document.getElementById("cg_comfortable_with_dogs").checked = !!profile.comfortable_with_dogs;
 
         window.GroveProfiles.setCheckedValues(
           'input[name="cg_care_types"]',
-          profile?.care_types || []
+          profile.care_types || []
         );
 
         renderPhotoPreview(window.GroveProfiles.getExistingPhotoUrls(profile));
@@ -265,45 +256,23 @@
         document.getElementById("dashMessages").textContent = messageCount;
       }
 
-      async function sendMagicLink() {
-        const email = document.getElementById("cg_auth_email").value.trim();
-        const msg = document.getElementById("authMessage");
-
-        if (!email) {
-          alert("Please enter your email first.");
-          return;
-        }
-
-        const { error } = await window.db.auth.signInWithOtp({
-          email,
-          options: {
-            emailRedirectTo: "https://jfrancomb-spec.github.io/grove-website/edit-caregiver.html"
-          }
-        });
-
-        if (error) {
-          handleError(error, "Sign-in link failed");
-          return;
-        }
-
-        if (msg) {
-          msg.textContent = "Check your email for a sign-in link.";
-          msg.style.display = "block";
-        }
-      }
-
       async function saveProfile(e) {
         e.preventDefault();
 
         if (!currentUser) {
-          alert("Please sign in first.");
+          window.location.href = "./login.html";
           return;
         }
 
         const saveButton = document.getElementById("saveProfileBtn");
+        const successMessage = document.getElementById("caregiverProfileSuccess");
         const originalButtonText = saveButton?.textContent || "Save Profile";
 
         try {
+          if (successMessage) {
+            successMessage.style.display = "none";
+          }
+
           if (saveButton) {
             saveButton.disabled = true;
             saveButton.textContent = "Saving...";
@@ -337,7 +306,10 @@
             }
           });
 
-          document.getElementById("caregiverProfileSuccess").style.display = "block";
+          if (successMessage) {
+            successMessage.style.display = "block";
+          }
+
           await refreshBundle();
         } catch (error) {
           console.error(error);
@@ -352,17 +324,30 @@
 
       async function signOut() {
         const { error } = await window.db.auth.signOut();
+
         if (error) {
           handleError(error, "Sign out failed");
           return;
         }
-        window.location.href = "./edit-caregiver.html";
+
+        window.location.href = "./login.html";
+      }
+
+      async function requireSession() {
+        const user = await window.GroveProfiles.getCurrentUser();
+
+        if (!user) {
+          window.location.href = "./login.html";
+          return null;
+        }
+
+        return user;
       }
 
       async function checkSessionAndSetup() {
-        currentUser = await window.GroveProfiles.getCurrentUser();
+        currentUser = await requireSession();
+        if (!currentUser) return;
 
-        const authCard = document.getElementById("authCard");
         const profileCard = document.getElementById("profileCard");
         const signedInText = document.getElementById("signedInText");
         const emailInput = document.getElementById("cg_email");
@@ -372,13 +357,6 @@
           e.target.value = window.GroveProfiles.formatPhoneNumber(e.target.value);
         });
 
-        if (!currentUser) {
-          authCard.style.display = "block";
-          profileCard.style.display = "none";
-          return;
-        }
-
-        authCard.style.display = "none";
         profileCard.style.display = "block";
         signedInText.textContent = `Signed in as ${currentUser.email}. You can review and update your caregiver profile below.`;
         emailInput.value = currentUser.email || "";
@@ -387,7 +365,6 @@
       }
 
       window.addEventListener("DOMContentLoaded", () => {
-        document.getElementById("sendLinkBtn")?.addEventListener("click", sendMagicLink);
         document.getElementById("signOutBtn")?.addEventListener("click", signOut);
         document.getElementById("caregiverProfileForm")?.addEventListener("submit", saveProfile);
         checkSessionAndSetup();
