@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Grove | Edit Caregiver Profile</title>
+  <title>Grove | Caregiver Profile</title>
   <link rel="stylesheet" href="./styles.css" />
   <link rel="icon" type="image/png" href="./MainIcon.png" />
 </head>
@@ -13,69 +13,91 @@
 
   <main>
     <div class="hero">
-      <h1>Edit Caregiver Profile</h1>
+      <h1>Caregiver Profile</h1>
       <div class="subtitle">
-        Find your profile and make updates.
+        Sign in to create, review, and update your caregiver profile.
       </div>
     </div>
 
     <section>
-      <div class="form-card" id="lookupCard">
-        <h2 class="mt-0">Find Your Profile</h2>
+      <div class="form-card" id="authCard">
+        <h2 class="mt-0">Sign In</h2>
+        <p class="mt-0">Enter your email and we’ll send you a secure sign-in link.</p>
 
-        <form id="lookupForm">
-          <div class="row">
-            <input id="lookup_email" type="email" placeholder="Email Address" required />
-          </div>
+        <div class="row">
+          <input id="cg_auth_email" type="email" placeholder="Email Address" />
+        </div>
 
-          <div class="row">
-            <input id="lookup_phone" type="text" placeholder="Phone Number" required />
-          </div>
-
-          <button class="button" type="submit">Find My Profile</button>
-        </form>
+        <button class="button" type="button" id="sendLinkBtn">Send Sign-In Link</button>
+        <p id="authMessage" class="success"></p>
       </div>
 
-      <div class="form-card" id="editCard" style="display:none;">
-        <h2 class="mt-0">Update Profile</h2>
+      <div class="form-card" id="profileCard" style="display:none;">
+        <div class="flex-between">
+          <h2 class="mb-0">Your Caregiver Dashboard</h2>
+          <button class="button" type="button" id="signOutBtn">Sign Out</button>
+        </div>
 
-        <form id="editCaregiverForm">
-          <input id="edit_id" type="hidden" />
-          <input id="edit_version_id" type="hidden" />
+        <p class="mt-10" id="signedInText"></p>
 
+        <div class="dashboard-stats">
+          <div class="dashboard-stat">
+            <div class="dashboard-label">Profile Status</div>
+            <div class="dashboard-value" id="dashProfileStatus">—</div>
+          </div>
+
+          <div class="dashboard-stat">
+            <div class="dashboard-label">Confirmed Encounters</div>
+            <div class="dashboard-value" id="dashConfirmedEncounters">0</div>
+          </div>
+
+          <div class="dashboard-stat">
+            <div class="dashboard-label">Average Response Time</div>
+            <div class="dashboard-value" id="dashResponseTime">—</div>
+          </div>
+
+          <div class="dashboard-stat">
+            <div class="dashboard-label">Messages</div>
+            <div class="dashboard-value" id="dashMessages">0</div>
+          </div>
+        </div>
+
+        <h3 class="mt-22">Your Profile</h3>
+
+        <form id="caregiverProfileForm">
           <div class="row">
-            <input id="edit_first_name" type="text" placeholder="First Name" required />
+            <input id="cg_first_name" type="text" placeholder="First Name" required />
           </div>
 
           <div class="row">
-            <input id="edit_last_name" type="text" placeholder="Last Name" required />
+            <input id="cg_last_name" type="text" placeholder="Last Name" required />
           </div>
 
           <div class="row">
-            <input id="edit_email" type="email" placeholder="Email Address" required />
+            <input id="cg_email" type="email" placeholder="Email Address" required disabled />
           </div>
 
           <div class="row">
-            <input id="edit_phone" type="text" placeholder="Phone Number" required />
+            <input id="cg_phone" type="text" placeholder="Phone Number" inputmode="numeric" />
           </div>
 
           <div class="row">
-            <input id="edit_location" type="text" placeholder="City or Neighborhood" required />
+            <input id="cg_location" type="text" placeholder="City or Neighborhood" required />
           </div>
 
           <div class="row">
             <label class="mb-6"><strong>Types of Care You Provide</strong></label>
             <div class="checkbox-group">
-              <label><input type="checkbox" name="edit_care_types" value="Childcare" /> Childcare</label>
-              <label><input type="checkbox" name="edit_care_types" value="Senior Care" /> Senior Care</label>
-              <label><input type="checkbox" name="edit_care_types" value="Pet Care" /> Pet Care</label>
-              <label><input type="checkbox" name="edit_care_types" value="Household Help" /> Household Help</label>
-              <label><input type="checkbox" name="edit_care_types" value="Other" /> Other</label>
+              <label><input type="checkbox" name="cg_care_types" value="Childcare" /> Childcare</label>
+              <label><input type="checkbox" name="cg_care_types" value="Senior Care" /> Senior Care</label>
+              <label><input type="checkbox" name="cg_care_types" value="Pet Care" /> Pet Care</label>
+              <label><input type="checkbox" name="cg_care_types" value="Household Help" /> Household Help</label>
+              <label><input type="checkbox" name="cg_care_types" value="Other" /> Other</label>
             </div>
           </div>
 
           <div class="row">
-            <select id="edit_years_experience" required>
+            <select id="cg_years_experience" required>
               <option value="">Years of Experience</option>
               <option value="none">None</option>
               <option value="1-2">1–2</option>
@@ -86,29 +108,42 @@
           </div>
 
           <div class="row">
-            <input id="edit_availability" type="text" placeholder="Availability (days/times)" />
+            <input id="cg_availability" type="text" placeholder="Availability (days/times)" />
           </div>
 
           <div class="row">
             <label class="mb-6"><strong>Profile Details</strong></label>
             <div class="checkbox-group">
-              <label><input id="edit_drivers_license" type="checkbox" /> Driver’s License</label>
-              <label><input id="edit_cpr_certified" type="checkbox" /> CPR Certified</label>
-              <label><input id="edit_non_smoker" type="checkbox" /> Non-Smoker</label>
-              <label><input id="edit_non_vaper" type="checkbox" /> Non-Vaper</label>
-              <label><input id="edit_comfortable_with_cats" type="checkbox" /> Comfortable with Cats</label>
-              <label><input id="edit_comfortable_with_dogs" type="checkbox" /> Comfortable with Dogs</label>
+              <label><input id="cg_drivers_license" type="checkbox" /> Driver’s License</label>
+              <label><input id="cg_cpr_certified" type="checkbox" /> CPR Certified</label>
+              <label><input id="cg_non_smoker" type="checkbox" /> Non-Smoker</label>
+              <label><input id="cg_non_vaper" type="checkbox" /> Non-Vaper</label>
+              <label><input id="cg_comfortable_with_cats" type="checkbox" /> Comfortable with Cats</label>
+              <label><input id="cg_comfortable_with_dogs" type="checkbox" /> Comfortable with Dogs</label>
             </div>
           </div>
 
           <div class="row">
-            <textarea id="edit_bio" placeholder="Tell families about your experience" required></textarea>
+            <label for="cg_bio"><strong>About You</strong></label>
+            <textarea id="cg_bio" placeholder="Tell families about your experience" required></textarea>
           </div>
 
-          <button class="button" type="submit" id="saveChangesBtn">Save Changes</button>
+          <div class="row">
+            <label for="cg_photos"><strong>Profile Photos (up to 5)</strong></label>
+            <input id="cg_photos" type="file" accept="image/*" multiple />
+          </div>
+
+          <div class="row" id="photoPreviewWrap" style="display:none;">
+            <div class="family-photo-gallery">
+              <img id="caregiver-main-photo" class="family-main-photo" src="" alt="Caregiver photo" />
+              <div id="photoPreviewList" class="family-thumbnails"></div>
+            </div>
+          </div>
+
+          <button class="button" type="submit" id="saveProfileBtn">Save Profile</button>
         </form>
 
-        <p id="editSuccess" class="success">✅ Profile updated successfully.</p>
+        <p id="caregiverProfileSuccess" class="success">✅ Profile saved successfully.</p>
       </div>
     </section>
   </main>
@@ -121,6 +156,7 @@
 
   <script>
     (function () {
+      let currentUser = null;
       let bundle = {
         parent: null,
         visibleVersion: null,
@@ -128,164 +164,233 @@
         workingVersion: null
       };
 
-      function fillForm() {
+      function renderPhotoPreview(urls) {
+        const wrap = document.getElementById("photoPreviewWrap");
+        const list = document.getElementById("photoPreviewList");
+        const mainImage = document.getElementById("caregiver-main-photo");
+
+        if (!wrap || !list || !mainImage) return;
+
+        const photos = Array.isArray(urls) ? urls.filter(Boolean) : [];
+
+        if (!photos.length) {
+          wrap.style.display = "none";
+          list.innerHTML = "";
+          mainImage.removeAttribute("src");
+          return;
+        }
+
+        let activeIndex = 0;
+
+        function drawGallery() {
+          mainImage.src = photos[activeIndex];
+          mainImage.alt = `Caregiver photo ${activeIndex + 1}`;
+
+          list.innerHTML = photos
+            .map((url, index) => {
+              const activeClass = index === activeIndex ? " active" : "";
+              return `
+                <button
+                  type="button"
+                  class="gallery-thumb${activeClass}"
+                  data-index="${index}"
+                  aria-label="View photo ${index + 1}"
+                >
+                  <img src="${url}" alt="Caregiver photo ${index + 1}" />
+                </button>
+              `;
+            })
+            .join("");
+
+          list.querySelectorAll(".gallery-thumb").forEach((button) => {
+            button.addEventListener("click", () => {
+              activeIndex = Number(button.dataset.index);
+              drawGallery();
+            });
+          });
+        }
+
+        wrap.style.display = "block";
+        drawGallery();
+      }
+
+      function fillProfileForm() {
         const profile = bundle.workingVersion;
-        const parent = bundle.parent;
 
-        document.getElementById("edit_id").value = parent?.id || "";
-        document.getElementById("edit_version_id").value = profile?.id || "";
+        document.getElementById("dashProfileStatus").innerHTML =
+          window.GroveProfiles.getProfileStatusHtml(bundle);
 
-        document.getElementById("edit_first_name").value = profile?.first_name || "";
-        document.getElementById("edit_last_name").value = profile?.last_name || "";
-        document.getElementById("edit_email").value = profile?.email || "";
-        document.getElementById("edit_phone").value = profile?.phone || "";
-        document.getElementById("edit_location").value = profile?.location || "";
-        document.getElementById("edit_years_experience").value = profile?.years_experience || "";
-        document.getElementById("edit_availability").value = profile?.availability || "";
-        document.getElementById("edit_bio").value = profile?.bio || "";
+        document.getElementById("dashConfirmedEncounters").textContent =
+          bundle.parent?.confirmed_encounters != null ? bundle.parent.confirmed_encounters : 0;
 
-        document.getElementById("edit_drivers_license").checked = !!profile?.has_drivers_license;
-        document.getElementById("edit_cpr_certified").checked = !!profile?.cpr_certified;
-        document.getElementById("edit_non_smoker").checked = !!profile?.non_smoker;
-        document.getElementById("edit_non_vaper").checked = !!profile?.non_vaper;
-        document.getElementById("edit_comfortable_with_cats").checked = !!profile?.comfortable_with_cats;
-        document.getElementById("edit_comfortable_with_dogs").checked = !!profile?.comfortable_with_dogs;
+        document.getElementById("dashResponseTime").textContent =
+          bundle.parent?.average_response_minutes != null
+            ? `${bundle.parent.average_response_minutes} min`
+            : "—";
+
+        document.getElementById("cg_first_name").value = profile?.first_name || "";
+        document.getElementById("cg_last_name").value = profile?.last_name || "";
+        document.getElementById("cg_email").value = currentUser?.email || profile?.email || "";
+        document.getElementById("cg_phone").value = profile?.phone || "";
+        document.getElementById("cg_location").value = profile?.location || "";
+        document.getElementById("cg_years_experience").value = profile?.years_experience || "";
+        document.getElementById("cg_availability").value = profile?.availability || "";
+        document.getElementById("cg_bio").value = profile?.bio || "";
+
+        document.getElementById("cg_drivers_license").checked = !!profile?.has_drivers_license;
+        document.getElementById("cg_cpr_certified").checked = !!profile?.cpr_certified;
+        document.getElementById("cg_non_smoker").checked = !!profile?.non_smoker;
+        document.getElementById("cg_non_vaper").checked = !!profile?.non_vaper;
+        document.getElementById("cg_comfortable_with_cats").checked = !!profile?.comfortable_with_cats;
+        document.getElementById("cg_comfortable_with_dogs").checked = !!profile?.comfortable_with_dogs;
 
         window.GroveProfiles.setCheckedValues(
-          'input[name="edit_care_types"]',
+          'input[name="cg_care_types"]',
           profile?.care_types || []
         );
+
+        renderPhotoPreview(window.GroveProfiles.getExistingPhotoUrls(profile));
       }
 
-      async function loadBundleByLookup(email, phone) {
-        bundle = await window.GroveProfiles.loadLookupProfileBundle({
+      async function refreshBundle() {
+        bundle = await window.GroveProfiles.loadProfileBundle({
           parentTable: "caregiver_profiles",
           versionTable: "caregiver_profile_versions",
+          userId: currentUser.id
+        });
+
+        fillProfileForm();
+
+        const messageCount = await window.GroveProfiles.loadMessageCount(currentUser.id);
+        document.getElementById("dashMessages").textContent = messageCount;
+      }
+
+      async function sendMagicLink() {
+        const email = document.getElementById("cg_auth_email").value.trim();
+        const msg = document.getElementById("authMessage");
+
+        if (!email) {
+          alert("Please enter your email first.");
+          return;
+        }
+
+        const { error } = await window.db.auth.signInWithOtp({
           email,
-          phone
+          options: {
+            emailRedirectTo: "https://jfrancomb-spec.github.io/grove-website/edit-caregiver.html"
+          }
         });
 
-        return bundle;
+        if (error) {
+          handleError(error, "Sign-in link failed");
+          return;
+        }
+
+        if (msg) {
+          msg.textContent = "Check your email for a sign-in link.";
+          msg.style.display = "block";
+        }
       }
 
-      async function wireLookup() {
-        const lookupForm = document.getElementById("lookupForm");
-        const lookupPhone = document.getElementById("lookup_phone");
+      async function saveProfile(e) {
+        e.preventDefault();
 
-        lookupPhone?.addEventListener("input", (e) => {
+        if (!currentUser) {
+          alert("Please sign in first.");
+          return;
+        }
+
+        const saveButton = document.getElementById("saveProfileBtn");
+        const originalButtonText = saveButton?.textContent || "Save Profile";
+
+        try {
+          if (saveButton) {
+            saveButton.disabled = true;
+            saveButton.textContent = "Saving...";
+          }
+
+          const photoUrls = await window.GroveProfiles.resolvePhotoUrls({
+            folder: "caregivers",
+            userId: currentUser.id,
+            files: document.getElementById("cg_photos")?.files,
+            existingVersion: bundle.workingVersion
+          });
+
+          await window.GroveProfiles.submitCaregiverProfile({
+            caregiverProfileId: bundle.parent?.id || null,
+            values: {
+              first_name: document.getElementById("cg_first_name").value.trim(),
+              last_name: document.getElementById("cg_last_name").value.trim(),
+              phone: document.getElementById("cg_phone").value.trim(),
+              location: document.getElementById("cg_location").value.trim(),
+              care_types: window.GroveProfiles.getCheckedValues('input[name="cg_care_types"]'),
+              years_experience: document.getElementById("cg_years_experience").value,
+              availability: document.getElementById("cg_availability").value.trim(),
+              has_drivers_license: document.getElementById("cg_drivers_license").checked,
+              cpr_certified: document.getElementById("cg_cpr_certified").checked,
+              non_smoker: document.getElementById("cg_non_smoker").checked,
+              non_vaper: document.getElementById("cg_non_vaper").checked,
+              comfortable_with_cats: document.getElementById("cg_comfortable_with_cats").checked,
+              comfortable_with_dogs: document.getElementById("cg_comfortable_with_dogs").checked,
+              bio: document.getElementById("cg_bio").value.trim(),
+              photo_urls: photoUrls
+            }
+          });
+
+          document.getElementById("caregiverProfileSuccess").style.display = "block";
+          await refreshBundle();
+        } catch (error) {
+          console.error(error);
+          handleError(error, "Profile save failed");
+        } finally {
+          if (saveButton) {
+            saveButton.disabled = false;
+            saveButton.textContent = originalButtonText;
+          }
+        }
+      }
+
+      async function signOut() {
+        const { error } = await window.db.auth.signOut();
+        if (error) {
+          handleError(error, "Sign out failed");
+          return;
+        }
+        window.location.href = "./edit-caregiver.html";
+      }
+
+      async function checkSessionAndSetup() {
+        currentUser = await window.GroveProfiles.getCurrentUser();
+
+        const authCard = document.getElementById("authCard");
+        const profileCard = document.getElementById("profileCard");
+        const signedInText = document.getElementById("signedInText");
+        const emailInput = document.getElementById("cg_email");
+        const phoneInput = document.getElementById("cg_phone");
+
+        phoneInput?.addEventListener("input", (e) => {
           e.target.value = window.GroveProfiles.formatPhoneNumber(e.target.value);
         });
 
-        lookupForm?.addEventListener("submit", async (e) => {
-          e.preventDefault();
+        if (!currentUser) {
+          authCard.style.display = "block";
+          profileCard.style.display = "none";
+          return;
+        }
 
-          try {
-            const email = document.getElementById("lookup_email").value.trim();
-            const phone = document.getElementById("lookup_phone").value.trim();
+        authCard.style.display = "none";
+        profileCard.style.display = "block";
+        signedInText.textContent = `Signed in as ${currentUser.email}. You can review and update your caregiver profile below.`;
+        emailInput.value = currentUser.email || "";
 
-            const result = await loadBundleByLookup(email, phone);
-
-            if (!result.parent) {
-              alert("No caregiver profile matched that email and phone number.");
-              return;
-            }
-
-            if (!result.workingVersion) {
-              alert("This caregiver profile does not have a visible or pending version yet.");
-              return;
-            }
-
-            fillForm();
-            document.getElementById("editSuccess").style.display = "none";
-            document.getElementById("editCard").style.display = "block";
-            document.getElementById("editCard").scrollIntoView({ behavior: "smooth" });
-          } catch (error) {
-            console.error(error);
-            handleError(error, "Lookup failed");
-          }
-        });
-      }
-
-      async function wireEditForm() {
-        const form = document.getElementById("editCaregiverForm");
-        const editPhone = document.getElementById("edit_phone");
-
-        editPhone?.addEventListener("input", (e) => {
-          e.target.value = window.GroveProfiles.formatPhoneNumber(e.target.value);
-        });
-
-        form?.addEventListener("submit", async (e) => {
-          e.preventDefault();
-
-          const caregiverProfileId = document.getElementById("edit_id").value;
-          const careTypes = window.GroveProfiles.getCheckedValues('input[name="edit_care_types"]');
-
-          if (!caregiverProfileId) {
-            alert("Profile not loaded.");
-            return;
-          }
-
-          if (!careTypes.length) {
-            alert("Please select at least one type of care.");
-            return;
-          }
-
-          const saveButton = document.getElementById("saveChangesBtn");
-          const originalButtonText = saveButton?.textContent || "Save Changes";
-
-          try {
-            if (saveButton) {
-              saveButton.disabled = true;
-              saveButton.textContent = "Saving...";
-            }
-
-            await window.GroveProfiles.submitCaregiverProfile({
-              caregiverProfileId,
-              values: {
-                first_name: document.getElementById("edit_first_name").value.trim(),
-                last_name: document.getElementById("edit_last_name").value.trim(),
-                phone: document.getElementById("edit_phone").value.trim(),
-                location: document.getElementById("edit_location").value.trim(),
-                care_types: careTypes,
-                years_experience: document.getElementById("edit_years_experience").value,
-                availability: document.getElementById("edit_availability").value.trim(),
-                has_drivers_license: document.getElementById("edit_drivers_license").checked,
-                cpr_certified: document.getElementById("edit_cpr_certified").checked,
-                non_smoker: document.getElementById("edit_non_smoker").checked,
-                non_vaper: document.getElementById("edit_non_vaper").checked,
-                comfortable_with_cats: document.getElementById("edit_comfortable_with_cats").checked,
-                comfortable_with_dogs: document.getElementById("edit_comfortable_with_dogs").checked,
-                bio: document.getElementById("edit_bio").value.trim(),
-                photo_urls: window.GroveProfiles.getExistingPhotoUrls(bundle.workingVersion)
-              }
-            });
-
-            const refreshed = await loadBundleByLookup(
-              document.getElementById("edit_email").value.trim(),
-              document.getElementById("edit_phone").value.trim()
-            );
-
-            if (refreshed.parent && refreshed.workingVersion) {
-              fillForm();
-            }
-
-            document.getElementById("editSuccess").style.display = "block";
-            document.getElementById("editSuccess").scrollIntoView({ behavior: "smooth" });
-          } catch (error) {
-            console.error(error);
-            handleError(error, "Update failed");
-          } finally {
-            if (saveButton) {
-              saveButton.disabled = false;
-              saveButton.textContent = originalButtonText;
-            }
-          }
-        });
+        await refreshBundle();
       }
 
       window.addEventListener("DOMContentLoaded", () => {
-        wireLookup();
-        wireEditForm();
+        document.getElementById("sendLinkBtn")?.addEventListener("click", sendMagicLink);
+        document.getElementById("signOutBtn")?.addEventListener("click", signOut);
+        document.getElementById("caregiverProfileForm")?.addEventListener("submit", saveProfile);
+        checkSessionAndSetup();
       });
     })();
   </script>
