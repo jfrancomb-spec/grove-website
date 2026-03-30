@@ -161,15 +161,14 @@
       });
     },
 
-  async submitCaregiverProfile({
+async submitCaregiverProfile({
   caregiverProfileId = null,
   values
 }) {
-  // 🔥 Ensure user is authenticated BEFORE calling function
   const user = await this.getCurrentUser();
 
   if (!user) {
-    throw new Error("User is not authenticated. Please sign in.");
+    throw new Error("You are not signed in. Please use the sign-in link and try again.");
   }
 
   const payload = {
@@ -194,9 +193,7 @@
     payload.caregiver_profile_id = caregiverProfileId;
   }
 
-  console.log("Submitting caregiver profile...");
-  console.log("User:", user.id);
-  console.log("Payload:", payload);
+  console.log("Submitting caregiver profile for user:", user.id);
 
   const { data, error } = await window.db.functions.invoke(
     "submit-caregiver-profile-version",
@@ -204,13 +201,13 @@
   );
 
   if (error) {
-    console.error("Edge Function error:", error);
+    console.error("submit-caregiver-profile-version error:", error);
     throw error;
   }
 
   if (!data?.success) {
-    console.error("Function returned failure:", data);
-    throw new Error("submit-caregiver-profile-version failed");
+    console.error("submit-caregiver-profile-version returned:", data);
+    throw new Error(data?.error || "submit-caregiver-profile-version failed");
   }
 
   return data;
