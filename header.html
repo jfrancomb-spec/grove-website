@@ -1,14 +1,12 @@
 <header class="site-header">
   <div class="header-inner">
-    <!-- Brand / Logo -->
     <div class="logo-wrap">
       <a href="./index.html" class="logo-link" aria-label="Grove Home">
-        <img src="./MainIcon.png" alt="Grove" class="logo-icon">
+        <img src="./MainIcon.png" alt="Grove" class="logo-icon" />
         <span class="logo-text">Grove</span>
       </a>
     </div>
 
-    <!-- Mobile menu button -->
     <button
       class="menu-toggle"
       id="menuToggle"
@@ -19,20 +17,27 @@
       <span aria-hidden="true">☰</span>
     </button>
 
-    <!-- Main navigation -->
     <nav class="nav" id="mainNav" aria-label="Primary navigation">
       <a href="./caregivers.html">Browse Caregivers</a>
       <a href="./families.html">Browse Families</a>
       <a href="./jobs.html">Care Opportunities</a>
-      <a href="./messages.html">Messages</a>
 
-      <a href="./family.html" class="button button-family nav-button">
-        Family Dashboard
+      <a href="./login.html" id="navLoginLink">Login</a>
+
+      <a href="./messages.html" id="navMessagesLink" style="display:none;">Messages</a>
+
+      <a href="./account.html" id="navAccountLink" class="button button-family nav-button" style="display:none;">
+        Account
       </a>
 
-      <a href="./caregiver.html" class="button button-caregiver nav-button">
-        Caregiver Dashboard
-      </a>
+      <button
+        type="button"
+        id="navSignOutBtn"
+        class="button button-secondary nav-button"
+        style="display:none;"
+      >
+        Sign Out
+      </button>
     </nav>
   </div>
 </header>
