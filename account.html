@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Grove | Account</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link rel="stylesheet" href="styles.css" />
+
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #f5f7fa;
+      color: #1f2937;
+    }
+
+    .page {
+      max-width: 900px;
+      margin: 40px auto;
+      padding: 0 20px 40px;
+    }
+
+    .hero-card {
+      background: white;
+      border-radius: 16px;
+      padding: 28px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+      margin-bottom: 24px;
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      font-size: 32px;
+    }
+
+    .subtext {
+      color: #6b7280;
+      margin-bottom: 0;
+    }
+
+    .status-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 18px;
+      margin-bottom: 24px;
+    }
+
+    .status-card {
+      background: white;
+      border-radius: 16px;
+      padding: 22px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
+    }
+
+    .status-label {
+      font-size: 14px;
+      font-weight: bold;
+      color: #6b7280;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      margin-bottom: 8px;
+    }
+
+    .status-value {
+      font-size: 24px;
+      font-weight: bold;
+      margin-bottom: 8px;
+    }
+
+    .status-detail {
+      font-size: 14px;
+      color: #6b7280;
+    }
+
+    .links-card {
+      background: white;
+      border-radius: 16px;
+      padding: 24px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
+    }
+
+    .links-card h2 {
+      margin-top: 0;
+      margin-bottom: 16px;
+      font-size: 22px;
+    }
+
+    .quick-links {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 14px;
+    }
+
+    .quick-link {
+      display: block;
+      text-decoration: none;
+      background: #f8fafc;
+      border: 1px solid #e5e7eb;
+      border-radius: 12px;
+      padding: 16px;
+      color: #111827;
+      font-weight: bold;
+      transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+    }
+
+    .quick-link:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 18px rgba(0,0,0,0.08);
+      border-color: #cbd5e1;
+    }
+
+    .quick-link small {
+      display: block;
+      font-weight: normal;
+      color: #6b7280;
+      margin-top: 6px;
+      line-height: 1.4;
+    }
+
+    .button-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 22px;
+    }
+
+    .button {
+      appearance: none;
+      border: none;
+      border-radius: 10px;
+      padding: 12px 18px;
+      font-size: 15px;
+      font-weight: bold;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-block;
+    }
+
+    .button-family {
+      background: #4f7fa8;
+      color: white;
+    }
+
+    .button-family:hover {
+      background: #426d91;
+    }
+
+    .button-caregiver {
+      background: #409088;
+      color: white;
+    }
+
+    .button-caregiver:hover {
+      background: #347872;
+    }
+
+    .button-secondary {
+      background: #e5e7eb;
+      color: #111827;
+    }
+
+    .button-secondary:hover {
+      background: #d1d5db;
+    }
+
+    .error-box {
+      background: #fef2f2;
+      color: #991b1b;
+      border: 1px solid #fecaca;
+      padding: 12px 14px;
+      border-radius: 10px;
+      margin-bottom: 18px;
+      display: none;
+    }
+
+    .loading {
+      color: #6b7280;
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <div id="errorBox" class="error-box"></div>
+
+    <section class="hero-card">
+      <h1>My Account</h1>
+      <p class="subtext">
+        Signed in as <strong id="accountEmail" class="loading">Loading...</strong>
+      </p>
+
+      <div class="button-row">
+        <a class="button button-family" href="edit-family.html">Edit Family Profile</a>
+        <a class="button button-caregiver" href="edit-caregiver.html">Edit Caregiver Profile</a>
+        <a class="button button-secondary" href="messages.html">View Messages</a>
+        <button class="button button-secondary" id="signOutBtn" type="button">Sign Out</button>
+      </div>
+    </section>
+
+    <section class="status-grid">
+      <div class="status-card">
+        <div class="status-label">Caregiver Profile</div>
+        <div class="status-value" id="caregiverStatus">Loading...</div>
+        <div class="status-detail" id="caregiverDetail">Checking your caregiver profile.</div>
+      </div>
+
+      <div class="status-card">
+        <div class="status-label">Family Profile</div>
+        <div class="status-value" id="familyStatus">Loading...</div>
+        <div class="status-detail" id="familyDetail">Checking your family profile.</div>
+      </div>
+
+      <div class="status-card">
+        <div class="status-label">Messages</div>
+        <div class="status-value" id="messageCount">Loading...</div>
+        <div class="status-detail" id="messageDetail">Checking your unread messages.</div>
+      </div>
+    </section>
+
+    <section class="links-card">
+      <h2>Quick Links</h2>
+
+      <div class="quick-links">
+        <a class="quick-link" href="edit-caregiver.html">
+          Edit caregiver profile
+          <small>Update your caregiver details, photos, experience, and care types.</small>
+        </a>
+
+        <a class="quick-link" href="edit-family.html">
+          Edit family profile
+          <small>Manage your household details, care needs, and family profile setup.</small>
+        </a>
+
+        <a class="quick-link" href="messages.html">
+          View messages
+          <small>Open your conversations and check for new replies.</small>
+        </a>
+
+        <a class="quick-link" href="jobs.html">
+          Browse jobs
+          <small>See available family job posts and explore opportunities.</small>
+        </a>
+
+        <a class="quick-link" href="caregivers.html">
+          Browse caregivers
+          <small>View public caregiver listings across Grove.</small>
+        </a>
+
+        <a class="quick-link" href="families.html">
+          Browse families
+          <small>View public family listings across Grove.</small>
+        </a>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    const SUPABASE_URL = "https://YOUR_PROJECT.supabase.co";
+    const SUPABASE_ANON_KEY = "YOUR_ANON_KEY";
+
+    const db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    window.db = db;
+
+    const errorBox = document.getElementById("errorBox");
+    const accountEmail = document.getElementById("accountEmail");
+
+    const caregiverStatus = document.getElementById("caregiverStatus");
+    const caregiverDetail = document.getElementById("caregiverDetail");
+
+    const familyStatus = document.getElementById("familyStatus");
+    const familyDetail = document.getElementById("familyDetail");
+
+    const messageCount = document.getElementById("messageCount");
+    const messageDetail = document.getElementById("messageDetail");
+
+    const signOutBtn = document.getElementById("signOutBtn");
+
+    function showError(message) {
+      errorBox.style.display = "block";
+      errorBox.textContent = message;
+    }
+
+    function formatProfileStatus(profile) {
+      if (!profile) {
+        return {
+          value: "Not created",
+          detail: "No profile found yet."
+        };
+      }
+
+      const approval = profile.approval_status || "unknown";
+      const isActive = profile.is_active;
+
+      let detail = `Status: ${approval}`;
+      if (typeof isActive === "boolean") {
+        detail += isActive ? " • Active" : " • Inactive";
+      }
+
+      return {
+        value: "Created",
+        detail
+      };
+    }
+
+    async function requireSession() {
+      const { data, error } = await db.auth.getSession();
+
+      if (error) {
+        showError("Unable to verify session.");
+        window.location.href = "login.html";
+        return null;
+      }
+
+      const session = data.session;
+
+      if (!session || !session.user) {
+        window.location.href = "login.html";
+        return null;
+      }
+
+      return session;
+    }
+
+    async function loadCaregiverProfile(userId) {
+      const { data, error } = await db
+        .from("caregiver_profiles")
+        .select("id, approval_status, is_active")
+        .eq("user_id", userId)
+        .maybeSingle();
+
+      if (error) {
+        caregiverStatus.textContent = "Error";
+        caregiverDetail.textContent = error.message;
+        return;
+      }
+
+      const result = formatProfileStatus(data);
+      caregiverStatus.textContent = result.value;
+      caregiverDetail.textContent = result.detail;
+    }
+
+    async function loadFamilyProfile(userId) {
+      const { data, error } = await db
+        .from("family_profiles")
+        .select("id, approval_status, is_active")
+        .eq("user_id", userId)
+        .maybeSingle();
+
+      if (error) {
+        familyStatus.textContent = "Error";
+        familyDetail.textContent = error.message;
+        return;
+      }
+
+      const result = formatProfileStatus(data);
+      familyStatus.textContent = result.value;
+      familyDetail.textContent = result.detail;
+    }
+
+    async function loadUnreadMessageCount(userId) {
+      try {
+        const { count, error } = await db
+          .from("messages")
+          .select("*", { count: "exact", head: true })
+          .eq("recipient_user_id", userId)
+          .eq("is_read", false);
+
+        if (error) {
+          throw error;
+        }
+
+        const unread = count || 0;
+        messageCount.textContent = unread;
+        messageDetail.textContent = unread === 1
+          ? "You have 1 unread message."
+          : `You have ${unread} unread messages.`;
+      } catch (error) {
+        messageCount.textContent = "—";
+        messageDetail.textContent = "Unread count not available yet.";
+      }
+    }
+
+    async function initPage() {
+      const session = await requireSession();
+      if (!session) return;
+
+      const user = session.user;
+      accountEmail.textContent = user.email || "Unknown email";
+
+      await Promise.all([
+        loadCaregiverProfile(user.id),
+        loadFamilyProfile(user.id),
+        loadUnreadMessageCount(user.id)
+      ]);
+    }
+
+    signOutBtn.addEventListener("click", async () => {
+      const { error } = await db.auth.signOut();
+
+      if (error) {
+        showError("Unable to sign out right now.");
+        return;
+      }
+
+      window.location.href = "login.html";
+    });
+
+    initPage();
+  </script>
+</body>
+</html>
