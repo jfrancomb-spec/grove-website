@@ -356,153 +356,76 @@
       return true;
     },
 
-    async updateUserAccountStatus(userId, accountStatus) {
-      const patch = {
-        account_status: accountStatus,
-        updated_at: new Date().toISOString()
-      };
+  async handleQueueAction(action, queueId) {
+  const item = this.state.queueItems.find((x) => x.id === queueId);
+  if (!item) return false;
 
-      if (accountStatus === "normal") {
-        patch.flagged_at = null;
-        patch.flag_reason = null;
-        patch.flag_source_type = null;
-        patch.flag_source_id = null;
-      }
+  const { data: userData } = await window.db.auth.getUser();
+  const user = userData?.user;
 
-      const { error } = await window.db
-        .from("user_risk_profiles")
-        .update(patch)
-        .eq("user_id", userId);
+  if (!user) {
+    throw new Error("Admin user not authenticated");
+  }
 
-      if (error) throw error;
-      return true;
-    },
+  // Simple UI-only actions stay local
+  if (action === "assign") {
+    await this.updateQueueItem(queueId, {
+      assigned_to: user.id
+    });
+    return true;
+  }
 
-    async invoke(functionName, body) {
-      const { data, error } = await window.db.functions.invoke(functionName, { body });
+  if (action === "in_review") {
+    await this.updateQueueItem(queueId, {
+      status: "in_review",
+      assigned_to: item.assigned_to || user.id
+    });
+    return true;
+  }
 
-      if (error) throw error;
-      if (!data?.success) {
-        throw new Error(`${functionName} failed`);
-      }
+  // Map UI actions → moderation_engine actions
+  const actionMap = {
+    approve_content: "approve_item",
+    reject_content: "reject_only",
+    resolve_kept_flagged: "reject_only",
+    resolve_restored_account: "return_account_to_active",
+    resolve_frozen_account: "reject_and_watch",
+    resolve_banned_account: "reject_and_ban",
+    resolve_dismissed: "reject_only"
+  };
 
-      return data;
-    },
+  const resolution_action = actionMap[action];
+  if (!resolution_action) return false;
 
-    async approveContent(item) {
-      if (item.related_table === "messages") {
-        return await this.invoke("approve-held-message", {
-          messageId: item.related_id,
-          notes: "Approved from admin dashboard"
-        });
-      }
+  let payload = {
+    queue_id: queueId,
+    resolution_action
+  };
 
-      if (item.related_table === "caregiver_profile_versions") {
-        return await this.invoke("approve-caregiver-profile-version", {
-          versionId: item.related_id,
-          notes: "Approved from admin dashboard"
-        });
-      }
+  // Add prompts where needed
+  if (resolution_action === "reject_only" || resolution_action === "reject_and_watch" || resolution_action === "reject_and_ban") {
+    const reason = prompt("Enter reason:");
+    if (!reason) throw new Error("Reason required");
 
-      if (item.related_table === "family_profile_versions") {
-        return await this.invoke("approve-family-profile-version", {
-          versionId: item.related_id,
-          notes: "Approved from admin dashboard"
-        });
-      }
+    payload.reason = reason;
+    payload.rejection_reason = reason;
+  }
 
-      throw new Error("Approve is not wired yet for this content type.");
-    },
+  if (resolution_action === "return_account_to_active") {
+    payload.auto_approve_remaining = confirm("Auto-approve remaining items?");
+    payload.approve_current_item = confirm("Approve this item too?");
+  }
 
-    async rejectContent(item) {
-      if (item.related_table === "messages") {
-        return await this.invoke("reject-held-message", {
-          messageId: item.related_id,
-          notes: "Rejected from admin dashboard"
-        });
-      }
+  const { error } = await window.db.rpc("moderation_engine", {
+    p_action: "resolve_queue_item",
+    p_payload: payload,
+    p_actor_user_id: user.id
+  });
 
-      if (item.related_table === "caregiver_profile_versions") {
-        return await this.invoke("reject-caregiver-profile-version", {
-          versionId: item.related_id,
-          notes: "Rejected from admin dashboard"
-        });
-      }
+  if (error) throw error;
 
-      if (item.related_table === "family_profile_versions") {
-        return await this.invoke("reject-family-profile-version", {
-          versionId: item.related_id,
-          notes: "Rejected from admin dashboard"
-        });
-      }
-
-      throw new Error("Reject is not wired yet for this content type.");
-    },
-
-    async handleQueueAction(action, queueId) {
-      const item = this.state.queueItems.find((x) => x.id === queueId);
-      if (!item) return false;
-
-      if (action === "assign") {
-        await this.updateQueueItem(queueId, {
-          assigned_to: this.state.adminUser.id
-        });
-        return true;
-      }
-
-      if (action === "in_review") {
-        await this.updateQueueItem(queueId, {
-          status: "in_review",
-          assigned_to: item.assigned_to || this.state.adminUser.id
-        });
-        return true;
-      }
-
-      if (action === "approve_content") {
-        await this.approveContent(item);
-        return true;
-      }
-
-      if (action === "reject_content") {
-        await this.rejectContent(item);
-        return true;
-      }
-
-      const resolutionMap = {
-        resolve_kept_flagged: "kept_flagged",
-        resolve_restored_account: "restored_account",
-        resolve_frozen_account: "frozen_account",
-        resolve_banned_account: "banned_account",
-        resolve_dismissed: "dismissed"
-      };
-
-      const resolution = resolutionMap[action];
-      if (!resolution) return false;
-
-      let accountStatus = null;
-      if (resolution === "restored_account" || resolution === "dismissed") {
-        accountStatus = "normal";
-      } else if (resolution === "kept_flagged") {
-        accountStatus = "flagged";
-      } else if (resolution === "frozen_account") {
-        accountStatus = "frozen";
-      } else if (resolution === "banned_account") {
-        accountStatus = "banned";
-      }
-
-      if (accountStatus) {
-        await this.updateUserAccountStatus(item.user_id, accountStatus);
-      }
-
-      await this.updateQueueItem(queueId, {
-        status: "resolved",
-        assigned_to: item.assigned_to || this.state.adminUser.id,
-        resolved_at: new Date().toISOString(),
-        resolution
-      });
-
-      return true;
-    }
+  return true;
+}
   };
 
   window.GroveAdmin = GroveAdmin;
