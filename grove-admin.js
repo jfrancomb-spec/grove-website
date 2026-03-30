@@ -36,17 +36,20 @@
       if (normalized === "open") return `<span class="badge badge-pending">Open</span>`;
       if (normalized === "in_review") return `<span class="badge badge-pending">In Review</span>`;
       if (normalized === "resolved") return `<span class="badge badge-approved">Resolved</span>`;
+      if (normalized === "cancelled") return `<span class="badge badge-denied">Cancelled</span>`;
 
       if (normalized === "flagged") return `<span class="badge badge-pending">Flagged</span>`;
-      if (normalized === "normal") return `<span class="badge badge-approved">Normal</span>`;
-      if (normalized === "frozen") return `<span class="badge badge-denied">Frozen</span>`;
-      if (normalized === "banned") return `<span class="badge badge-denied">Banned</span>`;
-
-      if (normalized === "held") return `<span class="badge badge-pending">Held</span>`;
       if (normalized === "queued") return `<span class="badge badge-pending">Queued</span>`;
-      if (normalized === "visible") return `<span class="badge badge-approved">Visible</span>`;
+      if (normalized === "watched") return `<span class="badge badge-pending">Watched</span>`;
+      if (normalized === "active") return `<span class="badge badge-approved">Active</span>`;
       if (normalized === "approved") return `<span class="badge badge-approved">Approved</span>`;
+      if (normalized === "posted") return `<span class="badge badge-approved">Posted</span>`;
       if (normalized === "rejected") return `<span class="badge badge-denied">Rejected</span>`;
+      if (normalized === "banned") return `<span class="badge badge-denied">Banned</span>`;
+      if (normalized === "frozen") return `<span class="badge badge-denied">Frozen</span>`;
+      if (normalized === "deleted") return `<span class="badge badge-denied">Deleted</span>`;
+      if (normalized === "inactive") return `<span class="badge">Inactive</span>`;
+      if (normalized === "draft") return `<span class="badge">Draft</span>`;
 
       return `<span class="badge badge-pending">${this.escapeHtml(status || "Unknown")}</span>`;
     },
@@ -66,7 +69,7 @@
         message: "Message Review",
         caregiver_profile: "Caregiver Profile Review",
         family_profile: "Family Profile Review",
-        job_listing: "Job Listing Review",
+        job_post: "Job Post Review",
         caregiver_review: "Caregiver Review",
         family_review: "Family Review",
         account: "Account Review"
@@ -156,7 +159,7 @@
       const inReviewItems = items.filter((item) => item.status === "in_review");
       const resolvedItems = items.filter((item) => item.status === "resolved");
       const flaggedUsers = Object.values(this.state.userRiskMap || {}).filter(
-        (risk) => risk.account_status === "flagged"
+        (risk) => ["queued", "watched", "banned", "frozen"].includes((risk.account_status || "").toLowerCase())
       );
 
       return {
@@ -184,10 +187,10 @@
 
       if (item.related_table === "messages") {
         return `
-          <div class="admin-meta"><strong>Message Status:</strong> ${this.statusBadge(related.moderation_status)}</div>
+          <div class="admin-meta"><strong>Message Status:</strong> ${this.statusBadge(related.content_status)}</div>
           <div class="admin-meta"><strong>Delivery:</strong> ${this.escapeHtml(related.delivery_status || "")}</div>
           <div class="admin-meta"><strong>Risk Score:</strong> ${related.risk_score ?? 0}</div>
-          ${related.moderation_reason ? `<div><strong>Reason:</strong> ${this.escapeHtml(related.moderation_reason)}</div>` : ""}
+          ${related.status_reason ? `<div><strong>Reason:</strong> ${this.escapeHtml(related.status_reason)}</div>` : ""}
           <div><strong>Message:</strong> ${this.escapeHtml(related.message_text || "")}</div>
         `;
       }
@@ -261,7 +264,12 @@
       return [
         "messages",
         "caregiver_profile_versions",
-        "family_profile_versions"
+        "family_profile_versions",
+        "job_post_versions",
+        "caregiver_reviews",
+        "family_reviews",
+        "care_requests",
+        "caregiver_applications"
       ].includes(item.related_table);
     },
 
@@ -269,7 +277,12 @@
       return [
         "messages",
         "caregiver_profile_versions",
-        "family_profile_versions"
+        "family_profile_versions",
+        "job_post_versions",
+        "caregiver_reviews",
+        "family_reviews",
+        "care_requests",
+        "caregiver_applications"
       ].includes(item.related_table);
     },
 
@@ -284,11 +297,9 @@
           ${canMoveInReview ? `<button class="button-admin" data-action="in_review" data-id="${item.id}">Mark In Review</button>` : ""}
           ${canResolve && this.canApprove(item) ? `<button class="button-admin button-approve" data-action="approve_content" data-id="${item.id}">Approve</button>` : ""}
           ${canResolve && this.canReject(item) ? `<button class="button-admin button-deny" data-action="reject_content" data-id="${item.id}">Reject</button>` : ""}
-          ${canResolve ? `<button class="button-admin" data-action="resolve_kept_flagged" data-id="${item.id}">Keep Flagged</button>` : ""}
-          ${canResolve ? `<button class="button-admin" data-action="resolve_restored_account" data-id="${item.id}">Restore Account</button>` : ""}
-          ${canResolve ? `<button class="button-admin button-deny" data-action="resolve_frozen_account" data-id="${item.id}">Freeze</button>` : ""}
-          ${canResolve ? `<button class="button-admin button-delete" data-action="resolve_banned_account" data-id="${item.id}">Ban</button>` : ""}
-          ${canResolve ? `<button class="button-admin" data-action="resolve_dismissed" data-id="${item.id}">Dismiss</button>` : ""}
+          ${canResolve ? `<button class="button-admin" data-action="return_account_to_active" data-id="${item.id}">Return to Active</button>` : ""}
+          ${canResolve ? `<button class="button-admin" data-action="reject_and_watch" data-id="${item.id}">Reject + Watch</button>` : ""}
+          ${canResolve ? `<button class="button-admin button-delete" data-action="reject_and_ban" data-id="${item.id}">Reject + Ban</button>` : ""}
         </div>
       `;
     },
@@ -310,10 +321,11 @@
               <div class="admin-meta"><strong>Assigned:</strong> ${this.escapeHtml(assignedLabel)}</div>
               <div class="admin-meta"><strong>Summary:</strong> ${this.escapeHtml(item.summary || "")}</div>
               <div class="admin-meta"><strong>User ID:</strong> ${this.escapeHtml(item.user_id || "")}</div>
+              ${item.review_type ? `<div class="admin-meta"><strong>Review Type:</strong> ${this.escapeHtml(item.review_type)}</div>` : ""}
               ${this.buildUserRiskHtml(item)}
               <div class="mt-16"><strong>Related Content</strong></div>
               ${this.buildRelatedContentHtml(item)}
-              ${item.resolution ? `<div class="mt-16"><strong>Resolution:</strong> ${this.escapeHtml(item.resolution)}</div>` : ""}
+              ${item.resolution_action ? `<div class="mt-16"><strong>Resolution:</strong> ${this.escapeHtml(item.resolution_action)}</div>` : ""}
               ${item.review_notes ? `<div><strong>Notes:</strong> ${this.escapeHtml(item.review_notes)}</div>` : ""}
             </div>
             <div>
@@ -356,76 +368,77 @@
       return true;
     },
 
-  async handleQueueAction(action, queueId) {
-  const item = this.state.queueItems.find((x) => x.id === queueId);
-  if (!item) return false;
+    async handleQueueAction(action, queueId) {
+      const item = this.state.queueItems.find((x) => x.id === queueId);
+      if (!item) return false;
 
-  const { data: userData } = await window.db.auth.getUser();
-  const user = userData?.user;
+      const { data: userData } = await window.db.auth.getUser();
+      const user = userData?.user;
 
-  if (!user) {
-    throw new Error("Admin user not authenticated");
-  }
+      if (!user) {
+        throw new Error("Admin user not authenticated");
+      }
 
-  // Simple UI-only actions stay local
-  if (action === "assign") {
-    await this.updateQueueItem(queueId, {
-      assigned_to: user.id
-    });
-    return true;
-  }
+      if (action === "assign") {
+        await this.updateQueueItem(queueId, {
+          assigned_to: user.id
+        });
+        return true;
+      }
 
-  if (action === "in_review") {
-    await this.updateQueueItem(queueId, {
-      status: "in_review",
-      assigned_to: item.assigned_to || user.id
-    });
-    return true;
-  }
+      if (action === "in_review") {
+        await this.updateQueueItem(queueId, {
+          status: "in_review",
+          assigned_to: item.assigned_to || user.id
+        });
+        return true;
+      }
 
-  // Map UI actions → moderation_engine actions
-  const actionMap = {
-    approve_content: "approve_item",
-    reject_content: "reject_only",
-    resolve_kept_flagged: "reject_only",
-    resolve_restored_account: "return_account_to_active",
-    resolve_frozen_account: "reject_and_watch",
-    resolve_banned_account: "reject_and_ban",
-    resolve_dismissed: "reject_only"
-  };
+      const actionMap = {
+        approve_content: "approve_item",
+        reject_content: "reject_only",
+        return_account_to_active: "return_account_to_active",
+        reject_and_watch: "reject_and_watch",
+        reject_and_ban: "reject_and_ban"
+      };
 
-  const resolution_action = actionMap[action];
-  if (!resolution_action) return false;
+      const resolution_action = actionMap[action];
+      if (!resolution_action) return false;
 
-  let payload = {
-    queue_id: queueId,
-    resolution_action
-  };
+      const payload = {
+        queue_id: queueId,
+        resolution_action
+      };
 
-  // Add prompts where needed
-  if (resolution_action === "reject_only" || resolution_action === "reject_and_watch" || resolution_action === "reject_and_ban") {
-    const reason = prompt("Enter reason:");
-    if (!reason) throw new Error("Reason required");
+      if (
+        resolution_action === "reject_only" ||
+        resolution_action === "reject_and_watch" ||
+        resolution_action === "reject_and_ban"
+      ) {
+        const reason = prompt("Enter reason:");
+        if (!reason) {
+          throw new Error("Reason required");
+        }
 
-    payload.reason = reason;
-    payload.rejection_reason = reason;
-  }
+        payload.reason = reason;
+        payload.rejection_reason = reason;
+      }
 
-  if (resolution_action === "return_account_to_active") {
-    payload.auto_approve_remaining = confirm("Auto-approve remaining items?");
-    payload.approve_current_item = confirm("Approve this item too?");
-  }
+      if (resolution_action === "return_account_to_active") {
+        payload.auto_approve_remaining = confirm("Auto-approve remaining items?");
+        payload.approve_current_item = confirm("Approve this item too?");
+      }
 
-  const { error } = await window.db.rpc("moderation_engine", {
-    p_action: "resolve_queue_item",
-    p_payload: payload,
-    p_actor_user_id: user.id
-  });
+      const { error } = await window.db.rpc("moderation_engine", {
+        p_action: "resolve_queue_item",
+        p_payload: payload,
+        p_actor_user_id: user.id
+      });
 
-  if (error) throw error;
+      if (error) throw error;
 
-  return true;
-}
+      return true;
+    }
   };
 
   window.GroveAdmin = GroveAdmin;
