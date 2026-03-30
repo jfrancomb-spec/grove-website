@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Grove | Family Profile</title>
+  <title>Grove | Edit Family Profile</title>
   <link rel="stylesheet" href="./styles.css" />
   <link rel="icon" type="image/png" href="./MainIcon.png" />
 </head>
@@ -13,29 +13,20 @@
 
   <main>
     <div class="hero">
-      <h1>Family Profile</h1>
+      <h1>Edit Family Profile</h1>
       <div class="subtitle">
-        Sign in to create, review, and update your family profile.
+        Update your family profile for your Grove account.
       </div>
     </div>
 
     <section>
-      <div class="form-card" id="authCard">
-        <h2 class="mt-0">Sign In</h2>
-        <p class="mt-0">Enter your email and we’ll send you a secure sign-in link.</p>
-
-        <div class="row">
-          <input id="fam_auth_email" type="email" placeholder="Email Address" />
-        </div>
-
-        <button class="button" type="button" id="sendLinkBtn">Send Sign-In Link</button>
-        <p id="authMessage" class="success"></p>
-      </div>
-
       <div class="form-card" id="profileCard" style="display:none;">
         <div class="flex-between">
-          <h2 class="mb-0">Your Family Dashboard</h2>
-          <button class="button" type="button" id="signOutBtn">Sign Out</button>
+          <h2 class="mb-0">Your Family Profile</h2>
+          <div class="button-row-inline">
+            <a class="button button-secondary" href="./account.html">Back to Account</a>
+            <button class="button" type="button" id="signOutBtn">Sign Out</button>
+          </div>
         </div>
 
         <p class="mt-10" id="signedInText"></p>
@@ -62,7 +53,7 @@
           </div>
         </div>
 
-        <h3 class="mt-22">Your Profile</h3>
+        <h3 class="mt-22">Profile Details</h3>
 
         <form id="familyProfileForm">
           <div class="row">
@@ -136,7 +127,7 @@
           <button class="button" type="submit" id="saveProfileBtn">Save Profile</button>
         </form>
 
-        <p id="familyProfileSuccess" class="success">✅ Profile saved successfully.</p>
+        <p id="familyProfileSuccess" class="success" style="display:none;">✅ Profile saved successfully.</p>
       </div>
     </section>
   </main>
@@ -208,7 +199,7 @@
       }
 
       function fillProfileForm() {
-        const profile = bundle.workingVersion;
+        const profile = bundle.workingVersion || {};
 
         document.getElementById("dashProfileStatus").innerHTML =
           window.GroveProfiles.getProfileStatusHtml(bundle);
@@ -221,23 +212,23 @@
             ? `${bundle.parent.average_response_minutes} min`
             : "—";
 
-        document.getElementById("fam_first_name").value = profile?.first_name || "";
-        document.getElementById("fam_last_name").value = profile?.last_name || "";
-        document.getElementById("fam_email").value = currentUser?.email || profile?.email || "";
-        document.getElementById("fam_phone").value = profile?.phone || "";
-        document.getElementById("fam_location").value = profile?.location || "";
-        document.getElementById("fam_household_description").value = profile?.household_description || "";
-        document.getElementById("fam_children_description").value = profile?.children_description || "";
-        document.getElementById("fam_pets_description").value = profile?.pets_description || "";
+        document.getElementById("fam_first_name").value = profile.first_name || "";
+        document.getElementById("fam_last_name").value = profile.last_name || "";
+        document.getElementById("fam_email").value = currentUser?.email || profile.email || "";
+        document.getElementById("fam_phone").value = profile.phone || "";
+        document.getElementById("fam_location").value = profile.location || "";
+        document.getElementById("fam_household_description").value = profile.household_description || "";
+        document.getElementById("fam_children_description").value = profile.children_description || "";
+        document.getElementById("fam_pets_description").value = profile.pets_description || "";
 
-        document.getElementById("fam_has_cats").checked = !!profile?.has_cats;
-        document.getElementById("fam_has_dogs").checked = !!profile?.has_dogs;
-        document.getElementById("fam_smoking_in_home").checked = !!profile?.smoking_in_home;
-        document.getElementById("fam_driving_needed").checked = !!profile?.driving_needed;
+        document.getElementById("fam_has_cats").checked = !!profile.has_cats;
+        document.getElementById("fam_has_dogs").checked = !!profile.has_dogs;
+        document.getElementById("fam_smoking_in_home").checked = !!profile.smoking_in_home;
+        document.getElementById("fam_driving_needed").checked = !!profile.driving_needed;
 
         window.GroveProfiles.setCheckedValues(
           'input[name="fam_care_types_needed"]',
-          profile?.care_types_needed || []
+          profile.care_types_needed || []
         );
 
         renderPhotoPreview(window.GroveProfiles.getExistingPhotoUrls(profile));
@@ -256,45 +247,23 @@
         document.getElementById("dashMessages").textContent = messageCount;
       }
 
-      async function sendMagicLink() {
-        const email = document.getElementById("fam_auth_email").value.trim();
-        const msg = document.getElementById("authMessage");
-
-        if (!email) {
-          alert("Please enter your email first.");
-          return;
-        }
-
-        const { error } = await window.db.auth.signInWithOtp({
-          email,
-          options: {
-            emailRedirectTo: "https://jfrancomb-spec.github.io/grove-website/family.html"
-          }
-        });
-
-        if (error) {
-          handleError(error, "Sign-in link failed");
-          return;
-        }
-
-        if (msg) {
-          msg.textContent = "Check your email for a sign-in link.";
-          msg.style.display = "block";
-        }
-      }
-
       async function saveProfile(e) {
         e.preventDefault();
 
         if (!currentUser) {
-          alert("Please sign in first.");
+          window.location.href = "./login.html";
           return;
         }
 
         const saveButton = document.getElementById("saveProfileBtn");
+        const successMessage = document.getElementById("familyProfileSuccess");
         const originalButtonText = saveButton?.textContent || "Save Profile";
 
         try {
+          if (successMessage) {
+            successMessage.style.display = "none";
+          }
+
           if (saveButton) {
             saveButton.disabled = true;
             saveButton.textContent = "Saving...";
@@ -325,7 +294,10 @@
             }
           });
 
-          document.getElementById("familyProfileSuccess").style.display = "block";
+          if (successMessage) {
+            successMessage.style.display = "block";
+          }
+
           await refreshBundle();
         } catch (error) {
           console.error(error);
@@ -340,17 +312,30 @@
 
       async function signOut() {
         const { error } = await window.db.auth.signOut();
+
         if (error) {
           handleError(error, "Sign out failed");
           return;
         }
-        window.location.href = "./family.html";
+
+        window.location.href = "./login.html";
+      }
+
+      async function requireSession() {
+        const user = await window.GroveProfiles.getCurrentUser();
+
+        if (!user) {
+          window.location.href = "./login.html";
+          return null;
+        }
+
+        return user;
       }
 
       async function checkSessionAndSetup() {
-        currentUser = await window.GroveProfiles.getCurrentUser();
+        currentUser = await requireSession();
+        if (!currentUser) return;
 
-        const authCard = document.getElementById("authCard");
         const profileCard = document.getElementById("profileCard");
         const signedInText = document.getElementById("signedInText");
         const emailInput = document.getElementById("fam_email");
@@ -360,13 +345,6 @@
           e.target.value = window.GroveProfiles.formatPhoneNumber(e.target.value);
         });
 
-        if (!currentUser) {
-          authCard.style.display = "block";
-          profileCard.style.display = "none";
-          return;
-        }
-
-        authCard.style.display = "none";
         profileCard.style.display = "block";
         signedInText.textContent = `Signed in as ${currentUser.email}. You can review and update your family profile below.`;
         emailInput.value = currentUser.email || "";
@@ -375,7 +353,6 @@
       }
 
       window.addEventListener("DOMContentLoaded", () => {
-        document.getElementById("sendLinkBtn")?.addEventListener("click", sendMagicLink);
         document.getElementById("signOutBtn")?.addEventListener("click", signOut);
         document.getElementById("familyProfileForm")?.addEventListener("submit", saveProfile);
         checkSessionAndSetup();
