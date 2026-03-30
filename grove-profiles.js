@@ -161,45 +161,61 @@
       });
     },
 
-    async submitCaregiverProfile({
-      caregiverProfileId = null,
-      values
-    }) {
-      const payload = {
-        first_name: values.first_name,
-        last_name: values.last_name,
-        phone: values.phone || "",
-        location: values.location,
-        care_types: Array.isArray(values.care_types) ? values.care_types : [],
-        years_experience: values.years_experience || "",
-        availability: values.availability || "",
-        has_drivers_license: !!values.has_drivers_license,
-        cpr_certified: !!values.cpr_certified,
-        non_smoker: !!values.non_smoker,
-        non_vaper: !!values.non_vaper,
-        comfortable_with_cats: !!values.comfortable_with_cats,
-        comfortable_with_dogs: !!values.comfortable_with_dogs,
-        bio: values.bio || "",
-        photo_urls: Array.isArray(values.photo_urls) ? values.photo_urls : []
-      };
+  async submitCaregiverProfile({
+  caregiverProfileId = null,
+  values
+}) {
+  // 🔥 Ensure user is authenticated BEFORE calling function
+  const user = await this.getCurrentUser();
 
-      if (caregiverProfileId) {
-        payload.caregiver_profile_id = caregiverProfileId;
-      }
+  if (!user) {
+    throw new Error("User is not authenticated. Please sign in.");
+  }
 
-      const { data, error } = await window.db.functions.invoke(
-        "submit-caregiver-profile-version",
-        { body: payload }
-      );
+  const payload = {
+    first_name: values.first_name,
+    last_name: values.last_name,
+    phone: values.phone || "",
+    location: values.location,
+    care_types: Array.isArray(values.care_types) ? values.care_types : [],
+    years_experience: values.years_experience || "",
+    availability: values.availability || "",
+    has_drivers_license: !!values.has_drivers_license,
+    cpr_certified: !!values.cpr_certified,
+    non_smoker: !!values.non_smoker,
+    non_vaper: !!values.non_vaper,
+    comfortable_with_cats: !!values.comfortable_with_cats,
+    comfortable_with_dogs: !!values.comfortable_with_dogs,
+    bio: values.bio || "",
+    photo_urls: Array.isArray(values.photo_urls) ? values.photo_urls : []
+  };
 
-      if (error) throw error;
-      if (!data?.success) {
-        throw new Error("submit-caregiver-profile-version failed");
-      }
+  if (caregiverProfileId) {
+    payload.caregiver_profile_id = caregiverProfileId;
+  }
 
-      return data;
-    },
+  console.log("Submitting caregiver profile...");
+  console.log("User:", user.id);
+  console.log("Payload:", payload);
 
+  const { data, error } = await window.db.functions.invoke(
+    "submit-caregiver-profile-version",
+    { body: payload }
+  );
+
+  if (error) {
+    console.error("Edge Function error:", error);
+    throw error;
+  }
+
+  if (!data?.success) {
+    console.error("Function returned failure:", data);
+    throw new Error("submit-caregiver-profile-version failed");
+  }
+
+  return data;
+}
+    
     async submitFamilyProfile({
       familyProfileId = null,
       values
