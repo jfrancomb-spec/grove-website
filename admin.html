@@ -93,25 +93,22 @@
     (function () {
       let currentUser = null;
 
-      async function requireSession() {
-        const { data, error } = await window.db.auth.getSession();
-
-        if (error) {
-          console.error(error);
-          window.location.href = "./login.html";
-          return null;
-        }
-
-        const user = data?.session?.user || null;
-        window.currentUser = user;
-
+      async function requireAdminSession() {
+      try {
+        const user = await window.requireAdminUser?.();
+    
         if (!user) {
-          window.location.href = "./login.html";
           return null;
         }
-
+    
+        window.currentUser = user;
         return user;
+      } catch (error) {
+        console.error(error);
+        window.location.href = "./account.html";
+        return null;
       }
+    }
 
       async function refreshAdminDashboard() {
         try {
