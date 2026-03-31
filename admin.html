@@ -14,32 +14,24 @@
 
   <main class="admin-page">
     <section class="admin-section">
-      <h1>Admin Moderation Dashboard</h1>
-      <p class="admin-subtext">
-        Review held and queued content, investigate flagged users, and resolve moderation decisions.
-      </p>
+      <div class="flex-between">
+        <div>
+          <h1>Admin Moderation Dashboard</h1>
+          <p class="admin-subtext">
+            Review held and queued content, investigate flagged users, and resolve moderation decisions.
+          </p>
+          <p class="admin-subtext" id="adminSignedInText"></p>
+        </div>
+
+        <div class="button-row-inline">
+          <a class="button button-secondary" href="./account.html">Back to Account</a>
+          <button class="button" type="button" id="signOutBtn">Sign Out</button>
+        </div>
+      </div>
     </section>
 
     <section class="admin-section">
-      <div class="form-card" id="loginCard" style="display:none;">
-        <h2 class="mt-0">Admin Sign In</h2>
-
-        <form id="loginForm">
-          <div class="row">
-            <input id="adminEmail" type="email" placeholder="Admin Email" required />
-          </div>
-
-          <div class="row">
-            <input id="adminPassword" type="password" placeholder="Password" required />
-          </div>
-
-          <button class="button" type="submit">Sign In</button>
-        </form>
-
-        <p id="loginMsg" class="success" style="display:none;"></p>
-      </div>
-
-      <div id="dashboard" style="display:none;">
+      <div id="dashboard">
         <div class="form-card">
           <div class="flex-between">
             <div>
@@ -48,8 +40,6 @@
                 Open items are newest moderation cases. Resolve with care.
               </p>
             </div>
-
-            <button class="button" type="button" id="signOutBtn">Sign Out</button>
           </div>
 
           <div class="dashboard-stats mt-22">
@@ -101,6 +91,28 @@
 
   <script>
     (function () {
+      let currentUser = null;
+
+      async function requireSession() {
+        const { data, error } = await window.db.auth.getSession();
+
+        if (error) {
+          console.error(error);
+          window.location.href = "./login.html";
+          return null;
+        }
+
+        const user = data?.session?.user || null;
+        window.currentUser = user;
+
+        if (!user) {
+          window.location.href = "./login.html";
+          return null;
+        }
+
+        return user;
+      }
+
       async function refreshAdminDashboard() {
         try {
           await window.GroveAdmin.loadQueueData();
@@ -155,48 +167,29 @@
         }
       }
 
-      async function showDashboardIfLoggedIn() {
-        const adminUser = await window.GroveAdmin.loadSession();
+      async function initPage() {
+        currentUser = await requireSession();
+        if (!currentUser) return;
 
-        const loginCard = document.getElementById("loginCard");
-        const dashboard = document.getElementById("dashboard");
-
-        if (!adminUser) {
-          loginCard.style.display = "block";
-          dashboard.style.display = "none";
-          return;
+        const signedInText = document.getElementById("adminSignedInText");
+        if (signedInText) {
+          signedInText.textContent = `Signed in as ${currentUser.email}.`;
         }
 
-        loginCard.style.display = "none";
-        dashboard.style.display = "block";
+        // Future enhancement:
+        // Add a real admin-role / admin-permission check here.
+        // Example ideas:
+        // - query a user_roles table
+        // - check an is_admin flag
+        // - check an admins table keyed by user_id
+        //
+        // For now, this page is session-protected only.
 
         await refreshAdminDashboard();
       }
 
       window.addEventListener("DOMContentLoaded", () => {
-        const loginForm = document.getElementById("loginForm");
-        const loginMsg = document.getElementById("loginMsg");
         const signOutBtn = document.getElementById("signOutBtn");
-
-        loginForm?.addEventListener("submit", async (e) => {
-          e.preventDefault();
-          if (loginMsg) loginMsg.style.display = "none";
-
-          const email = document.getElementById("adminEmail").value.trim();
-          const password = document.getElementById("adminPassword").value;
-
-          const { error } = await window.db.auth.signInWithPassword({
-            email,
-            password
-          });
-
-          if (error) {
-            handleError(error, "Login failed");
-            return;
-          }
-
-          await showDashboardIfLoggedIn();
-        });
 
         signOutBtn?.addEventListener("click", async () => {
           const { error } = await window.db.auth.signOut();
@@ -206,10 +199,10 @@
             return;
           }
 
-          location.reload();
+          window.location.href = "./login.html";
         });
 
-        showDashboardIfLoggedIn();
+        initPage();
       });
     })();
   </script>
