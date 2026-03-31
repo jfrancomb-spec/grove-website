@@ -19,6 +19,46 @@ const SUPABASE_ANON_KEY = "sb_publishable_JwsPcXgi_T-NQZo1tGZY_w_kcRc9kWc";
 window.db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // ======================================================
+// Header auth state (NEW)
+// ======================================================
+async function updateHeaderAuth() {
+  if (!window.db || !window.db.auth) return;
+
+  const loginLink = document.getElementById("navLoginLink");
+  const messagesLink = document.getElementById("navMessagesLink");
+  const accountLink = document.getElementById("navAccountLink");
+  const signOutBtn = document.getElementById("navSignOutBtn");
+
+  try {
+    const { data } = await window.db.auth.getSession();
+    const session = data?.session || null;
+
+    const isSignedIn = !!session?.user;
+
+    if (loginLink) loginLink.style.display = isSignedIn ? "none" : "";
+    if (messagesLink) messagesLink.style.display = isSignedIn ? "" : "none";
+    if (accountLink) accountLink.style.display = isSignedIn ? "" : "none";
+
+    if (signOutBtn) {
+      signOutBtn.style.display = isSignedIn ? "" : "none";
+
+      signOutBtn.onclick = async () => {
+        const { error } = await window.db.auth.signOut();
+
+        if (error) {
+          handleError(error, "Sign out failed");
+          return;
+        }
+
+        window.location.href = "./login.html";
+      };
+    }
+  } catch (err) {
+    console.error("Header auth error:", err);
+  }
+}
+
+// ======================================================
 // Error handler
 // ======================================================
 function handleError(error, message = "Something went wrong") {
@@ -93,6 +133,7 @@ async function loadPart(id, file) {
   if (id === "header-placeholder") {
     highlightCurrentNav();
     wireMobileMenu();
+    updateHeaderAuth(); // ✅ NEW
   }
 }
 
