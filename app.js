@@ -121,6 +121,47 @@ function getModerationMessage(result) {
 }
 
 // ======================================================
+// Auth / role helpers
+// ======================================================
+async function getCurrentSessionUser() {
+  const { data, error } = await window.db.auth.getSession();
+
+  if (error) {
+    throw error;
+  }
+
+  return data?.session?.user || null;
+}
+
+async function getAdminRecord(userId) {
+  if (!userId) return null;
+  const { data, error } = await window.db
+    .from("admin_users")
+    .select("user_id, email, is_active")
+    .eq("user_id", userId)
+    .eq("is_active", true)
+    .maybeSingle();
+  if (error) {
+    throw error;
+  }
+  return data || null;
+}
+
+async function requireAdminUser() {
+  const user = await getCurrentSessionUser();
+  if (!user) {
+    window.location.href = "./login.html";
+    return null;
+  }
+  const adminRecord = await getAdminRecord(user.id);
+  if (!adminRecord) {
+    window.location.href = "./account.html";
+    return null;
+  }
+  return user;
+}
+
+// ======================================================
 // Header / Footer injection
 // ======================================================
 async function loadPart(id, file) {
