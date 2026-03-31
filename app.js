@@ -21,35 +21,48 @@ window.db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 // ======================================================
 // Header auth state (NEW)
 // ======================================================
+// ======================================================
+// Header auth state
+// ======================================================
 async function updateHeaderAuth() {
   if (!window.db || !window.db.auth) return;
 
   const loginLink = document.getElementById("navLoginLink");
   const messagesLink = document.getElementById("navMessagesLink");
+  const adminLink = document.getElementById("navAdminLink");
   const accountLink = document.getElementById("navAccountLink");
   const signOutBtn = document.getElementById("navSignOutBtn");
 
   try {
     const { data } = await window.db.auth.getSession();
     const session = data?.session || null;
-
-    const isSignedIn = !!session?.user;
-
-    if (loginLink) loginLink.style.display = isSignedIn ? "none" : "";
-    if (messagesLink) messagesLink.style.display = isSignedIn ? "" : "none";
-    if (accountLink) accountLink.style.display = isSignedIn ? "" : "none";
-
+    const user = session?.user || null;
+    const isSignedIn = !!user;
+    let isAdmin = false;
+    if (user && typeof window.getAdminRecord === "function") {
+      const adminRecord = await window.getAdminRecord(user.id);
+      isAdmin = !!adminRecord;
+    }
+    if (loginLink) {
+      loginLink.style.display = isSignedIn ? "none" : "";
+    }
+    if (messagesLink) {
+      messagesLink.style.display = isSignedIn ? "" : "none";
+    }
+    if (adminLink) {
+      adminLink.style.display = isSignedIn && isAdmin ? "" : "none";
+    }
+    if (accountLink) {
+      accountLink.style.display = isSignedIn ? "" : "none";
+    }
     if (signOutBtn) {
       signOutBtn.style.display = isSignedIn ? "" : "none";
-
       signOutBtn.onclick = async () => {
         const { error } = await window.db.auth.signOut();
-
         if (error) {
           handleError(error, "Sign out failed");
           return;
         }
-
         window.location.href = "./login.html";
       };
     }
