@@ -90,17 +90,17 @@
   <script src="./grove-admin.js"></script>
 
   <script>
-    (function () {
-      let currentUser = null;
+  (function () {
+    let currentUser = null;
 
-      async function requireAdminSession() {
+    async function requireAdminSession() {
       try {
         const user = await window.requireAdminUser?.();
-    
+
         if (!user) {
           return null;
         }
-    
+
         window.currentUser = user;
         return user;
       } catch (error) {
@@ -110,98 +110,90 @@
       }
     }
 
-      async function refreshAdminDashboard() {
-        try {
-          await window.GroveAdmin.loadQueueData();
+    async function refreshAdminDashboard() {
+      try {
+        await window.GroveAdmin.loadQueueData();
 
-          const stats = window.GroveAdmin.getStats();
-          document.getElementById("statOpen").textContent = stats.open;
-          document.getElementById("statInReview").textContent = stats.inReview;
-          document.getElementById("statResolved").textContent = stats.resolved;
-          document.getElementById("statFlaggedUsers").textContent = stats.flaggedUsers;
+        const stats = window.GroveAdmin.getStats();
+        document.getElementById("statOpen").textContent = stats.open;
+        document.getElementById("statInReview").textContent = stats.inReview;
+        document.getElementById("statResolved").textContent = stats.resolved;
+        document.getElementById("statFlaggedUsers").textContent = stats.flaggedUsers;
 
-          const sections = window.GroveAdmin.getSections();
+        const sections = window.GroveAdmin.getSections();
 
-          const openList = document.getElementById("open-list");
-          const inReviewList = document.getElementById("in-review-list");
-          const resolvedList = document.getElementById("resolved-list");
+        const openList = document.getElementById("open-list");
+        const inReviewList = document.getElementById("in-review-list");
+        const resolvedList = document.getElementById("resolved-list");
 
-          window.GroveAdmin.renderQueueSection(
-            openList,
-            sections.open,
-            "No open moderation items."
-          );
+        window.GroveAdmin.renderQueueSection(
+          openList,
+          sections.open,
+          "No open moderation items."
+        );
 
-          window.GroveAdmin.renderQueueSection(
-            inReviewList,
-            sections.inReview,
-            "No items currently in review."
-          );
+        window.GroveAdmin.renderQueueSection(
+          inReviewList,
+          sections.inReview,
+          "No items currently in review."
+        );
 
-          window.GroveAdmin.renderQueueSection(
-            resolvedList,
-            sections.resolved,
-            "No resolved moderation items yet."
-          );
+        window.GroveAdmin.renderQueueSection(
+          resolvedList,
+          sections.resolved,
+          "No resolved moderation items yet."
+        );
 
-          window.GroveAdmin.bindActionButtons(document, async (action, id) => {
-            try {
-              await window.GroveAdmin.handleQueueAction(action, id);
-              await refreshAdminDashboard();
-            } catch (error) {
-              console.error(error);
-              handleError(error, "Admin action failed");
-            }
-          });
-        } catch (error) {
-          console.error(error);
-          document.getElementById("open-list").innerHTML =
-            "<p>Unable to load moderation queue.</p>";
-          document.getElementById("in-review-list").innerHTML =
-            "<p>Unable to load moderation queue.</p>";
-          document.getElementById("resolved-list").innerHTML =
-            "<p>Unable to load moderation queue.</p>";
-        }
-      }
-
-      async function initPage() {
-        currentUser = await requireAdminSession();
-        if (!currentUser) return;
-
-        const signedInText = document.getElementById("adminSignedInText");
-        if (signedInText) {
-          signedInText.textContent = `Signed in as ${currentUser.email}.`;
-        }
-
-        // Future enhancement:
-        // Add a real admin-role / admin-permission check here.
-        // Example ideas:
-        // - query a user_roles table
-        // - check an is_admin flag
-        // - check an admins table keyed by user_id
-        //
-        // For now, this page is session-protected only.
-
-        await refreshAdminDashboard();
-      }
-
-      window.addEventListener("DOMContentLoaded", () => {
-        const signOutBtn = document.getElementById("signOutBtn");
-
-        signOutBtn?.addEventListener("click", async () => {
-          const { error } = await window.db.auth.signOut();
-
-          if (error) {
-            handleError(error, "Sign out failed");
-            return;
+        window.GroveAdmin.bindActionButtons(document, async (action, id) => {
+          try {
+            await window.GroveAdmin.handleQueueAction(action, id);
+            await refreshAdminDashboard();
+          } catch (error) {
+            console.error(error);
+            handleError(error, "Admin action failed");
           }
-
-          window.location.href = "./login.html";
         });
+      } catch (error) {
+        console.error(error);
+        document.getElementById("open-list").innerHTML =
+          "<p>Unable to load moderation queue.</p>";
+        document.getElementById("in-review-list").innerHTML =
+          "<p>Unable to load moderation queue.</p>";
+        document.getElementById("resolved-list").innerHTML =
+          "<p>Unable to load moderation queue.</p>";
+      }
+    }
 
-        initPage();
+    async function initPage() {
+      currentUser = await requireAdminSession();
+      if (!currentUser) return;
+
+      const signedInText = document.getElementById("adminSignedInText");
+      if (signedInText) {
+        signedInText.textContent = `Signed in as ${currentUser.email}.`;
+      }
+
+      await refreshAdminDashboard();
+    }
+
+    window.addEventListener("DOMContentLoaded", () => {
+      const signOutBtn = document.getElementById("signOutBtn");
+
+      signOutBtn?.addEventListener("click", async () => {
+        const { error } = await window.db.auth.signOut();
+
+        if (error) {
+          handleError(error, "Sign out failed");
+          return;
+        }
+
+        window.location.href = "./login.html";
       });
-    })();
-  </script>
+
+      initPage();
+    });
+  })();
+</script>
+  
 </body>
 </html>
