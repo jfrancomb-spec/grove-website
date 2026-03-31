@@ -23,13 +23,16 @@
     <section>
       <div class="messages-layout">
         <div class="form-card">
-          <h2 class="mt-0">Inbox</h2>
+          <div class="flex-between">
+            <h2 class="mt-0">Inbox</h2>
+            <a class="button button-secondary" href="./account.html">Back to Account</a>
+          </div>
           <div id="conversationList"></div>
         </div>
 
         <div class="form-card">
           <h2 class="mt-0">Conversation</h2>
-          <div id="threadHeader" class="mb-16 text-muted">Select a conversation to view messages.</div>
+          <div id="threadHeader" class="mb-16 text-muted">Loading...</div>
           <div id="messageThread" class="message-thread"></div>
 
           <div id="messageComposer" style="display:none;">
@@ -133,14 +136,20 @@
         return new Date(lastMessage.created_at) > new Date(myParticipant.last_read_at);
       }
 
-      async function loadSession() {
-        const { data } = await window.db.auth.getSession();
+      async function requireSession() {
+        const { data, error } = await window.db.auth.getSession();
+
+        if (error) {
+          console.error(error);
+          window.location.href = "./login.html";
+          return false;
+        }
+
         currentUser = data?.session?.user || null;
         window.currentUser = currentUser;
 
         if (!currentUser) {
-          document.getElementById("conversationList").innerHTML = "<p>Please sign in first.</p>";
-          document.getElementById("threadHeader").textContent = "You must be signed in to view messages.";
+          window.location.href = "./login.html";
           return false;
         }
 
@@ -792,7 +801,6 @@
             sendButton.textContent = "Sending...";
           }
 
-          // 1. Insert as draft
           const { data: inserted, error: insertError } = await window.db
             .from("messages")
             .insert([{
@@ -810,7 +818,6 @@
             throw insertError;
           }
 
-          // 2. Let moderation engine decide what happens
           const { data: modResult, error: modError } = await window.db.rpc("moderation_engine", {
             p_action: "submit_content",
             p_payload: {
@@ -872,7 +879,7 @@
       }
 
       window.addEventListener("DOMContentLoaded", async () => {
-        const ok = await loadSession();
+        const ok = await requireSession();
         if (!ok) return;
 
         document.getElementById("sendMessageBtn")?.addEventListener("click", sendMessage);
