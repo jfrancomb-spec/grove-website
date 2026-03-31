@@ -562,7 +562,9 @@ async function resolveQueueItem(queueId, resolutionAction, options = {}) {
     handleError(error, "Could not resolve queue item");
   }
 }
-
+window.getCurrentSessionUser = getCurrentSessionUser;
+window.getAdminRecord = getAdminRecord;
+window.requireAdminUser = requireAdminUser;
 window.resolveQueueItem = resolveQueueItem;
 
 // ======================================================
