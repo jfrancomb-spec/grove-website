@@ -165,7 +165,7 @@
       }
 
       async function initPage() {
-        currentUser = await requireSession();
+        currentUser = await requireAdminSession();
         if (!currentUser) return;
 
         const signedInText = document.getElementById("adminSignedInText");
