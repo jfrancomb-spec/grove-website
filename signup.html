@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Grove | Create Account</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <link rel="stylesheet" href="./styles.css" />
+  <link rel="icon" type="image/png" href="./MainIcon.png" />
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f5f7fa;
+      margin: 0;
+      color: #1f2937;
+    }
+
+    .signup-page {
+      max-width: 460px;
+      margin: 80px auto;
+      padding: 0 20px;
+    }
+
+    .signup-card {
+      background: white;
+      padding: 30px;
+      border-radius: 14px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+    }
+
+    .signup-card h1 {
+      text-align: center;
+      margin-top: 0;
+      margin-bottom: 10px;
+    }
+
+    .signup-subtext {
+      text-align: center;
+      color: #6b7280;
+      margin-bottom: 24px;
+      line-height: 1.5;
+    }
+
+    .form-group {
+      margin-bottom: 16px;
+    }
+
+    .form-group label {
+      display: block;
+      margin-bottom: 6px;
+      font-weight: bold;
+    }
+
+    .form-group input {
+      width: 100%;
+      padding: 10px 12px;
+      border-radius: 8px;
+      border: 1px solid #d1d5db;
+      font-size: 15px;
+      box-sizing: border-box;
+    }
+
+    .signup-button {
+      width: 100%;
+      padding: 12px;
+      background: #409088;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .signup-button:hover {
+      background: #347872;
+    }
+
+    .error-message {
+      color: #b91c1c;
+      margin-top: 12px;
+      text-align: center;
+      min-height: 20px;
+    }
+
+    .success-message {
+      color: #166534;
+      margin-top: 12px;
+      text-align: center;
+      min-height: 20px;
+      line-height: 1.5;
+    }
+
+    .signup-links {
+      margin-top: 22px;
+      text-align: center;
+      font-size: 14px;
+      color: #6b7280;
+      line-height: 1.8;
+    }
+
+    .signup-links a {
+      color: #4f7fa8;
+      text-decoration: none;
+      font-weight: 600;
+    }
+
+    .signup-links a:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <div id="header-placeholder"></div>
+
+  <main class="signup-page">
+    <div class="signup-card">
+      <h1>Create Your Grove Account</h1>
+      <p class="signup-subtext">
+        Create one account for Grove. After signing up, you can add a caregiver profile, a family profile, or both.
+      </p>
+
+      <form id="signupForm">
+        <div class="form-group">
+          <label for="email">Email</label>
+          <input type="email" id="email" autocomplete="email" required />
+        </div>
+
+        <div class="form-group">
+          <label for="password">Password</label>
+          <input type="password" id="password" autocomplete="new-password" required />
+        </div>
+
+        <div class="form-group">
+          <label for="confirmPassword">Confirm Password</label>
+          <input type="password" id="confirmPassword" autocomplete="new-password" required />
+        </div>
+
+        <button class="signup-button" type="submit" id="signupBtn">Create Account</button>
+
+        <div class="error-message" id="errorMessage"></div>
+        <div class="success-message" id="successMessage"></div>
+      </form>
+
+      <div class="signup-links">
+        <div>Already have an account? <a href="./login.html">Log in</a></div>
+      </div>
+    </div>
+  </main>
+
+  <div id="footer-placeholder"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script src="./app.js"></script>
+
+  <script>
+    (function () {
+      const form = document.getElementById("signupForm");
+      const signupBtn = document.getElementById("signupBtn");
+      const errorMessage = document.getElementById("errorMessage");
+      const successMessage = document.getElementById("successMessage");
+
+      async function redirectIfSignedIn() {
+        try {
+          const { data, error } = await window.db.auth.getSession();
+
+          if (error) {
+            console.error(error);
+            return;
+          }
+
+          if (data?.session?.user) {
+            window.location.href = "./account.html";
+          }
+        } catch (error) {
+          console.error("Session check failed:", error);
+        }
+      }
+
+      async function handleSignup(event) {
+        event.preventDefault();
+
+        errorMessage.textContent = "";
+        successMessage.textContent = "";
+
+        const email = document.getElementById("email").value.trim();
+        const password = document.getElementById("password").value;
+        const confirmPassword = document.getElementById("confirmPassword").value;
+
+        if (!email || !password || !confirmPassword) {
+          errorMessage.textContent = "Please complete all fields.";
+          return;
+        }
+
+        if (password.length < 8) {
+          errorMessage.textContent = "Password must be at least 8 characters.";
+          return;
+        }
+
+        if (password !== confirmPassword) {
+          errorMessage.textContent = "Passwords do not match.";
+          return;
+        }
+
+        const originalText = signupBtn.textContent;
+
+        try {
+          signupBtn.disabled = true;
+          signupBtn.textContent = "Creating account...";
+
+          const { data, error } = await window.db.auth.signUp({
+            email,
+            password,
+            options: {
+              emailRedirectTo: `${window.location.origin}${window.location.pathname.replace("signup.html", "account.html")}`
+            }
+          });
+
+          if (error) {
+            errorMessage.textContent = error.message || "Sign up failed.";
+            return;
+          }
+
+          if (data?.session) {
+            successMessage.textContent = "Account created. Redirecting...";
+            window.location.href = "./account.html";
+            return;
+          }
+
+          successMessage.textContent =
+            "Account created. Please check your email and confirm your address before signing in.";
+
+          form.reset();
+        } catch (error) {
+          console.error(error);
+          errorMessage.textContent = "Something went wrong while creating your account.";
+        } finally {
+          signupBtn.disabled = false;
+          signupBtn.textContent = originalText;
+        }
+      }
+
+      window.addEventListener("DOMContentLoaded", async () => {
+        await redirectIfSignedIn();
+        form?.addEventListener("submit", handleSignup);
+      });
+    })();
+  </script>
+</body>
+</html>
