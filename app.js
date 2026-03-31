@@ -21,9 +21,7 @@ window.db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 // ======================================================
 // Header auth state (NEW)
 // ======================================================
-// ======================================================
-// Header auth state
-// ======================================================
+
 async function updateHeaderAuth() {
   if (!window.db || !window.db.auth) return;
 
@@ -70,6 +68,9 @@ async function updateHeaderAuth() {
     console.error("Header auth error:", err);
   }
 }
+window.getCurrentSessionUser = getCurrentSessionUser;
+window.getAdminRecord = getAdminRecord;
+window.requireAdminUser = requireAdminUser;
 
 // ======================================================
 // Error handler
