@@ -5,8 +5,8 @@
   <title>Grove | Account</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="./styles.css" />
+  <link rel="icon" type="image/png" href="./MainIcon.png" />
 
   <style>
     body {
@@ -38,6 +38,7 @@
     .subtext {
       color: #6b7280;
       margin-bottom: 0;
+      line-height: 1.5;
     }
 
     .status-grid {
@@ -72,6 +73,7 @@
     .status-detail {
       font-size: 14px;
       color: #6b7280;
+      line-height: 1.5;
     }
 
     .links-card {
@@ -107,7 +109,7 @@
 
     .quick-link:hover {
       transform: translateY(-1px);
-      box-shadow: 0 6px 18px rgba(0,0,0,0.08);
+      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
       border-color: #cbd5e1;
     }
 
@@ -181,7 +183,9 @@
   </style>
 </head>
 <body>
-  <div class="page">
+  <div id="header-placeholder"></div>
+
+  <main class="page">
     <div id="errorBox" class="error-box"></div>
 
     <section class="hero-card">
@@ -191,9 +195,9 @@
       </p>
 
       <div class="button-row">
-        <a class="button button-family" href="edit-family.html">Edit Family Profile</a>
-        <a class="button button-caregiver" href="edit-caregiver.html">Edit Caregiver Profile</a>
-        <a class="button button-secondary" href="messages.html">View Messages</a>
+        <a class="button button-family" href="./edit-family.html">Edit Family Profile</a>
+        <a class="button button-caregiver" href="./edit-caregiver.html">Edit Caregiver Profile</a>
+        <a class="button button-secondary" href="./messages.html">View Messages</a>
         <button class="button button-secondary" id="signOutBtn" type="button">Sign Out</button>
       </div>
     </section>
@@ -214,7 +218,7 @@
       <div class="status-card">
         <div class="status-label">Messages</div>
         <div class="status-value" id="messageCount">Loading...</div>
-        <div class="status-detail" id="messageDetail">Checking your unread messages.</div>
+        <div class="status-detail" id="messageDetail">Checking your conversations.</div>
       </div>
     </section>
 
@@ -222,191 +226,214 @@
       <h2>Quick Links</h2>
 
       <div class="quick-links">
-        <a class="quick-link" href="edit-caregiver.html">
+        <a class="quick-link" href="./edit-caregiver.html">
           Edit caregiver profile
           <small>Update your caregiver details, photos, experience, and care types.</small>
         </a>
 
-        <a class="quick-link" href="edit-family.html">
+        <a class="quick-link" href="./edit-family.html">
           Edit family profile
           <small>Manage your household details, care needs, and family profile setup.</small>
         </a>
 
-        <a class="quick-link" href="messages.html">
+        <a class="quick-link" href="./messages.html">
           View messages
           <small>Open your conversations and check for new replies.</small>
         </a>
 
-        <a class="quick-link" href="jobs.html">
+        <a class="quick-link" href="./jobs.html">
           Browse jobs
           <small>See available family job posts and explore opportunities.</small>
         </a>
 
-        <a class="quick-link" href="caregivers.html">
+        <a class="quick-link" href="./caregivers.html">
           Browse caregivers
           <small>View public caregiver listings across Grove.</small>
         </a>
 
-        <a class="quick-link" href="families.html">
+        <a class="quick-link" href="./families.html">
           Browse families
           <small>View public family listings across Grove.</small>
         </a>
       </div>
     </section>
-  </div>
+  </main>
+
+  <div id="footer-placeholder"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script src="./app.js"></script>
 
   <script>
-    const SUPABASE_URL = "https://YOUR_PROJECT.supabase.co";
-    const SUPABASE_ANON_KEY = "YOUR_ANON_KEY";
+    (function () {
+      const errorBox = document.getElementById("errorBox");
+      const accountEmail = document.getElementById("accountEmail");
 
-    const db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-    window.db = db;
+      const caregiverStatus = document.getElementById("caregiverStatus");
+      const caregiverDetail = document.getElementById("caregiverDetail");
 
-    const errorBox = document.getElementById("errorBox");
-    const accountEmail = document.getElementById("accountEmail");
+      const familyStatus = document.getElementById("familyStatus");
+      const familyDetail = document.getElementById("familyDetail");
 
-    const caregiverStatus = document.getElementById("caregiverStatus");
-    const caregiverDetail = document.getElementById("caregiverDetail");
+      const messageCount = document.getElementById("messageCount");
+      const messageDetail = document.getElementById("messageDetail");
 
-    const familyStatus = document.getElementById("familyStatus");
-    const familyDetail = document.getElementById("familyDetail");
+      const signOutBtn = document.getElementById("signOutBtn");
 
-    const messageCount = document.getElementById("messageCount");
-    const messageDetail = document.getElementById("messageDetail");
+      function showError(message) {
+        errorBox.style.display = "block";
+        errorBox.textContent = message;
+      }
 
-    const signOutBtn = document.getElementById("signOutBtn");
+      function formatProfileStatus(profile) {
+        if (!profile) {
+          return {
+            value: "Not created",
+            detail: "No profile found yet. You can create one any time."
+          };
+        }
 
-    function showError(message) {
-      errorBox.style.display = "block";
-      errorBox.textContent = message;
-    }
+        const approval = profile.approval_status || "unknown";
+        const isActive = profile.is_active;
 
-    function formatProfileStatus(profile) {
-      if (!profile) {
+        let detail = `Status: ${approval}`;
+        if (typeof isActive === "boolean") {
+          detail += isActive ? " • Active" : " • Inactive";
+        }
+
         return {
-          value: "Not created",
-          detail: "No profile found yet."
+          value: "Created",
+          detail
         };
       }
 
-      const approval = profile.approval_status || "unknown";
-      const isActive = profile.is_active;
+      async function requireSession() {
+        try {
+          const { data, error } = await window.db.auth.getSession();
 
-      let detail = `Status: ${approval}`;
-      if (typeof isActive === "boolean") {
-        detail += isActive ? " • Active" : " • Inactive";
+          if (error) {
+            showError("Unable to verify session.");
+            window.location.href = "./login.html";
+            return null;
+          }
+
+          const session = data?.session || null;
+
+          if (!session || !session.user) {
+            window.location.href = "./login.html";
+            return null;
+          }
+
+          return session;
+        } catch (error) {
+          console.error(error);
+          window.location.href = "./login.html";
+          return null;
+        }
       }
 
-      return {
-        value: "Created",
-        detail
-      };
-    }
-
-    async function requireSession() {
-      const { data, error } = await db.auth.getSession();
-
-      if (error) {
-        showError("Unable to verify session.");
-        window.location.href = "login.html";
-        return null;
-      }
-
-      const session = data.session;
-
-      if (!session || !session.user) {
-        window.location.href = "login.html";
-        return null;
-      }
-
-      return session;
-    }
-
-    async function loadCaregiverProfile(userId) {
-      const { data, error } = await db
-        .from("caregiver_profiles")
-        .select("id, approval_status, is_active")
-        .eq("user_id", userId)
-        .maybeSingle();
-
-      if (error) {
-        caregiverStatus.textContent = "Error";
-        caregiverDetail.textContent = error.message;
-        return;
-      }
-
-      const result = formatProfileStatus(data);
-      caregiverStatus.textContent = result.value;
-      caregiverDetail.textContent = result.detail;
-    }
-
-    async function loadFamilyProfile(userId) {
-      const { data, error } = await db
-        .from("family_profiles")
-        .select("id, approval_status, is_active")
-        .eq("user_id", userId)
-        .maybeSingle();
-
-      if (error) {
-        familyStatus.textContent = "Error";
-        familyDetail.textContent = error.message;
-        return;
-      }
-
-      const result = formatProfileStatus(data);
-      familyStatus.textContent = result.value;
-      familyDetail.textContent = result.detail;
-    }
-
-    async function loadUnreadMessageCount(userId) {
-      try {
-        const { count, error } = await db
-          .from("messages")
-          .select("*", { count: "exact", head: true })
-          .eq("recipient_user_id", userId)
-          .eq("is_read", false);
+      async function loadCaregiverProfile(userId) {
+        const { data, error } = await window.db
+          .from("caregiver_profiles")
+          .select("id, approval_status, is_active")
+          .eq("user_id", userId)
+          .maybeSingle();
 
         if (error) {
-          throw error;
+          caregiverStatus.textContent = "Error";
+          caregiverDetail.textContent = error.message;
+          return;
         }
 
-        const unread = count || 0;
-        messageCount.textContent = unread;
-        messageDetail.textContent = unread === 1
-          ? "You have 1 unread message."
-          : `You have ${unread} unread messages.`;
-      } catch (error) {
-        messageCount.textContent = "—";
-        messageDetail.textContent = "Unread count not available yet.";
-      }
-    }
-
-    async function initPage() {
-      const session = await requireSession();
-      if (!session) return;
-
-      const user = session.user;
-      accountEmail.textContent = user.email || "Unknown email";
-
-      await Promise.all([
-        loadCaregiverProfile(user.id),
-        loadFamilyProfile(user.id),
-        loadUnreadMessageCount(user.id)
-      ]);
-    }
-
-    signOutBtn.addEventListener("click", async () => {
-      const { error } = await db.auth.signOut();
-
-      if (error) {
-        showError("Unable to sign out right now.");
-        return;
+        const result = formatProfileStatus(data);
+        caregiverStatus.textContent = result.value;
+        caregiverDetail.textContent = result.detail;
       }
 
-      window.location.href = "login.html";
-    });
+      async function loadFamilyProfile(userId) {
+        const { data, error } = await window.db
+          .from("family_profiles")
+          .select("id, approval_status, is_active")
+          .eq("user_id", userId)
+          .maybeSingle();
 
-    initPage();
+        if (error) {
+          familyStatus.textContent = "Error";
+          familyDetail.textContent = error.message;
+          return;
+        }
+
+        const result = formatProfileStatus(data);
+        familyStatus.textContent = result.value;
+        familyDetail.textContent = result.detail;
+      }
+
+      async function loadMessageSummary(userId) {
+        try {
+          const { data: participants, error } = await window.db
+            .from("conversation_participants")
+            .select("conversation_id, has_unread_visible_messages")
+            .eq("user_id", userId)
+            .eq("is_archived", false);
+
+          if (error) {
+            throw error;
+          }
+
+          const rows = participants || [];
+          const conversationTotal = rows.length;
+          const unreadTotal = rows.filter((row) => row.has_unread_visible_messages === true).length;
+
+          messageCount.textContent = unreadTotal;
+
+          if (!conversationTotal) {
+            messageDetail.textContent = "No conversations yet.";
+            return;
+          }
+
+          if (unreadTotal === 0) {
+            messageDetail.textContent = `You have ${conversationTotal} conversation${conversationTotal === 1 ? "" : "s"} and no unread messages.`;
+            return;
+          }
+
+          messageDetail.textContent =
+            unreadTotal === 1
+              ? `You have 1 conversation with unread messages.`
+              : `You have ${unreadTotal} conversations with unread messages.`;
+        } catch (error) {
+          console.error(error);
+          messageCount.textContent = "—";
+          messageDetail.textContent = "Message summary not available yet.";
+        }
+      }
+
+      async function initPage() {
+        const session = await requireSession();
+        if (!session) return;
+
+        const user = session.user;
+        accountEmail.textContent = user.email || "Unknown email";
+
+        await Promise.all([
+          loadCaregiverProfile(user.id),
+          loadFamilyProfile(user.id),
+          loadMessageSummary(user.id)
+        ]);
+      }
+
+      signOutBtn?.addEventListener("click", async () => {
+        const { error } = await window.db.auth.signOut();
+
+        if (error) {
+          showError("Unable to sign out right now.");
+          return;
+        }
+
+        window.location.href = "./login.html";
+      });
+
+      window.addEventListener("DOMContentLoaded", initPage);
+    })();
   </script>
 </body>
 </html>
