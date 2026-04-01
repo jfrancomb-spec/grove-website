@@ -30,6 +30,34 @@
       margin-bottom: 24px;
     }
 
+    .welcome-card {
+      background: white;
+      border-radius: 16px;
+      padding: 24px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
+      margin-bottom: 24px;
+      display: none;
+    }
+
+    .welcome-card h2 {
+      margin-top: 0;
+      margin-bottom: 10px;
+      font-size: 24px;
+    }
+
+    .welcome-card p {
+      margin: 0 0 16px;
+      color: #4b5563;
+      line-height: 1.6;
+    }
+
+    .welcome-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 14px;
+    }
+
     h1 {
       margin: 0 0 8px;
       font-size: 32px;
@@ -210,6 +238,19 @@
       </div>
     </section>
 
+    <section class="welcome-card" id="welcomeCard">
+      <h2>Welcome to Grove</h2>
+      <p>
+        Your Grove account is ready. Next, create a family profile, a caregiver profile, or both.
+        You only need one Grove account, and you can use it for whichever roles fit you.
+      </p>
+
+      <div class="welcome-actions">
+        <a class="button button-family" href="./edit-family.html">Create Family Profile</a>
+        <a class="button button-caregiver" href="./edit-caregiver.html">Create Caregiver Profile</a>
+      </div>
+    </section>
+
     <section class="status-grid">
       <div class="status-card">
         <div class="status-label">Caregiver Profile</div>
@@ -238,7 +279,7 @@
     <section class="links-card">
       <h2>Quick Links</h2>
 
-      <div class="quick-links" id="quickLinks">
+      <div class="quick-links">
         <a class="quick-link" id="caregiverQuickLink" href="./edit-caregiver.html">
           Caregiver profile
           <small id="caregiverQuickLinkText">Loading caregiver profile actions.</small>
@@ -281,6 +322,7 @@
     (function () {
       const errorBox = document.getElementById("errorBox");
       const accountEmail = document.getElementById("accountEmail");
+      const welcomeCard = document.getElementById("welcomeCard");
 
       const caregiverStatus = document.getElementById("caregiverStatus");
       const caregiverDetail = document.getElementById("caregiverDetail");
@@ -303,6 +345,9 @@
       const familyQuickLinkText = document.getElementById("familyQuickLinkText");
 
       const signOutBtn = document.getElementById("signOutBtn");
+
+      let hasFamilyProfile = false;
+      let hasCaregiverProfile = false;
 
       function showError(message) {
         errorBox.style.display = "block";
@@ -343,7 +388,6 @@
 
         const topButton = isFamily ? topFamilyButton : topCaregiverButton;
         const actionWrap = isFamily ? familyActionWrap : caregiverActionWrap;
-        const quickLink = isFamily ? familyQuickLink : caregiverQuickLink;
         const quickLinkText = isFamily ? familyQuickLinkText : caregiverQuickLinkText;
         const href = isFamily ? "./edit-family.html" : "./edit-caregiver.html";
         const buttonClass = isFamily ? "button-family" : "button-caregiver";
@@ -359,10 +403,6 @@
             isFamily ? "Edit Family Profile" : "Edit Caregiver Profile",
             buttonClass
           );
-
-          if (quickLink) {
-            quickLink.firstChild.textContent = isFamily ? "Edit family profile" : "Edit caregiver profile";
-          }
 
           if (quickLinkText) {
             quickLinkText.textContent = isFamily
@@ -381,16 +421,19 @@
             buttonClass
           );
 
-          if (quickLink) {
-            quickLink.firstChild.textContent = isFamily ? "Create family profile" : "Create caregiver profile";
-          }
-
           if (quickLinkText) {
             quickLinkText.textContent = isFamily
               ? "Set up your family profile so caregivers can learn about your household and care needs."
               : "Set up your caregiver profile so families can learn about your experience and services.";
           }
         }
+      }
+
+      function updateWelcomeState() {
+        if (!welcomeCard) return;
+
+        const showWelcome = !hasFamilyProfile && !hasCaregiverProfile;
+        welcomeCard.style.display = showWelcome ? "block" : "none";
       }
 
       async function requireSession() {
@@ -428,14 +471,18 @@
         if (error) {
           caregiverStatus.textContent = "Error";
           caregiverDetail.textContent = error.message;
+          hasCaregiverProfile = false;
           updateProfileActionUI("caregiver", false);
+          updateWelcomeState();
           return;
         }
 
         const result = formatProfileStatus(data);
+        hasCaregiverProfile = result.exists;
         caregiverStatus.textContent = result.value;
         caregiverDetail.textContent = result.detail;
         updateProfileActionUI("caregiver", result.exists);
+        updateWelcomeState();
       }
 
       async function loadFamilyProfile(userId) {
@@ -448,14 +495,18 @@
         if (error) {
           familyStatus.textContent = "Error";
           familyDetail.textContent = error.message;
+          hasFamilyProfile = false;
           updateProfileActionUI("family", false);
+          updateWelcomeState();
           return;
         }
 
         const result = formatProfileStatus(data);
+        hasFamilyProfile = result.exists;
         familyStatus.textContent = result.value;
         familyDetail.textContent = result.detail;
         updateProfileActionUI("family", result.exists);
+        updateWelcomeState();
       }
 
       async function loadMessageSummary(userId) {
@@ -498,8 +549,12 @@
       }
 
       async function initPage() {
+        hasFamilyProfile = false;
+        hasCaregiverProfile = false;
+
         updateProfileActionUI("family", false);
         updateProfileActionUI("caregiver", false);
+        updateWelcomeState();
 
         const session = await requireSession();
         if (!session) return;
