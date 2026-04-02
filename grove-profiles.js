@@ -211,7 +211,7 @@ async submitCaregiverProfile({
   }
 
   return data;
-}
+},
     
     async submitFamilyProfile({
       familyProfileId = null,
