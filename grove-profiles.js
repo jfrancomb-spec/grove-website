@@ -212,47 +212,64 @@ async submitCaregiverProfile({
 
   return data;
 },
-    
+
     async submitFamilyProfile({
-      familyProfileId = null,
-      values
-    }) {
-      const payload = {
-        first_name: values.first_name,
-        last_name: values.last_name,
-        phone: values.phone || "",
-        location: values.location,
-        care_types_needed: Array.isArray(values.care_types_needed)
-          ? values.care_types_needed
-          : [],
-        has_cats: !!values.has_cats,
-        has_dogs: !!values.has_dogs,
-        smoking_in_home: !!values.smoking_in_home,
-        driving_needed: !!values.driving_needed,
-        household_description: values.household_description || "",
-        children_description: values.children_description || "",
-        pets_description: values.pets_description || "",
-        bio: values.bio || "",
-        photo_urls: Array.isArray(values.photo_urls) ? values.photo_urls : []
-      };
+  familyProfileId = null,
+  values
+}) {
+  const user = await this.getCurrentUser();
 
-      if (familyProfileId) {
-        payload.family_profile_id = familyProfileId;
-      }
+  if (!user) {
+    throw new Error("You are not signed in. Please log in and try again.");
+  }
 
-      const { data, error } = await window.db.functions.invoke(
-        "submit-family-profile-version",
-        { body: payload }
-      );
+  const payload = {
+    first_name: values.first_name,
+    last_name: values.last_name,
+    phone: values.phone || "",
+    location: values.location,
+    care_types_needed: Array.isArray(values.care_types_needed)
+      ? values.care_types_needed
+      : [],
+    has_cats: !!values.has_cats,
+    has_dogs: !!values.has_dogs,
+    smoking_in_home: !!values.smoking_in_home,
+    driving_needed: !!values.driving_needed,
+    household_description: values.household_description || "",
+    children_description: values.children_description || "",
+    pets_description: values.pets_description || "",
+    bio: values.bio || "",
+    photo_urls: Array.isArray(values.photo_urls) ? values.photo_urls : []
+  };
 
-      if (error) throw error;
-      if (!data?.success) {
-        throw new Error("submit-family-profile-version failed");
-      }
+  if (familyProfileId) {
+    payload.family_profile_id = familyProfileId;
+  }
 
-      return data;
-    },
+  console.log("Submitting family profile for user:", user.id);
+  console.log("submit-family-profile-version payload:", payload);
 
+  const { data, error } = await window.db.functions.invoke(
+    "submit-family-profile-version",
+    { body: payload }
+  );
+
+  console.log("submit-family-profile-version response data:", data);
+  console.log("submit-family-profile-version response error:", error);
+
+  if (error) {
+    console.error("submit-family-profile-version error:", error);
+    throw error;
+  }
+
+  if (!data?.success) {
+    console.error("submit-family-profile-version returned:", data);
+    throw new Error(data?.error || "submit-family-profile-version failed");
+  }
+
+  return data;
+},
+    
     async lookupProfileParentByEmailPhone({ parentTable, email, phone }) {
       const { data, error } = await window.db
         .from(parentTable)
