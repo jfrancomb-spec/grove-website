@@ -213,7 +213,7 @@ async submitCaregiverProfile({
   return data;
 },
 
-    async submitFamilyProfile({
+async submitFamilyProfile({
   familyProfileId = null,
   values
 }) {
@@ -249,32 +249,29 @@ async submitCaregiverProfile({
   console.log("Submitting family profile for user:", user.id);
   console.log("submit-family-profile-version payload:", payload);
 
-const {
-  data: { session }
-} = await window.db.auth.getSession();
+  const {
+    data: { session },
+    error: sessionError
+  } = await window.db.auth.getSession();
 
-const {
-  data: { session },
-  error: sessionError
-} = await window.db.auth.getSession();
-
-if (sessionError) {
-  throw sessionError;
-}
-
-if (!session?.access_token) {
-  throw new Error("No active access token found.");
-}
-
-const { data, error } = await window.db.functions.invoke(
-  "submit-family-profile-version",
-  {
-    body: payload,
-    headers: {
-      Authorization: `Bearer ${session.access_token}`
-    }
+  if (sessionError) {
+    console.error("submit-family-profile-version session error:", sessionError);
+    throw sessionError;
   }
-);
+
+  if (!session?.access_token) {
+    throw new Error("No active access token found.");
+  }
+
+  const { data, error } = await window.db.functions.invoke(
+    "submit-family-profile-version",
+    {
+      body: payload,
+      headers: {
+        Authorization: `Bearer ${session.access_token}`
+      }
+    }
+  );
 
   console.log("submit-family-profile-version response data:", data);
   console.log("submit-family-profile-version response error:", error);
@@ -290,8 +287,7 @@ const { data, error } = await window.db.functions.invoke(
   }
 
   return data;
-},
-    
+},    
     async lookupProfileParentByEmailPhone({ parentTable, email, phone }) {
       const { data, error } = await window.db
         .from(parentTable)
