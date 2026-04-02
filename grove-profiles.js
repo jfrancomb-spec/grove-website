@@ -253,6 +253,19 @@ const {
   data: { session }
 } = await window.db.auth.getSession();
 
+const {
+  data: { session },
+  error: sessionError
+} = await window.db.auth.getSession();
+
+if (sessionError) {
+  throw sessionError;
+}
+
+if (!session?.access_token) {
+  throw new Error("No active access token found.");
+}
+
 const { data, error } = await window.db.functions.invoke(
   "submit-family-profile-version",
   {
