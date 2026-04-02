@@ -249,10 +249,19 @@ async submitCaregiverProfile({
   console.log("Submitting family profile for user:", user.id);
   console.log("submit-family-profile-version payload:", payload);
 
-  const { data, error } = await window.db.functions.invoke(
-    "submit-family-profile-version",
-    { body: payload }
-  );
+const {
+  data: { session }
+} = await window.db.auth.getSession();
+
+const { data, error } = await window.db.functions.invoke(
+  "submit-family-profile-version",
+  {
+    body: payload,
+    headers: {
+      Authorization: `Bearer ${session.access_token}`
+    }
+  }
+);
 
   console.log("submit-family-profile-version response data:", data);
   console.log("submit-family-profile-version response error:", error);
