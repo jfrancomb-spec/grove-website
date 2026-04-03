@@ -10,11 +10,9 @@
 </head>
 
 <body>
-  <!-- Shared header -->
   <div id="header-placeholder"></div>
 
   <main>
-    <!-- HERO -->
     <div class="hero">
       <h1>Care Jobs</h1>
       <div class="subtitle">
@@ -25,111 +23,180 @@
       <a class="button" href="./caregivers.html">Browse Caregivers</a>
     </div>
 
-    <!-- FILTERS + RESULTS -->
     <section>
-      <div class="form-card" style="margin-bottom: 16px;">
-        <h2 style="margin-top: 0;">Filter Jobs</h2>
+      <div class="browse-layout">
+        <aside class="filter-sidebar" id="jobFilterSidebar">
+          <div class="card filter-card">
+            <div class="filter-card-header">
+              <h3 class="mb-0">Filters</h3>
+              <button
+                type="button"
+                class="filter-close"
+                id="jobFilterClose"
+                aria-label="Close filters"
+                data-close-filters
+              >
+                ×
+              </button>
+            </div>
 
-        <div class="row">
-          <select id="jobFilterType">
-            <option value="">All care types</option>
-            <option>Childcare</option>
-            <option>Senior Care</option>
-            <option>Pet Care</option>
-            <option>Household Help</option>
-            <option>Other</option>
-          </select>
+            <div class="row">
+              <label for="jobFilterType">Care Type</label>
+              <select id="jobFilterType">
+                <option value="">All care types</option>
+                <option value="childcare">Childcare</option>
+                <option value="senior care">Senior Care</option>
+                <option value="pet care">Pet Care</option>
+                <option value="household help">Household Help</option>
+                <option value="other">Other</option>
+              </select>
+            </div>
+
+            <div class="row">
+              <label for="jobFilterLocation">Location</label>
+              <input
+                id="jobFilterLocation"
+                type="text"
+                placeholder="City or neighborhood"
+              />
+            </div>
+
+            <div class="row">
+              <label for="jobFilterKeyword">Keyword</label>
+              <input
+                id="jobFilterKeyword"
+                type="text"
+                placeholder="Schedule, pay, pets, driving, etc."
+              />
+            </div>
+
+            <div class="filter-actions">
+              <button class="button" type="button" id="jobFilterBtn">Apply Filters</button>
+              <button class="button filter-clear-button" type="button" id="clearFilters">Clear Filters</button>
+            </div>
+          </div>
+        </aside>
+
+        <div class="browse-main">
+          <div class="browse-topbar">
+            <button
+              type="button"
+              class="button filter-toggle-button"
+              id="jobFilterOpen"
+              data-open-filters
+            >
+              Filters
+            </button>
+
+            <p id="jobsCount" class="browse-count">0 jobs</p>
+          </div>
+
+          <p class="mb-16">
+            Care requests are submitted by community members and approved before becoming visible.
+            Families and caregivers communicate directly and should use their own judgment when arranging care.
+          </p>
+
+          <div id="jobsContainer" class="browse-results"></div>
         </div>
-
-        <div class="row">
-          <input
-            id="jobFilterLocation"
-            type="text"
-            placeholder="Filter by city/neighborhood (optional)"
-          />
-        </div>
-
-        <p id="jobsCount" style="margin: 8px 0 0 0; font-weight: 600;"></p>
-
-        <button class="button" type="button" id="jobFilterBtn">Apply Filters</button>
-        <button class="button" type="button" id="clearFilters">Clear Filters</button>
       </div>
 
-      <p style="margin-bottom: 16px;">
-        Care requests are submitted by community members and approved before becoming visible.
-        Families and caregivers communicate directly and should use their own judgment when arranging care.
-      </p>
-
-      <div id="jobsContainer" class="cards"></div>
+      <div class="filter-overlay"></div>
     </section>
   </main>
 
-  <!-- Shared footer -->
   <div id="footer-placeholder"></div>
 
-  <!-- Scripts -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
   <script src="./app.js"></script>
+  <script src="./browse-common.js"></script>
 
-  <!-- Page script -->
   <script>
     (function () {
       let allJobs = [];
 
-      // Render job cards
+      function truncateText(text, maxLength = 180) {
+        const clean = String(text || "").replace(/\s+/g, " ").trim();
+        if (!clean) return "";
+        return clean.length <= maxLength ? clean : `${clean.slice(0, maxLength - 1)}…`;
+      }
+
       function renderJobs(list) {
         const container = document.getElementById("jobsContainer");
         const countEl = document.getElementById("jobsCount");
 
-        if (countEl) countEl.textContent = `${list.length} job(s) shown`;
+        if (countEl) {
+          countEl.textContent = `${list.length} job${list.length === 1 ? "" : "s"}`;
+        }
 
         container.innerHTML = "";
 
         if (!list.length) {
-          container.innerHTML = "<p>No jobs match those filters yet.</p>";
+          container.innerHTML = "<div class='empty-state'><p>No jobs match those filters yet.</p></div>";
           return;
         }
 
         list.forEach((job) => {
           const card = document.createElement("div");
-          card.className = "card";
+          card.className = "card browse-card";
+
+          const postedDate = job.created_at
+            ? new Date(job.created_at).toLocaleDateString()
+            : "";
+
+          const careType = job.care_type || "Not specified";
+          const location = job.location || "Location not listed";
+          const schedule = job.schedule || "Schedule not listed";
+          const payRange = job.pay_range || "";
+          const description = truncateText(job.description || "", 220);
 
           card.innerHTML = `
-            <h3>${job.title}</h3>
-            <p><strong>Type:</strong> ${job.care_type}</p>
-            <p><strong>Location:</strong> ${job.location} (local)</p>
-            <p><strong>Schedule:</strong> ${job.schedule}</p>
-            ${job.pay_range ? `<p><strong>Pay:</strong> ${job.pay_range}</p>` : ``}
-            <p>${job.description}</p>
-            <p style="font-size: 13px; color: #777;">
-              Posted ${new Date(job.created_at).toLocaleDateString()}
-            </p>
-            <a class="button" href="./apply.html?job_id=${job.id}">Apply for this job</a>
+            <div class="browse-card-body">
+              <h3>${job.title || "Care Opportunity"}</h3>
+              <p class="browse-card-meta">${location} • ${careType}</p>
+              <p><strong>Schedule:</strong> ${schedule}</p>
+              ${payRange ? `<p><strong>Pay:</strong> ${payRange}</p>` : ""}
+              ${description ? `<p>${description}</p>` : ""}
+              ${postedDate ? `<p class="browse-card-meta">Posted ${postedDate}</p>` : ""}
+            </div>
+            <div class="browse-card-actions">
+              <a class="button button-family" href="./apply.html?job_id=${job.id}">Apply for this job</a>
+            </div>
           `;
 
           container.appendChild(card);
         });
       }
 
-      // Apply filters to the loaded list
       function applyFilters() {
         const typeVal = (document.getElementById("jobFilterType")?.value || "").trim().toLowerCase();
         const locVal = (document.getElementById("jobFilterLocation")?.value || "").trim().toLowerCase();
+        const keyVal = (document.getElementById("jobFilterKeyword")?.value || "").trim().toLowerCase();
 
         const filtered = allJobs.filter((job) => {
           const jobType = (job.care_type || "").trim().toLowerCase();
           const jobLoc = (job.location || "").trim().toLowerCase();
+          const title = (job.title || "").trim().toLowerCase();
+          const schedule = (job.schedule || "").trim().toLowerCase();
+          const pay = (job.pay_range || "").trim().toLowerCase();
+          const description = (job.description || "").trim().toLowerCase();
 
           const typeOk = !typeVal || jobType === typeVal;
           const locOk = !locVal || jobLoc.includes(locVal);
+          const keyOk =
+            !keyVal ||
+            jobType.includes(keyVal) ||
+            jobLoc.includes(keyVal) ||
+            title.includes(keyVal) ||
+            schedule.includes(keyVal) ||
+            pay.includes(keyVal) ||
+            description.includes(keyVal);
 
-          return typeOk && locOk;
+          return typeOk && locOk && keyOk;
         });
 
         renderJobs(filtered);
       }
 
-      // Load jobs from Supabase (approved/active only)
       async function loadJobsOnce() {
         let tries = 0;
         while (!window.db && tries < 40) {
@@ -140,7 +207,7 @@
         const container = document.getElementById("jobsContainer");
 
         if (!window.db) {
-          container.innerHTML = "<p>Database connection not ready. Please refresh.</p>";
+          container.innerHTML = "<div class='empty-state'><p>Database connection not ready. Please refresh.</p></div>";
           return;
         }
 
@@ -151,7 +218,7 @@
           .order("created_at", { ascending: false });
 
         if (error) {
-          container.innerHTML = "<p>Unable to load jobs right now.</p>";
+          container.innerHTML = "<div class='empty-state'><p>Unable to load jobs right now.</p></div>";
           console.error(error);
           return;
         }
@@ -160,18 +227,32 @@
         applyFilters();
       }
 
-      // Wire up filter controls
       function wireEvents() {
-        document.getElementById("jobFilterBtn")?.addEventListener("click", applyFilters);
+        document.getElementById("jobFilterBtn")?.addEventListener("click", () => {
+          applyFilters();
+          closeBrowseSidebar?.();
+        });
 
         document.getElementById("clearFilters")?.addEventListener("click", () => {
           document.getElementById("jobFilterType").value = "";
           document.getElementById("jobFilterLocation").value = "";
+          document.getElementById("jobFilterKeyword").value = "";
           applyFilters();
+          closeBrowseSidebar?.();
         });
 
         document.getElementById("jobFilterType")?.addEventListener("change", applyFilters);
         document.getElementById("jobFilterLocation")?.addEventListener("input", applyFilters);
+        document.getElementById("jobFilterKeyword")?.addEventListener("input", applyFilters);
+
+        if (typeof wireBrowseSidebar === "function") {
+          wireBrowseSidebar({
+            openButtonSelector: "#jobFilterOpen",
+            closeButtonSelector: "#jobFilterClose",
+            sidebarSelector: "#jobFilterSidebar",
+            overlaySelector: ".filter-overlay"
+          });
+        }
       }
 
       window.addEventListener("DOMContentLoaded", () => {
