@@ -338,10 +338,7 @@
       const topFamilyButton = document.getElementById("topFamilyButton");
       const topCaregiverButton = document.getElementById("topCaregiverButton");
 
-      const caregiverQuickLink = document.getElementById("caregiverQuickLink");
       const caregiverQuickLinkText = document.getElementById("caregiverQuickLinkText");
-
-      const familyQuickLink = document.getElementById("familyQuickLink");
       const familyQuickLinkText = document.getElementById("familyQuickLinkText");
 
       const signOutBtn = document.getElementById("signOutBtn");
@@ -363,17 +360,30 @@
           };
         }
 
-        const approval = profile.approval_status || "unknown";
-        const isActive = profile.is_active;
+        const isActive = profile.is_active === true;
+        const hasVisibleVersion = !!profile.current_visible_version_id;
+        const hasPendingVersion = !!profile.current_pending_version_id;
 
-        let detail = `Status: ${approval}`;
-        if (typeof isActive === "boolean") {
-          detail += isActive ? " • Active" : " • Inactive";
+        let value = "Created";
+        let detail = "Profile exists.";
+
+        if (hasVisibleVersion && isActive) {
+          value = "Published";
+          detail = "Your live profile is visible in Grove.";
+        } else if (hasPendingVersion) {
+          value = "Pending Review";
+          detail = "You have a submitted version waiting in queue or review.";
+        } else if (hasVisibleVersion && !isActive) {
+          value = "Hidden";
+          detail = "A visible version exists, but the profile is not currently active.";
+        } else {
+          value = "Draft";
+          detail = "Your profile exists but is not currently published.";
         }
 
         return {
           exists: true,
-          value: "Created",
+          value,
           detail
         };
       }
@@ -464,7 +474,7 @@
       async function loadCaregiverProfile(userId) {
         const { data, error } = await window.db
           .from("caregiver_profiles")
-          .select("id, approval_status, is_active")
+          .select("id, current_visible_version_id, current_pending_version_id, is_active")
           .eq("user_id", userId)
           .maybeSingle();
 
@@ -488,7 +498,7 @@
       async function loadFamilyProfile(userId) {
         const { data, error } = await window.db
           .from("family_profiles")
-          .select("id, approval_status, is_active")
+          .select("id, current_visible_version_id, current_pending_version_id, is_active")
           .eq("user_id", userId)
           .maybeSingle();
 
