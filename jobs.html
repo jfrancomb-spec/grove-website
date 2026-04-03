@@ -120,6 +120,17 @@
         return clean.length <= maxLength ? clean : `${clean.slice(0, maxLength - 1)}…`;
       }
 
+      function normalizeJob(parentRow, versionRow) {
+        return {
+          ...parentRow,
+          ...versionRow,
+          id: parentRow.id,
+          job_post_id: parentRow.id,
+          current_visible_version_id: parentRow.current_visible_version_id,
+          user_id: parentRow.user_id
+        };
+      }
+
       function renderJobs(list) {
         const container = document.getElementById("jobsContainer");
         const countEl = document.getElementById("jobsCount");
@@ -139,8 +150,8 @@
           const card = document.createElement("div");
           card.className = "card browse-card";
 
-          const postedDate = job.created_at
-            ? new Date(job.created_at).toLocaleDateString()
+          const postedDate = job.submitted_at || job.created_at
+            ? new Date(job.submitted_at || job.created_at).toLocaleDateString()
             : "";
 
           const careType = job.care_type || "Not specified";
@@ -200,7 +211,7 @@
       async function loadJobsOnce() {
         let tries = 0;
         while (!window.db && tries < 40) {
-          await new Promise((r) => setTimeout(r, 50));
+          await new Promise((resolve) => setTimeout(resolve, 50));
           tries++;
         }
 
@@ -211,26 +222,62 @@
           return;
         }
 
-        const { data, error } = await window.db
+        const { data: parentRows, error: parentError } = await window.db
           .from("job_posts")
-          .select("*")
+          .select("id, user_id, current_visible_version_id, is_active")
+          .not("current_visible_version_id", "is", null)
           .eq("is_active", true)
           .order("created_at", { ascending: false });
 
-        if (error) {
+        if (parentError) {
           container.innerHTML = "<div class='empty-state'><p>Unable to load jobs right now.</p></div>";
-          console.error(error);
+          console.error(parentError);
           return;
         }
 
-        allJobs = data || [];
+        const versionIds = (parentRows || [])
+          .map((row) => row.current_visible_version_id)
+          .filter(Boolean);
+
+        if (!versionIds.length) {
+          allJobs = [];
+          applyFilters();
+          return;
+        }
+
+        const { data: versionRows, error: versionError } = await window.db
+          .from("job_post_versions")
+          .select("*")
+          .in("id", versionIds)
+          .eq("is_live", true)
+          .eq("content_status", "published");
+
+        if (versionError) {
+          container.innerHTML = "<div class='empty-state'><p>Unable to load jobs right now.</p></div>";
+          console.error(versionError);
+          return;
+        }
+
+        const versionMap = {};
+        (versionRows || []).forEach((version) => {
+          versionMap[version.id] = version;
+        });
+
+        allJobs = (parentRows || [])
+          .map((parent) => {
+            const version = versionMap[parent.current_visible_version_id];
+            if (!version) return null;
+            return normalizeJob(parent, version);
+          })
+          .filter(Boolean);
+
         applyFilters();
       }
 
       function wireEvents() {
         document.getElementById("jobFilterBtn")?.addEventListener("click", () => {
           applyFilters();
-          closeBrowseSidebar?.();
+          if (typeof closeBrowseSidebar === "function") closeBrowseSidebar();
         });
 
         document.getElementById("clearFilters")?.addEventListener("click", () => {
@@ -238,7 +285,7 @@
           document.getElementById("jobFilterLocation").value = "";
           document.getElementById("jobFilterKeyword").value = "";
           applyFilters();
-          closeBrowseSidebar?.();
+          if (typeof closeBrowseSidebar === "function") closeBrowseSidebar();
         });
 
         document.getElementById("jobFilterType")?.addEventListener("change", applyFilters);
