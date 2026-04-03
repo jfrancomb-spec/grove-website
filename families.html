@@ -293,7 +293,7 @@
           .from("family_reviews")
           .select("*")
           .eq("is_visible", true)
-          .in("content_status", ["visible", "approved"])
+          .eq("content_status", "published")
           .order("created_at", { ascending: false });
 
         if (reviewError) {
@@ -338,6 +338,7 @@
           .from("family_profiles")
           .select("id, user_id, current_visible_version_id, average_response_minutes, confirmed_encounters")
           .not("current_visible_version_id", "is", null)
+          .eq("is_active", true)
           .order("created_at", { ascending: false });
 
         if (parentError) {
@@ -364,7 +365,7 @@
           .select("*")
           .in("id", versionIds)
           .eq("is_live", true)
-          .in("content_status", ["visible", "approved"]);
+          .eq("content_status", "published");
 
         if (versionError) {
           console.error(versionError);
