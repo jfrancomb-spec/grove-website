@@ -21,6 +21,8 @@ const SUPABASE_URL = "https://apjdknqppglnamndwwya.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFwamRrbnFwcGdsbmFtbmR3d3lhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI0NTIyODgsImV4cCI6MjA4ODAyODI4OH0.Q3B9ZkgxSoUshDM4zw5m30qAIVwjn-B57REjhV-Wo68";
 
 window.db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+console.log("SUPABASE URL:", SUPABASE_URL);
+console.log("KEY PREFIX:", SUPABASE_ANON_KEY.slice(0, 20));
 
 // ======================================================
 // Header auth state (NEW)
