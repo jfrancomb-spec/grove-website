@@ -112,14 +112,17 @@
       text-decoration: none;
     }
 
-    .links-card {
+    .links-card,
+    .jobs-card {
       background: white;
       border-radius: 16px;
       padding: 24px;
       box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
+      margin-bottom: 24px;
     }
 
-    .links-card h2 {
+    .links-card h2,
+    .jobs-card h2 {
       margin-top: 0;
       margin-bottom: 16px;
       font-size: 22px;
@@ -216,6 +219,146 @@
     .loading {
       color: #6b7280;
     }
+
+    .jobs-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 16px;
+      flex-wrap: wrap;
+      margin-bottom: 16px;
+    }
+
+    .jobs-card-subtext {
+      margin: 0;
+      color: #6b7280;
+      line-height: 1.5;
+    }
+
+    .my-jobs-loading,
+    .my-jobs-message,
+    .my-jobs-empty {
+      background: #f8fafc;
+      border: 1px solid #e5e7eb;
+      border-radius: 12px;
+      padding: 16px;
+      color: #4b5563;
+    }
+
+    .my-jobs-message.error {
+      background: #fef2f2;
+      border-color: #fecaca;
+      color: #991b1b;
+    }
+
+    .my-jobs-groups {
+      display: grid;
+      gap: 20px;
+    }
+
+    .my-jobs-group h3 {
+      margin: 0 0 12px;
+      font-size: 18px;
+      color: #111827;
+    }
+
+    .my-jobs-grid {
+      display: grid;
+      gap: 14px;
+    }
+
+    .job-card {
+      border: 1px solid #e5e7eb;
+      border-radius: 14px;
+      padding: 18px;
+      background: #fff;
+    }
+
+    .job-card-top {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      align-items: flex-start;
+      margin-bottom: 14px;
+    }
+
+    .job-card h4 {
+      margin: 0 0 6px;
+      font-size: 18px;
+      color: #111827;
+    }
+
+    .job-meta-line {
+      color: #6b7280;
+      font-size: 14px;
+      line-height: 1.4;
+    }
+
+    .status-badge {
+      display: inline-block;
+      border-radius: 999px;
+      padding: 6px 10px;
+      font-size: 12px;
+      font-weight: bold;
+      white-space: nowrap;
+    }
+
+    .status-published {
+      background: #eaf7f4;
+      color: #22665f;
+    }
+
+    .status-queued {
+      background: #fff7ed;
+      color: #9a3412;
+    }
+
+    .status-flagged,
+    .status-rejected {
+      background: #fef2f2;
+      color: #991b1b;
+    }
+
+    .status-inactive,
+    .status-draft {
+      background: #f3f4f6;
+      color: #4b5563;
+    }
+
+    .job-details p {
+      margin: 0 0 8px;
+      font-size: 14px;
+      line-height: 1.5;
+      color: #374151;
+    }
+
+    .job-actions {
+      margin-top: 14px;
+    }
+
+    .my-jobs-empty p {
+      margin-top: 0;
+      margin-bottom: 14px;
+    }
+
+    @media (max-width: 640px) {
+      .page {
+        margin-top: 24px;
+      }
+
+      .hero-card,
+      .welcome-card,
+      .status-card,
+      .links-card,
+      .jobs-card {
+        padding: 18px;
+      }
+
+      .job-card-top,
+      .jobs-card-header {
+        flex-direction: column;
+      }
+    }
   </style>
 </head>
 <body>
@@ -274,6 +417,27 @@
           <a class="button button-secondary" href="./messages.html">Open Messages</a>
         </div>
       </div>
+    </section>
+
+    <section class="jobs-card">
+      <div class="jobs-card-header">
+        <div>
+          <h2>Your Job Posts</h2>
+          <p class="jobs-card-subtext">
+            Manage the care requests you have posted through Grove.
+          </p>
+        </div>
+
+        <a class="button button-family" href="./findcare.html">Post a New Job</a>
+      </div>
+
+      <div id="myJobsLoading" class="my-jobs-loading" style="display:none;">
+        Loading your job posts...
+      </div>
+
+      <div id="myJobsMessage" class="my-jobs-message" style="display:none;"></div>
+
+      <div id="myJobsGroups" class="my-jobs-groups"></div>
     </section>
 
     <section class="links-card">
@@ -343,12 +507,21 @@
 
       const signOutBtn = document.getElementById("signOutBtn");
 
+      const myJobsLoading = document.getElementById("myJobsLoading");
+      const myJobsMessage = document.getElementById("myJobsMessage");
+      const myJobsGroups = document.getElementById("myJobsGroups");
+
       let hasFamilyProfile = false;
       let hasCaregiverProfile = false;
 
       function showError(message) {
         errorBox.style.display = "block";
         errorBox.textContent = message;
+      }
+
+      function hideError() {
+        errorBox.style.display = "none";
+        errorBox.textContent = "";
       }
 
       function formatProfileStatus(profile) {
@@ -390,7 +563,7 @@
 
       function setActionButton(container, href, text, buttonClass) {
         if (!container) return;
-        container.innerHTML = `<a class="button ${buttonClass}" href="${href}">${text}</a>`;
+        container.innerHTML = '<a class="button ' + buttonClass + '" href="' + href + '">' + text + '</a>';
       }
 
       function updateProfileActionUI(type, exists) {
@@ -543,14 +716,14 @@
           }
 
           if (unreadTotal === 0) {
-            messageDetail.textContent = `You have ${conversationTotal} conversation${conversationTotal === 1 ? "" : "s"} and no unread messages.`;
+            messageDetail.textContent = "You have " + conversationTotal + " conversation" + (conversationTotal === 1 ? "" : "s") + " and no unread messages.";
             return;
           }
 
           messageDetail.textContent =
             unreadTotal === 1
               ? "You have 1 conversation with unread messages."
-              : `You have ${unreadTotal} conversations with unread messages.`;
+              : "You have " + unreadTotal + " conversations with unread messages.";
         } catch (error) {
           console.error(error);
           messageCount.textContent = "—";
@@ -558,10 +731,311 @@
         }
       }
 
+      async function loadMyJobs(userId) {
+        setMyJobsLoading(true);
+        clearMyJobsMessage();
+        myJobsGroups.innerHTML = "";
+
+        try {
+          const { data: jobPosts, error: jobError } = await window.db
+            .from("job_posts")
+            .select("id, user_id, title, care_type, location, schedule, description, pay_range, is_active, content_status, current_visible_version_id, current_pending_version_id, status_reason, updated_at")
+            .eq("user_id", userId)
+            .neq("content_status", "deleted")
+            .order("updated_at", { ascending: false });
+
+          if (jobError) {
+            throw jobError;
+          }
+
+          const rows = jobPosts || [];
+
+          if (!rows.length) {
+            renderEmptyJobs();
+            return;
+          }
+
+          const versionIds = [];
+          rows.forEach((job) => {
+            if (job.current_visible_version_id) versionIds.push(job.current_visible_version_id);
+            if (job.current_pending_version_id) versionIds.push(job.current_pending_version_id);
+          });
+
+          const uniqueVersionIds = Array.from(new Set(versionIds));
+          let versionsById = {};
+
+          if (uniqueVersionIds.length) {
+            const { data: versions, error: versionError } = await window.db
+              .from("job_post_versions")
+              .select("id, job_post_id, version_number, title, care_type, location, schedule, description, pay_range, content_status, review_status, moderation_reason, rejection_reason, is_live, approved_at, submitted_at, updated_at, status_reason")
+              .in("id", uniqueVersionIds);
+
+            if (versionError) {
+              throw versionError;
+            }
+
+            (versions || []).forEach((row) => {
+              versionsById[row.id] = row;
+            });
+          }
+
+          const normalized = rows.map((job) => normalizeJob(job, versionsById));
+          renderJobGroups(normalized);
+        } catch (error) {
+          console.error("Failed loading jobs:", error);
+          showMyJobsMessage(error.message || "Unable to load your job posts.", true);
+        } finally {
+          setMyJobsLoading(false);
+        }
+      }
+
+      function normalizeJob(job, versionsById) {
+        const visibleVersion = job.current_visible_version_id
+          ? versionsById[job.current_visible_version_id] || null
+          : null;
+
+        const pendingVersion = job.current_pending_version_id
+          ? versionsById[job.current_pending_version_id] || null
+          : null;
+
+        const displayVersion = pendingVersion || visibleVersion || null;
+
+        const title = (displayVersion && displayVersion.title) || job.title || generateFallbackJobTitle(job.care_type);
+        const careType = (displayVersion && displayVersion.care_type) || job.care_type || "";
+        const location = (displayVersion && displayVersion.location) || job.location || "";
+        const schedule = (displayVersion && displayVersion.schedule) || job.schedule || "";
+        const payRange = (displayVersion && displayVersion.pay_range) || job.pay_range || "";
+        const statusMeta = deriveJobStatus(job, visibleVersion, pendingVersion);
+
+        return {
+          id: job.id,
+          title,
+          careType,
+          location,
+          schedule,
+          payRange,
+          updatedAt: job.updated_at,
+          statusKey: statusMeta.key,
+          statusLabel: statusMeta.label,
+          statusReason: statusMeta.reason,
+          group: statusMeta.group
+        };
+      }
+
+      function deriveJobStatus(job, visibleVersion, pendingVersion) {
+        if (!job.is_active && job.content_status !== "deleted") {
+          return {
+            key: "inactive",
+            label: "Inactive",
+            reason: job.status_reason || "This job post is not currently active.",
+            group: "inactive"
+          };
+        }
+
+        if (pendingVersion) {
+          if (pendingVersion.content_status === "queued") {
+            return {
+              key: "queued",
+              label: "Pending Review",
+              reason: pendingVersion.status_reason || pendingVersion.review_status || "This job post is waiting for moderation review.",
+              group: "pending"
+            };
+          }
+
+          if (pendingVersion.content_status === "flagged") {
+            return {
+              key: "flagged",
+              label: "Flagged",
+              reason: pendingVersion.moderation_reason || pendingVersion.status_reason || "This job post was flagged for review.",
+              group: "attention"
+            };
+          }
+
+          if (pendingVersion.content_status === "rejected") {
+            return {
+              key: "rejected",
+              label: "Rejected",
+              reason: pendingVersion.rejection_reason || pendingVersion.moderation_reason || pendingVersion.status_reason || "This job post needs changes before it can go live.",
+              group: "attention"
+            };
+          }
+        }
+
+        if (visibleVersion && visibleVersion.content_status === "published" && visibleVersion.is_live) {
+          return {
+            key: "published",
+            label: "Published",
+            reason: visibleVersion.status_reason || "This job post is live and visible to caregivers.",
+            group: "live"
+          };
+        }
+
+        if (job.content_status === "queued") {
+          return {
+            key: "queued",
+            label: "Pending Review",
+            reason: job.status_reason || "This job post is waiting for moderation review.",
+            group: "pending"
+          };
+        }
+
+        if (job.content_status === "rejected") {
+          return {
+            key: "rejected",
+            label: "Rejected",
+            reason: job.status_reason || "This job post needs changes before it can go live.",
+            group: "attention"
+          };
+        }
+
+        return {
+          key: "draft",
+          label: "Draft",
+          reason: job.status_reason || "This job post is not yet published.",
+          group: "inactive"
+        };
+      }
+
+      function renderJobGroups(jobs) {
+        myJobsGroups.innerHTML = "";
+
+        const grouped = {
+          live: jobs.filter((job) => job.group === "live"),
+          pending: jobs.filter((job) => job.group === "pending"),
+          attention: jobs.filter((job) => job.group === "attention"),
+          inactive: jobs.filter((job) => job.group === "inactive")
+        };
+
+        const sections = [
+          { key: "live", title: "Live" },
+          { key: "pending", title: "Pending Review" },
+          { key: "attention", title: "Needs Attention" },
+          { key: "inactive", title: "Inactive" }
+        ];
+
+        let renderedAny = false;
+
+        sections.forEach((section) => {
+          const items = grouped[section.key];
+          if (!items.length) return;
+
+          renderedAny = true;
+
+          const wrapper = document.createElement("div");
+          wrapper.className = "my-jobs-group";
+
+          const heading = document.createElement("h3");
+          heading.textContent = section.title;
+          wrapper.appendChild(heading);
+
+          const grid = document.createElement("div");
+          grid.className = "my-jobs-grid";
+
+          items.forEach((job) => {
+            grid.appendChild(buildJobCard(job));
+          });
+
+          wrapper.appendChild(grid);
+          myJobsGroups.appendChild(wrapper);
+        });
+
+        if (!renderedAny) {
+          renderEmptyJobs();
+        }
+      }
+
+      function buildJobCard(job) {
+        const card = document.createElement("article");
+        card.className = "job-card status-" + job.statusKey;
+
+        const updatedText = formatDate(job.updatedAt);
+
+        card.innerHTML =
+          '<div class="job-card-top">' +
+            '<div>' +
+              '<h4>' + escapeHtml(job.title) + '</h4>' +
+              '<div class="job-meta-line">' +
+                (job.careType ? '<span>' + escapeHtml(job.careType) + '</span>' : '') +
+                (job.location ? '<span>' + (job.careType ? ' • ' : '') + escapeHtml(job.location) + '</span>' : '') +
+              '</div>' +
+            '</div>' +
+            '<span class="status-badge status-' + escapeHtml(job.statusKey) + '">' + escapeHtml(job.statusLabel) + '</span>' +
+          '</div>' +
+          '<div class="job-details">' +
+            (job.schedule ? '<p><strong>Schedule:</strong> ' + escapeHtml(job.schedule) + '</p>' : '') +
+            (job.payRange ? '<p><strong>Pay:</strong> ' + escapeHtml(job.payRange) + '</p>' : '') +
+            (job.statusReason ? '<p><strong>Status:</strong> ' + escapeHtml(job.statusReason) + '</p>' : '') +
+            '<p><strong>Updated:</strong> ' + escapeHtml(updatedText) + '</p>' +
+          '</div>' +
+          '<div class="job-actions">' +
+            '<a class="button button-family" href="./findcare.html?job_post_id=' + encodeURIComponent(job.id) + '">Edit</a>' +
+          '</div>';
+
+        return card;
+      }
+
+      function renderEmptyJobs() {
+        myJobsGroups.innerHTML =
+          '<div class="my-jobs-empty">' +
+            '<p>You have not posted any care requests yet.</p>' +
+            '<a class="button button-family" href="./findcare.html">Post Your First Job</a>' +
+          '</div>';
+      }
+
+      function setMyJobsLoading(isLoading) {
+        myJobsLoading.style.display = isLoading ? "block" : "none";
+      }
+
+      function showMyJobsMessage(message, isError) {
+        myJobsMessage.textContent = message;
+        myJobsMessage.className = isError ? "my-jobs-message error" : "my-jobs-message";
+        myJobsMessage.style.display = "block";
+      }
+
+      function clearMyJobsMessage() {
+        myJobsMessage.textContent = "";
+        myJobsMessage.className = "my-jobs-message";
+        myJobsMessage.style.display = "none";
+      }
+
+      function generateFallbackJobTitle(careType) {
+        const normalized = String(careType || "").toLowerCase();
+
+        if (normalized === "childcare") return "Childcare Needed";
+        if (normalized === "senior care") return "Senior Care Needed";
+        if (normalized === "pet care") return "Pet Care Needed";
+        if (normalized === "household help") return "Household Help Needed";
+
+        return "Care Needed";
+      }
+
+      function formatDate(value) {
+        if (!value) return "Unknown";
+
+        const date = new Date(value);
+        if (Number.isNaN(date.getTime())) return "Unknown";
+
+        return date.toLocaleDateString([], {
+          year: "numeric",
+          month: "short",
+          day: "numeric"
+        });
+      }
+
+      function escapeHtml(value) {
+        return String(value || "")
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;")
+          .replace(/'/g, "&#39;");
+      }
+
       async function initPage() {
         hasFamilyProfile = false;
         hasCaregiverProfile = false;
 
+        hideError();
         updateProfileActionUI("family", false);
         updateProfileActionUI("caregiver", false);
         updateWelcomeState();
@@ -575,7 +1049,8 @@
         await Promise.all([
           loadCaregiverProfile(user.id),
           loadFamilyProfile(user.id),
-          loadMessageSummary(user.id)
+          loadMessageSummary(user.id),
+          loadMyJobs(user.id)
         ]);
       }
 
