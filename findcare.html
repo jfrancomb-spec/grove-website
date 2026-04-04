@@ -10,21 +10,18 @@
 </head>
 
 <body>
-  <!-- Shared header -->
   <div id="header-placeholder"></div>
 
   <main>
-    <!-- HERO -->
     <div class="hero">
       <h1>Post a Care Request</h1>
       <div class="subtitle">
-        Share what you need. Your request can be viewed by caregivers in the Grove network.
+        Share what kind of help you need. Your request can be viewed by caregivers in the Grove network.
       </div>
       <a class="button" href="#FindCare">Post Request</a>
       <a class="button" href="./caregivers.html">Browse Caregivers</a>
     </div>
 
-    <!-- WHY -->
     <section>
       <h2>Why Families Choose Grove</h2>
 
@@ -46,36 +43,25 @@
       </div>
     </section>
 
-    <!-- FORM -->
     <section id="FindCare">
-      <h2>Care Request</h2>
+      <h2 id="formHeading">Care Request</h2>
       <p>
         The more detail you provide, the easier it is for caregivers to decide if the opportunity fits their availability.
       </p>
 
       <div class="form-card">
+        <div id="requestError" class="error" style="display:none; margin-bottom: 16px;"></div>
+
         <form id="careForm">
-          <div class="row">
-            <input id="name" type="text" placeholder="Your Name" required />
-          </div>
-
-          <div class="row">
-            <input id="email" type="email" placeholder="Email Address" required />
-          </div>
-
           <div class="row">
             <select id="care_type" required>
               <option value="">Type of Care Needed</option>
-              <option>Childcare</option>
-              <option>Senior Care</option>
-              <option>Pet Care</option>
-              <option>Household Help</option>
-              <option>Other</option>
+              <option value="Childcare">Childcare</option>
+              <option value="Senior Care">Senior Care</option>
+              <option value="Pet Care">Pet Care</option>
+              <option value="Household Help">Household Help</option>
+              <option value="Other">Other</option>
             </select>
-          </div>
-
-          <div class="row">
-            <input id="location" type="text" placeholder="City or Neighborhood" required />
           </div>
 
           <div class="row">
@@ -83,23 +69,25 @@
           </div>
 
           <div class="row">
-            <textarea id="details" placeholder="Tell caregivers about your needs" required></textarea>
+            <input id="pay_range" type="text" placeholder="Pay (example: $18–$22/hour)" required />
           </div>
 
-          <button class="button" type="submit">Submit Request</button>
+          <div class="row">
+            <textarea id="details" placeholder="Tell caregivers about the position, responsibilities, ages, pets, routines, expectations, etc." required></textarea>
+          </div>
+
+          <button class="button" id="submitButton" type="submit">Submit Request</button>
         </form>
 
-        <!-- Shown by app.js after successful submit -->
-        <p id="careSuccess" class="success">
-          ✅ Request posted! You can browse caregivers and reach out to anyone you’d like to connect with.
+        <p id="careSuccess" class="success" style="display:none;">
+          ✅ Request submitted successfully.
         </p>
 
         <div style="margin-top: 22px;">
           <h3 style="margin-bottom: 6px;">What Happens Next</h3>
           <p style="margin-top: 0;">
-            After you submit your request, it will be visible to caregivers in the Grove network.
-            Caregivers who are interested can reach out. You can also browse caregivers and contact people
-            you’d like to connect with.
+            After you submit your request, it may be published right away or temporarily held depending on your account status.
+            Once published, it will be visible to caregivers in the Grove network.
           </p>
         </div>
 
@@ -110,11 +98,155 @@
     </section>
   </main>
 
-  <!-- Shared footer -->
   <div id="footer-placeholder"></div>
 
-  <!-- Scripts -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
   <script src="./app.js"></script>
+
+  <script>
+    (function () {
+      const form = document.getElementById("careForm");
+      const successEl = document.getElementById("careSuccess");
+      const errorEl = document.getElementById("requestError");
+      const submitButton = document.getElementById("submitButton");
+      const formHeading = document.getElementById("formHeading");
+
+      const params = new URLSearchParams(window.location.search);
+      const existingJobId = params.get("id");
+
+      function showError(message) {
+        if (!errorEl) return;
+        errorEl.textContent = message;
+        errorEl.style.display = "block";
+      }
+
+      function clearError() {
+        if (!errorEl) return;
+        errorEl.textContent = "";
+        errorEl.style.display = "none";
+      }
+
+      function showSuccess(message) {
+        if (!successEl) return;
+        successEl.textContent = message;
+        successEl.style.display = "block";
+      }
+
+      function setSubmitting(isSubmitting) {
+        if (!submitButton) return;
+        submitButton.disabled = isSubmitting;
+        submitButton.textContent = isSubmitting ? "Saving..." : (existingJobId ? "Save Changes" : "Submit Request");
+      }
+
+      async function requireSession() {
+        const { data, error } = await window.db.auth.getSession();
+
+        if (error || !data?.session?.user) {
+          window.location.href = "./login.html";
+          return null;
+        }
+
+        return data.session.user;
+      }
+
+      async function loadExistingJob(userId) {
+        if (!existingJobId) return;
+
+        if (formHeading) {
+          formHeading.textContent = "Edit Care Request";
+        }
+
+        if (submitButton) {
+          submitButton.textContent = "Save Changes";
+        }
+
+        const { data: parent, error: parentError } = await window.db
+          .from("job_posts")
+          .select("id, user_id, current_visible_version_id, current_pending_version_id")
+          .eq("id", existingJobId)
+          .eq("user_id", userId)
+          .maybeSingle();
+
+        if (parentError) throw new Error(parentError.message);
+        if (!parent) throw new Error("Job post not found.");
+
+        const versionId = parent.current_pending_version_id || parent.current_visible_version_id;
+        if (!versionId) return;
+
+        const { data: version, error: versionError } = await window.db
+          .from("job_post_versions")
+          .select("*")
+          .eq("id", versionId)
+          .maybeSingle();
+
+        if (versionError) throw new Error(versionError.message);
+        if (!version) return;
+
+        document.getElementById("care_type").value = version.care_type || "";
+        document.getElementById("schedule").value = version.schedule || "";
+        document.getElementById("pay_range").value = version.pay_range || "";
+        document.getElementById("details").value = version.description || "";
+      }
+
+      async function submitJob(values) {
+        const { data, error } = await window.db.functions.invoke("submit-job-post-version", {
+          body: values
+        });
+
+        if (error) throw error;
+        if (!data?.success) throw new Error(data?.error || "submit-job-post-version failed");
+
+        return data;
+      }
+
+      form?.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        clearError();
+        if (successEl) successEl.style.display = "none";
+
+        try {
+          const user = await requireSession();
+          if (!user) return;
+
+          const payload = {
+            care_type: document.getElementById("care_type").value.trim(),
+            schedule: document.getElementById("schedule").value.trim(),
+            pay_range: document.getElementById("pay_range").value.trim(),
+            description: document.getElementById("details").value.trim()
+          };
+
+          if (existingJobId) {
+            payload.job_post_id = existingJobId;
+          }
+
+          setSubmitting(true);
+
+          const result = await submitJob(payload);
+
+          showSuccess(
+            result?.version?.content_status === "queued"
+              ? "✅ Request saved and placed in queue."
+              : "✅ Request submitted and published."
+          );
+        } catch (error) {
+          console.error(error);
+          showError(error?.message || "Unable to submit request right now.");
+        } finally {
+          setSubmitting(false);
+        }
+      });
+
+      window.addEventListener("DOMContentLoaded", async () => {
+        try {
+          const user = await requireSession();
+          if (!user) return;
+          await loadExistingJob(user.id);
+        } catch (error) {
+          console.error(error);
+          showError(error?.message || "Unable to load request details.");
+        }
+      });
+    })();
+  </script>
 </body>
 </html>
