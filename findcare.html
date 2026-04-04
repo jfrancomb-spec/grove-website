@@ -164,32 +164,18 @@
       function applyEditModeUI() {
         if (!existingJobId) return;
 
-        if (heroTitle) {
-          heroTitle.textContent = "Edit a Care Request";
-        }
-
+        if (heroTitle) heroTitle.textContent = "Edit a Care Request";
         if (heroSubtitle) {
           heroSubtitle.textContent =
             "Update your care request details. Changes will be saved through Grove's moderation and versioning system.";
         }
-
-        if (heroPrimaryButton) {
-          heroPrimaryButton.textContent = "Edit Request";
-        }
-
-        if (formHeading) {
-          formHeading.textContent = "Edit Care Request";
-        }
-
+        if (heroPrimaryButton) heroPrimaryButton.textContent = "Edit Request";
+        if (formHeading) formHeading.textContent = "Edit Care Request";
         if (formIntro) {
           formIntro.textContent =
             "Update the details below so caregivers can see the most accurate version of your request.";
         }
-
-        if (submitButton) {
-          submitButton.textContent = "Save Changes";
-        }
-
+        if (submitButton) submitButton.textContent = "Save Changes";
         if (whatHappensNextText) {
           whatHappensNextText.textContent =
             "After you save changes, Grove will create a new version of your request. Depending on your account status, it may publish right away or wait in queue for review.";
@@ -201,14 +187,12 @@
       async function requireFreshSession() {
         try {
           const { data: userData, error: userError } = await window.db.auth.getUser();
-
           if (userError || !userData?.user) {
             window.location.href = "./login.html";
             return null;
           }
 
           const { data: sessionData, error: sessionError } = await window.db.auth.getSession();
-
           if (sessionError || !sessionData?.session?.access_token) {
             window.location.href = "./login.html";
             return null;
@@ -237,19 +221,11 @@
           .eq("user_id", userId)
           .maybeSingle();
 
-        if (parentError) {
-          throw new Error(parentError.message);
-        }
-
-        if (!parent) {
-          throw new Error("Job post not found.");
-        }
+        if (parentError) throw new Error(parentError.message);
+        if (!parent) throw new Error("Job post not found.");
 
         const versionId = parent.current_pending_version_id || parent.current_visible_version_id;
-
-        if (!versionId) {
-          throw new Error("No editable version was found for this job post.");
-        }
+        if (!versionId) throw new Error("No editable version was found for this job post.");
 
         const { data: version, error: versionError } = await window.db
           .from("job_post_versions")
@@ -257,13 +233,8 @@
           .eq("id", versionId)
           .maybeSingle();
 
-        if (versionError) {
-          throw new Error(versionError.message);
-        }
-
-        if (!version) {
-          throw new Error("Job post version not found.");
-        }
+        if (versionError) throw new Error(versionError.message);
+        if (!version) throw new Error("Job post version not found.");
 
         if (careTypeEl) careTypeEl.value = version.care_type || "";
         if (scheduleEl) scheduleEl.value = version.schedule || "";
@@ -287,46 +258,56 @@
       }
 
       function validatePayload(payload) {
-        if (!payload.care_type) {
-          throw new Error("Please select the type of care needed.");
-        }
-
-        if (!payload.schedule) {
-          throw new Error("Please enter the schedule needed.");
-        }
-
-        if (!payload.pay_range) {
-          throw new Error("Please enter the pay information.");
-        }
-
-        if (!payload.description) {
-          throw new Error("Please enter request details.");
-        }
+        if (!payload.care_type) throw new Error("Please select the type of care needed.");
+        if (!payload.schedule) throw new Error("Please enter the schedule needed.");
+        if (!payload.pay_range) throw new Error("Please enter the pay information.");
+        if (!payload.description) throw new Error("Please enter request details.");
       }
 
       async function submitJob(values, accessToken) {
-        const { data, error } = await window.db.functions.invoke("submit-job-post-version", {
-          body: values,
+        const url = "https://apjdknqppglnamndwwya.supabase.co/functions/v1/submit-job-post-version";
+
+        const response = await fetch(url, {
+          method: "POST",
           headers: {
-            Authorization: "Bearer " + accessToken
-          }
+            "Content-Type": "application/json",
+            "apikey": window.SUPABASE_ANON_KEY || "",
+            "Authorization": "Bearer " + accessToken
+          },
+          body: JSON.stringify(values)
         });
 
-        if (error) {
-          throw new Error(error.message || "Unable to submit request right now.");
+        const responseText = await response.text();
+        let parsed = null;
+
+        try {
+          parsed = responseText ? JSON.parse(responseText) : null;
+        } catch {
+          parsed = null;
         }
 
-        if (!data?.success) {
-          throw new Error(data?.error || "submit-job-post-version failed");
+        console.log("submit-job-post-version status:", response.status);
+        console.log("submit-job-post-version raw response:", responseText);
+        console.log("submit-job-post-version parsed response:", parsed);
+
+        if (!response.ok) {
+          throw new Error(
+            parsed?.error ||
+            parsed?.details ||
+            responseText ||
+            ("Request failed with status " + response.status)
+          );
         }
 
-        return data;
+        if (!parsed?.success) {
+          throw new Error(parsed?.error || "submit-job-post-version failed");
+        }
+
+        return parsed;
       }
 
       function scheduleRedirectToAccount() {
-        if (redirectTimer) {
-          clearTimeout(redirectTimer);
-        }
+        if (redirectTimer) clearTimeout(redirectTimer);
 
         redirectTimer = window.setTimeout(function () {
           window.location.href = "./account.html";
