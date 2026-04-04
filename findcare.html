@@ -198,16 +198,26 @@
         document.title = "Grove | Edit Care Request";
       }
 
-      async function requireSession() {
+      async function requireFreshSession() {
         try {
-          const { data, error } = await window.db.auth.getSession();
+          const { data: userData, error: userError } = await window.db.auth.getUser();
 
-          if (error || !data?.session?.user) {
+          if (userError || !userData?.user) {
             window.location.href = "./login.html";
             return null;
           }
 
-          return data.session;
+          const { data: sessionData, error: sessionError } = await window.db.auth.getSession();
+
+          if (sessionError || !sessionData?.session?.access_token) {
+            window.location.href = "./login.html";
+            return null;
+          }
+
+          return {
+            user: userData.user,
+            accessToken: sessionData.session.access_token
+          };
         } catch (error) {
           console.error(error);
           window.location.href = "./login.html";
@@ -329,19 +339,15 @@
         hideSuccess();
 
         try {
-          const session = await requireSession();
-          if (!session) return;
+          const auth = await requireFreshSession();
+          if (!auth) return;
 
           const payload = buildPayload();
           validatePayload(payload);
 
-          if (!session.access_token) {
-            throw new Error("Your session is missing an access token. Please sign in again.");
-          }
-
           setSubmitting(true);
 
-          const result = await submitJob(payload, session.access_token);
+          const result = await submitJob(payload, auth.accessToken);
           const status = result?.version?.content_status || "";
 
           if (existingJobId) {
@@ -373,11 +379,11 @@
           hideSuccess();
           clearError();
 
-          const session = await requireSession();
-          if (!session) return;
+          const auth = await requireFreshSession();
+          if (!auth) return;
 
           if (existingJobId) {
-            await loadExistingJob(session.user.id);
+            await loadExistingJob(auth.user.id);
           }
 
           setSubmitting(false);
