@@ -124,6 +124,8 @@
       const params = new URLSearchParams(window.location.search);
       const existingJobId = params.get("job_post_id");
 
+      let redirectTimer = null;
+
       function showError(message) {
         if (!errorEl) return;
         errorEl.textContent = message;
@@ -310,6 +312,16 @@
         return data;
       }
 
+      function scheduleRedirectToAccount() {
+        if (redirectTimer) {
+          clearTimeout(redirectTimer);
+        }
+
+        redirectTimer = window.setTimeout(function () {
+          window.location.href = "./account.html";
+        }, 1800);
+      }
+
       form?.addEventListener("submit", async function (event) {
         event.preventDefault();
         clearError();
@@ -330,16 +342,18 @@
           if (existingJobId) {
             showSuccess(
               status === "queued"
-                ? "✅ Changes saved and placed in queue."
-                : "✅ Changes saved successfully."
+                ? "✅ Changes saved and placed in queue. Redirecting to your account..."
+                : "✅ Changes saved successfully. Redirecting to your account..."
             );
           } else {
             showSuccess(
               status === "queued"
-                ? "✅ Request submitted and placed in queue."
-                : "✅ Request submitted and published."
+                ? "✅ Request submitted and placed in queue. Redirecting to your account..."
+                : "✅ Request submitted and published. Redirecting to your account..."
             );
           }
+
+          scheduleRedirectToAccount();
         } catch (error) {
           console.error(error);
           showError(error?.message || "Unable to submit request right now.");
