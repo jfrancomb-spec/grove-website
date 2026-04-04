@@ -22,12 +22,19 @@
       padding: 0 20px 40px;
     }
 
-    .hero-card {
-      background: white;
-      border-radius: 16px;
-      padding: 28px;
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+    .page-heading {
       margin-bottom: 24px;
+    }
+
+    .page-heading h1 {
+      margin: 0 0 6px;
+      font-size: 32px;
+    }
+
+    .page-heading p {
+      margin: 0;
+      color: #6b7280;
+      line-height: 1.5;
     }
 
     .welcome-card {
@@ -56,17 +63,6 @@
       flex-wrap: wrap;
       gap: 12px;
       margin-top: 14px;
-    }
-
-    h1 {
-      margin: 0 0 8px;
-      font-size: 32px;
-    }
-
-    .subtext {
-      color: #6b7280;
-      margin-bottom: 0;
-      line-height: 1.5;
     }
 
     .status-grid {
@@ -158,13 +154,6 @@
       color: #6b7280;
       margin-top: 6px;
       line-height: 1.4;
-    }
-
-    .button-row {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 12px;
-      margin-top: 22px;
     }
 
     .button {
@@ -399,7 +388,6 @@
         margin-top: 24px;
       }
 
-      .hero-card,
       .welcome-card,
       .status-card,
       .links-card,
@@ -420,18 +408,11 @@
   <main class="page">
     <div id="errorBox" class="error-box"></div>
 
-    <section class="hero-card">
+    <section class="page-heading">
       <h1>My Account</h1>
-      <p class="subtext">
+      <p>
         Signed in as <strong id="accountEmail" class="loading">Loading...</strong>
       </p>
-
-      <div class="button-row">
-        <a class="button button-family" id="topFamilyButton" href="./edit-family.html">Family Profile</a>
-        <a class="button button-caregiver" id="topCaregiverButton" href="./edit-caregiver.html">Caregiver Profile</a>
-        <a class="button button-secondary" href="./messages.html">View Messages</a>
-        <button class="button button-secondary" id="signOutBtn" type="button">Sign Out</button>
-      </div>
     </section>
 
     <section class="welcome-card" id="welcomeCard">
@@ -552,13 +533,8 @@
       const messageCount = document.getElementById("messageCount");
       const messageDetail = document.getElementById("messageDetail");
 
-      const topFamilyButton = document.getElementById("topFamilyButton");
-      const topCaregiverButton = document.getElementById("topCaregiverButton");
-
       const caregiverQuickLinkText = document.getElementById("caregiverQuickLinkText");
       const familyQuickLinkText = document.getElementById("familyQuickLinkText");
-
-      const signOutBtn = document.getElementById("signOutBtn");
 
       const myJobsLoading = document.getElementById("myJobsLoading");
       const myJobsMessage = document.getElementById("myJobsMessage");
@@ -624,17 +600,12 @@
       function updateProfileActionUI(type, exists) {
         const isFamily = type === "family";
 
-        const topButton = isFamily ? topFamilyButton : topCaregiverButton;
         const actionWrap = isFamily ? familyActionWrap : caregiverActionWrap;
         const quickLinkText = isFamily ? familyQuickLinkText : caregiverQuickLinkText;
         const href = isFamily ? "./edit-family.html" : "./edit-caregiver.html";
         const buttonClass = isFamily ? "button-family" : "button-caregiver";
 
         if (exists) {
-          if (topButton) {
-            topButton.textContent = isFamily ? "Edit Family Profile" : "Edit Caregiver Profile";
-          }
-
           setActionButton(
             actionWrap,
             href,
@@ -648,10 +619,6 @@
               : "Review and update your caregiver details, experience, photos, and care types.";
           }
         } else {
-          if (topButton) {
-            topButton.textContent = isFamily ? "Create Family Profile" : "Create Caregiver Profile";
-          }
-
           setActionButton(
             actionWrap,
             href,
@@ -1181,17 +1148,6 @@
           loadMyJobs(user.id)
         ]);
       }
-
-      signOutBtn?.addEventListener("click", async () => {
-        const { error } = await window.db.auth.signOut();
-
-        if (error) {
-          showError("Unable to sign out right now.");
-          return;
-        }
-
-        window.location.href = "./login.html";
-      });
 
       myJobsGroups?.addEventListener("click", handleJobActionClick);
 
