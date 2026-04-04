@@ -79,9 +79,7 @@
           <button class="button" id="submitButton" type="submit">Submit Request</button>
         </form>
 
-        <p id="careSuccess" class="success" style="display:none;">
-          ✅ Request submitted successfully.
-        </p>
+        <p id="careSuccess" class="success" style="display:none;"></p>
 
         <div style="margin-top: 22px;">
           <h3 style="margin-bottom: 6px;">What Happens Next</h3>
@@ -302,7 +300,12 @@
         });
 
         if (error) {
-          throw error;
+          const detailedMessage =
+            error.message ||
+            error.context?.error ||
+            error.context?.details ||
+            "Unable to submit request right now.";
+          throw new Error(detailedMessage);
         }
 
         if (!data?.success) {
@@ -356,6 +359,7 @@
           scheduleRedirectToAccount();
         } catch (error) {
           console.error(error);
+          hideSuccess();
           showError(error?.message || "Unable to submit request right now.");
         } finally {
           setSubmitting(false);
@@ -364,16 +368,20 @@
 
       window.addEventListener("DOMContentLoaded", async function () {
         try {
+          hideSuccess();
+          clearError();
+
           const user = await requireSession();
           if (!user) return;
 
           if (existingJobId) {
             await loadExistingJob(user.id);
-          } else {
-            setSubmitting(false);
           }
+
+          setSubmitting(false);
         } catch (error) {
           console.error(error);
+          hideSuccess();
           showError(error?.message || "Unable to load request details.");
         }
       });
