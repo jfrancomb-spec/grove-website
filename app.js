@@ -12,6 +12,10 @@
 
 // ======================================================
 // Supabase client (global)
+// IMPORTANT:
+// Use the LEGACY JWT-BASED ANON KEY here, not sb_publishable_...
+// Dashboard path:
+// Project Settings -> API -> Project API keys -> anon (legacy JWT)
 // ======================================================
 const SUPABASE_URL = "https://apjdknqppglnamndwwya.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFwamRrbnFwcGdsbmFtbmR3d3lhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI0NTIyODgsImV4cCI6MjA4ODAyODI4OH0.Q3B9ZkgxSoUshDM4zw5m30qAIVwjn-B57REjhV-Wo68";
@@ -188,7 +192,7 @@ async function loadPart(id, file) {
   if (id === "header-placeholder") {
     highlightCurrentNav();
     wireMobileMenu();
-    updateHeaderAuth(); // ✅ NEW
+    updateHeaderAuth();
   }
 }
 
