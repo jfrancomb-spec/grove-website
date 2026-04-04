@@ -117,7 +117,7 @@
       function truncateText(text, maxLength = 180) {
         const clean = String(text || "").replace(/\s+/g, " ").trim();
         if (!clean) return "";
-        return clean.length <= maxLength ? clean : `${clean.slice(0, maxLength - 1)}…`;
+        return clean.length <= maxLength ? clean : clean.slice(0, maxLength - 1) + "…";
       }
 
       function normalizeJob(parentRow, versionRow) {
@@ -136,7 +136,7 @@
         const countEl = document.getElementById("jobsCount");
 
         if (countEl) {
-          countEl.textContent = `${list.length} job${list.length === 1 ? "" : "s"}`;
+          countEl.textContent = list.length + " job" + (list.length === 1 ? "" : "s");
         }
 
         container.innerHTML = "";
@@ -208,6 +208,17 @@
         renderJobs(filtered);
       }
 
+      function showLoadError(message) {
+        const container = document.getElementById("jobsContainer");
+        const countEl = document.getElementById("jobsCount");
+
+        if (countEl) {
+          countEl.textContent = "0 jobs";
+        }
+
+        container.innerHTML = "<div class='empty-state'><p>" + message + "</p></div>";
+      }
+
       async function loadJobsOnce() {
         let tries = 0;
         while (!window.db && tries < 40) {
@@ -215,23 +226,22 @@
           tries++;
         }
 
-        const container = document.getElementById("jobsContainer");
-
         if (!window.db) {
-          container.innerHTML = "<div class='empty-state'><p>Database connection not ready. Please refresh.</p></div>";
+          showLoadError("Database connection not ready. Please refresh.");
           return;
         }
 
         const { data: parentRows, error: parentError } = await window.db
           .from("job_posts")
-          .select("id, user_id, current_visible_version_id, is_active")
+          .select("id, user_id, current_visible_version_id, is_active, content_status, created_at")
           .not("current_visible_version_id", "is", null)
           .eq("is_active", true)
+          .eq("content_status", "published")
           .order("created_at", { ascending: false });
 
         if (parentError) {
-          container.innerHTML = "<div class='empty-state'><p>Unable to load jobs right now.</p></div>";
           console.error(parentError);
+          showLoadError("Unable to load jobs right now.");
           return;
         }
 
@@ -253,8 +263,8 @@
           .eq("content_status", "published");
 
         if (versionError) {
-          container.innerHTML = "<div class='empty-state'><p>Unable to load jobs right now.</p></div>";
           console.error(versionError);
+          showLoadError("Unable to load jobs right now.");
           return;
         }
 
@@ -275,12 +285,12 @@
       }
 
       function wireEvents() {
-        document.getElementById("jobFilterBtn")?.addEventListener("click", () => {
+        document.getElementById("jobFilterBtn")?.addEventListener("click", function () {
           applyFilters();
           if (typeof closeBrowseSidebar === "function") closeBrowseSidebar();
         });
 
-        document.getElementById("clearFilters")?.addEventListener("click", () => {
+        document.getElementById("clearFilters")?.addEventListener("click", function () {
           document.getElementById("jobFilterType").value = "";
           document.getElementById("jobFilterLocation").value = "";
           document.getElementById("jobFilterKeyword").value = "";
@@ -302,7 +312,7 @@
         }
       }
 
-      window.addEventListener("DOMContentLoaded", () => {
+      window.addEventListener("DOMContentLoaded", function () {
         wireEvents();
         loadJobsOnce();
       });
