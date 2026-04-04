@@ -14,11 +14,11 @@
 
   <main>
     <div class="hero">
-      <h1>Post a Care Request</h1>
-      <div class="subtitle">
+      <h1 id="heroTitle">Post a Care Request</h1>
+      <div class="subtitle" id="heroSubtitle">
         Share what kind of help you need. Your request can be viewed by caregivers in the Grove network.
       </div>
-      <a class="button" href="#FindCare">Post Request</a>
+      <a class="button" href="#FindCare" id="heroPrimaryButton">Post Request</a>
       <a class="button" href="./caregivers.html">Browse Caregivers</a>
     </div>
 
@@ -45,7 +45,7 @@
 
     <section id="FindCare">
       <h2 id="formHeading">Care Request</h2>
-      <p>
+      <p id="formIntro">
         The more detail you provide, the easier it is for caregivers to decide if the opportunity fits their availability.
       </p>
 
@@ -85,14 +85,14 @@
 
         <div style="margin-top: 22px;">
           <h3 style="margin-bottom: 6px;">What Happens Next</h3>
-          <p style="margin-top: 0;">
+          <p style="margin-top: 0;" id="whatHappensNextText">
             After you submit your request, it may be published right away or temporarily held depending on your account status.
             Once published, it will be visible to caregivers in the Grove network.
           </p>
         </div>
 
         <p style="margin-top: 16px;">
-          <a href="./index.html">← Back to Home</a>
+          <a href="./account.html">← Back to My Account</a>
         </p>
       </div>
     </section>
@@ -110,9 +110,19 @@
       const errorEl = document.getElementById("requestError");
       const submitButton = document.getElementById("submitButton");
       const formHeading = document.getElementById("formHeading");
+      const formIntro = document.getElementById("formIntro");
+      const heroTitle = document.getElementById("heroTitle");
+      const heroSubtitle = document.getElementById("heroSubtitle");
+      const heroPrimaryButton = document.getElementById("heroPrimaryButton");
+      const whatHappensNextText = document.getElementById("whatHappensNextText");
+
+      const careTypeEl = document.getElementById("care_type");
+      const scheduleEl = document.getElementById("schedule");
+      const payRangeEl = document.getElementById("pay_range");
+      const detailsEl = document.getElementById("details");
 
       const params = new URLSearchParams(window.location.search);
-      const existingJobId = params.get("id");
+      const existingJobId = params.get("job_post_id");
 
       function showError(message) {
         if (!errorEl) return;
@@ -132,33 +142,83 @@
         successEl.style.display = "block";
       }
 
+      function hideSuccess() {
+        if (!successEl) return;
+        successEl.textContent = "";
+        successEl.style.display = "none";
+      }
+
       function setSubmitting(isSubmitting) {
         if (!submitButton) return;
+
         submitButton.disabled = isSubmitting;
-        submitButton.textContent = isSubmitting ? "Saving..." : (existingJobId ? "Save Changes" : "Submit Request");
-      }
 
-      async function requireSession() {
-        const { data, error } = await window.db.auth.getSession();
-
-        if (error || !data?.session?.user) {
-          window.location.href = "./login.html";
-          return null;
+        if (isSubmitting) {
+          submitButton.textContent = "Saving...";
+          return;
         }
 
-        return data.session.user;
+        submitButton.textContent = existingJobId ? "Save Changes" : "Submit Request";
       }
 
-      async function loadExistingJob(userId) {
+      function applyEditModeUI() {
         if (!existingJobId) return;
+
+        if (heroTitle) {
+          heroTitle.textContent = "Edit a Care Request";
+        }
+
+        if (heroSubtitle) {
+          heroSubtitle.textContent =
+            "Update your care request details. Changes will be saved through Grove's moderation and versioning system.";
+        }
+
+        if (heroPrimaryButton) {
+          heroPrimaryButton.textContent = "Edit Request";
+        }
 
         if (formHeading) {
           formHeading.textContent = "Edit Care Request";
         }
 
+        if (formIntro) {
+          formIntro.textContent =
+            "Update the details below so caregivers can see the most accurate version of your request.";
+        }
+
         if (submitButton) {
           submitButton.textContent = "Save Changes";
         }
+
+        if (whatHappensNextText) {
+          whatHappensNextText.textContent =
+            "After you save changes, Grove will create a new version of your request. Depending on your account status, it may publish right away or wait in queue for review.";
+        }
+
+        document.title = "Grove | Edit Care Request";
+      }
+
+      async function requireSession() {
+        try {
+          const { data, error } = await window.db.auth.getSession();
+
+          if (error || !data?.session?.user) {
+            window.location.href = "./login.html";
+            return null;
+          }
+
+          return data.session.user;
+        } catch (error) {
+          console.error(error);
+          window.location.href = "./login.html";
+          return null;
+        }
+      }
+
+      async function loadExistingJob(userId) {
+        if (!existingJobId) return;
+
+        applyEditModeUI();
 
         const { data: parent, error: parentError } = await window.db
           .from("job_posts")
@@ -167,25 +227,71 @@
           .eq("user_id", userId)
           .maybeSingle();
 
-        if (parentError) throw new Error(parentError.message);
-        if (!parent) throw new Error("Job post not found.");
+        if (parentError) {
+          throw new Error(parentError.message);
+        }
+
+        if (!parent) {
+          throw new Error("Job post not found.");
+        }
 
         const versionId = parent.current_pending_version_id || parent.current_visible_version_id;
-        if (!versionId) return;
+
+        if (!versionId) {
+          throw new Error("No editable version was found for this job post.");
+        }
 
         const { data: version, error: versionError } = await window.db
           .from("job_post_versions")
-          .select("*")
+          .select("care_type, schedule, pay_range, description")
           .eq("id", versionId)
           .maybeSingle();
 
-        if (versionError) throw new Error(versionError.message);
-        if (!version) return;
+        if (versionError) {
+          throw new Error(versionError.message);
+        }
 
-        document.getElementById("care_type").value = version.care_type || "";
-        document.getElementById("schedule").value = version.schedule || "";
-        document.getElementById("pay_range").value = version.pay_range || "";
-        document.getElementById("details").value = version.description || "";
+        if (!version) {
+          throw new Error("Job post version not found.");
+        }
+
+        if (careTypeEl) careTypeEl.value = version.care_type || "";
+        if (scheduleEl) scheduleEl.value = version.schedule || "";
+        if (payRangeEl) payRangeEl.value = version.pay_range || "";
+        if (detailsEl) detailsEl.value = version.description || "";
+      }
+
+      function buildPayload() {
+        const payload = {
+          care_type: careTypeEl ? careTypeEl.value.trim() : "",
+          schedule: scheduleEl ? scheduleEl.value.trim() : "",
+          pay_range: payRangeEl ? payRangeEl.value.trim() : "",
+          description: detailsEl ? detailsEl.value.trim() : ""
+        };
+
+        if (existingJobId) {
+          payload.job_post_id = existingJobId;
+        }
+
+        return payload;
+      }
+
+      function validatePayload(payload) {
+        if (!payload.care_type) {
+          throw new Error("Please select the type of care needed.");
+        }
+
+        if (!payload.schedule) {
+          throw new Error("Please enter the schedule needed.");
+        }
+
+        if (!payload.pay_range) {
+          throw new Error("Please enter the pay information.");
+        }
+
+        if (!payload.description) {
+          throw new Error("Please enter request details.");
+        }
       }
 
       async function submitJob(values) {
@@ -193,41 +299,47 @@
           body: values
         });
 
-        if (error) throw error;
-        if (!data?.success) throw new Error(data?.error || "submit-job-post-version failed");
+        if (error) {
+          throw error;
+        }
+
+        if (!data?.success) {
+          throw new Error(data?.error || "submit-job-post-version failed");
+        }
 
         return data;
       }
 
-      form?.addEventListener("submit", async (event) => {
+      form?.addEventListener("submit", async function (event) {
         event.preventDefault();
         clearError();
-        if (successEl) successEl.style.display = "none";
+        hideSuccess();
 
         try {
           const user = await requireSession();
           if (!user) return;
 
-          const payload = {
-            care_type: document.getElementById("care_type").value.trim(),
-            schedule: document.getElementById("schedule").value.trim(),
-            pay_range: document.getElementById("pay_range").value.trim(),
-            description: document.getElementById("details").value.trim()
-          };
-
-          if (existingJobId) {
-            payload.job_post_id = existingJobId;
-          }
+          const payload = buildPayload();
+          validatePayload(payload);
 
           setSubmitting(true);
 
           const result = await submitJob(payload);
+          const status = result?.version?.content_status || "";
 
-          showSuccess(
-            result?.version?.content_status === "queued"
-              ? "✅ Request saved and placed in queue."
-              : "✅ Request submitted and published."
-          );
+          if (existingJobId) {
+            showSuccess(
+              status === "queued"
+                ? "✅ Changes saved and placed in queue."
+                : "✅ Changes saved successfully."
+            );
+          } else {
+            showSuccess(
+              status === "queued"
+                ? "✅ Request submitted and placed in queue."
+                : "✅ Request submitted and published."
+            );
+          }
         } catch (error) {
           console.error(error);
           showError(error?.message || "Unable to submit request right now.");
@@ -236,11 +348,16 @@
         }
       });
 
-      window.addEventListener("DOMContentLoaded", async () => {
+      window.addEventListener("DOMContentLoaded", async function () {
         try {
           const user = await requireSession();
           if (!user) return;
-          await loadExistingJob(user.id);
+
+          if (existingJobId) {
+            await loadExistingJob(user.id);
+          } else {
+            setSubmitting(false);
+          }
         } catch (error) {
           console.error(error);
           showError(error?.message || "Unable to load request details.");
