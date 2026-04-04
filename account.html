@@ -817,7 +817,7 @@
           });
 
           const uniqueVersionIds = Array.from(new Set(versionIds));
-          let versionsById = {};
+          const versionsById = {};
 
           if (uniqueVersionIds.length) {
             const { data: versions, error: versionError } = await window.db
@@ -838,7 +838,7 @@
           renderJobGroups(normalized);
         } catch (error) {
           console.error("Failed loading jobs:", error);
-          showMyJobsMessage(error.message || "Unable to load your job posts.", true);
+          showMyJobsMessage(error.message || "Unable to load your job posts.", true, false);
         } finally {
           setMyJobsLoading(false);
         }
@@ -871,7 +871,6 @@
           payRange,
           updatedAt: job.updated_at,
           isActive: job.is_active === true,
-          hasLiveVersion: !!(visibleVersion && visibleVersion.content_status === "published" && visibleVersion.is_live),
           statusKey: statusMeta.key,
           statusLabel: statusMeta.label,
           statusReason: statusMeta.reason,
@@ -1106,38 +1105,22 @@
           throw new Error("No signed-in user found.");
         }
 
-        const { data: job, error: loadError } = await window.db
-          .from("job_posts")
-          .select("id, user_id, is_active")
-          .eq("id", jobId)
-          .eq("user_id", currentUserId)
-          .maybeSingle();
+        const { data, error } = await window.db.functions.invoke("toggle-job-post-active-state", {
+          body: {
+            job_post_id: jobId,
+            is_active: shouldBeActive
+          }
+        });
 
-        if (loadError) {
-          throw new Error(loadError.message);
+        if (error) {
+          throw new Error(error.message || "Unable to update job status.");
         }
 
-        if (!job) {
-          throw new Error("Job post not found.");
+        if (!data?.success) {
+          throw new Error(data?.error || "Unable to update job status.");
         }
 
-        const updatePayload = {
-          is_active: shouldBeActive,
-          updated_at: new Date().toISOString(),
-          status_reason: shouldBeActive
-            ? "Reactivated by user from account page"
-            : "Deactivated by user from account page"
-        };
-
-        const { error: updateError } = await window.db
-          .from("job_posts")
-          .update(updatePayload)
-          .eq("id", jobId)
-          .eq("user_id", currentUserId);
-
-        if (updateError) {
-          throw new Error(updateError.message);
-        }
+        return data;
       }
 
       async function handleJobActionClick(event) {
