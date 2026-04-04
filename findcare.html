@@ -207,7 +207,7 @@
             return null;
           }
 
-          return data.session.user;
+          return data.session;
         } catch (error) {
           console.error(error);
           window.location.href = "./login.html";
@@ -294,18 +294,16 @@
         }
       }
 
-      async function submitJob(values) {
+      async function submitJob(values, accessToken) {
         const { data, error } = await window.db.functions.invoke("submit-job-post-version", {
-          body: values
+          body: values,
+          headers: {
+            Authorization: "Bearer " + accessToken
+          }
         });
 
         if (error) {
-          const detailedMessage =
-            error.message ||
-            error.context?.error ||
-            error.context?.details ||
-            "Unable to submit request right now.";
-          throw new Error(detailedMessage);
+          throw new Error(error.message || "Unable to submit request right now.");
         }
 
         if (!data?.success) {
@@ -331,15 +329,19 @@
         hideSuccess();
 
         try {
-          const user = await requireSession();
-          if (!user) return;
+          const session = await requireSession();
+          if (!session) return;
 
           const payload = buildPayload();
           validatePayload(payload);
 
+          if (!session.access_token) {
+            throw new Error("Your session is missing an access token. Please sign in again.");
+          }
+
           setSubmitting(true);
 
-          const result = await submitJob(payload);
+          const result = await submitJob(payload, session.access_token);
           const status = result?.version?.content_status || "";
 
           if (existingJobId) {
@@ -371,11 +373,11 @@
           hideSuccess();
           clearError();
 
-          const user = await requireSession();
-          if (!user) return;
+          const session = await requireSession();
+          if (!session) return;
 
           if (existingJobId) {
-            await loadExistingJob(user.id);
+            await loadExistingJob(session.user.id);
           }
 
           setSubmitting(false);
