@@ -251,6 +251,12 @@
       color: #991b1b;
     }
 
+    .my-jobs-message.success {
+      background: #ecfdf5;
+      border-color: #bbf7d0;
+      color: #166534;
+    }
+
     .my-jobs-groups {
       display: grid;
       gap: 20px;
@@ -334,6 +340,53 @@
 
     .job-actions {
       margin-top: 14px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .job-action-button {
+      appearance: none;
+      border: none;
+      border-radius: 10px;
+      padding: 10px 14px;
+      font-size: 14px;
+      font-weight: bold;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-block;
+    }
+
+    .job-action-button:disabled {
+      opacity: 0.65;
+      cursor: not-allowed;
+    }
+
+    .job-action-edit {
+      background: #4f7fa8;
+      color: white;
+    }
+
+    .job-action-edit:hover {
+      background: #426d91;
+    }
+
+    .job-action-deactivate {
+      background: #e5e7eb;
+      color: #111827;
+    }
+
+    .job-action-deactivate:hover {
+      background: #d1d5db;
+    }
+
+    .job-action-reactivate {
+      background: #409088;
+      color: white;
+    }
+
+    .job-action-reactivate:hover {
+      background: #347872;
     }
 
     .my-jobs-empty p {
@@ -513,6 +566,8 @@
 
       let hasFamilyProfile = false;
       let hasCaregiverProfile = false;
+      let currentUserId = null;
+      let jobActionInProgress = false;
 
       function showError(message) {
         errorBox.style.display = "block";
@@ -815,6 +870,8 @@
           schedule,
           payRange,
           updatedAt: job.updated_at,
+          isActive: job.is_active === true,
+          hasLiveVersion: !!(visibleVersion && visibleVersion.content_status === "published" && visibleVersion.is_live),
           statusKey: statusMeta.key,
           statusLabel: statusMeta.label,
           statusReason: statusMeta.reason,
@@ -950,6 +1007,17 @@
 
         const updatedText = formatDate(job.updatedAt);
 
+        let actionsHtml =
+          '<a class="job-action-button job-action-edit" href="./findcare.html?job_post_id=' + encodeURIComponent(job.id) + '">Edit</a>';
+
+        if (job.isActive) {
+          actionsHtml +=
+            '<button class="job-action-button job-action-deactivate" type="button" data-job-action="deactivate" data-job-id="' + escapeHtml(job.id) + '">Deactivate</button>';
+        } else {
+          actionsHtml +=
+            '<button class="job-action-button job-action-reactivate" type="button" data-job-action="reactivate" data-job-id="' + escapeHtml(job.id) + '">Reactivate</button>';
+        }
+
         card.innerHTML =
           '<div class="job-card-top">' +
             '<div>' +
@@ -967,9 +1035,7 @@
             (job.statusReason ? '<p><strong>Status:</strong> ' + escapeHtml(job.statusReason) + '</p>' : '') +
             '<p><strong>Updated:</strong> ' + escapeHtml(updatedText) + '</p>' +
           '</div>' +
-          '<div class="job-actions">' +
-            '<a class="button button-family" href="./findcare.html?job_post_id=' + encodeURIComponent(job.id) + '">Edit</a>' +
-          '</div>';
+          '<div class="job-actions">' + actionsHtml + '</div>';
 
         return card;
       }
@@ -986,9 +1052,13 @@
         myJobsLoading.style.display = isLoading ? "block" : "none";
       }
 
-      function showMyJobsMessage(message, isError) {
+      function showMyJobsMessage(message, isError, isSuccess) {
+        let className = "my-jobs-message";
+        if (isError) className += " error";
+        if (isSuccess) className += " success";
+
         myJobsMessage.textContent = message;
-        myJobsMessage.className = isError ? "my-jobs-message error" : "my-jobs-message";
+        myJobsMessage.className = className;
         myJobsMessage.style.display = "block";
       }
 
@@ -1031,6 +1101,80 @@
           .replace(/'/g, "&#39;");
       }
 
+      async function setJobActiveState(jobId, shouldBeActive) {
+        if (!currentUserId) {
+          throw new Error("No signed-in user found.");
+        }
+
+        const { data: job, error: loadError } = await window.db
+          .from("job_posts")
+          .select("id, user_id, is_active")
+          .eq("id", jobId)
+          .eq("user_id", currentUserId)
+          .maybeSingle();
+
+        if (loadError) {
+          throw new Error(loadError.message);
+        }
+
+        if (!job) {
+          throw new Error("Job post not found.");
+        }
+
+        const updatePayload = {
+          is_active: shouldBeActive,
+          updated_at: new Date().toISOString(),
+          status_reason: shouldBeActive
+            ? "Reactivated by user from account page"
+            : "Deactivated by user from account page"
+        };
+
+        const { error: updateError } = await window.db
+          .from("job_posts")
+          .update(updatePayload)
+          .eq("id", jobId)
+          .eq("user_id", currentUserId);
+
+        if (updateError) {
+          throw new Error(updateError.message);
+        }
+      }
+
+      async function handleJobActionClick(event) {
+        const button = event.target.closest("[data-job-action]");
+        if (!button) return;
+
+        const action = button.getAttribute("data-job-action");
+        const jobId = button.getAttribute("data-job-id");
+
+        if (!action || !jobId || jobActionInProgress) return;
+
+        try {
+          jobActionInProgress = true;
+          clearMyJobsMessage();
+
+          const buttons = myJobsGroups.querySelectorAll("[data-job-action]");
+          buttons.forEach((el) => {
+            el.disabled = true;
+          });
+
+          if (action === "deactivate") {
+            await setJobActiveState(jobId, false);
+            showMyJobsMessage("Job post deactivated.", false, true);
+          } else if (action === "reactivate") {
+            await setJobActiveState(jobId, true);
+            showMyJobsMessage("Job post reactivated.", false, true);
+          }
+
+          await loadMyJobs(currentUserId);
+        } catch (error) {
+          console.error(error);
+          showMyJobsMessage(error.message || "Unable to update job status.", true, false);
+        } finally {
+          jobActionInProgress = false;
+        }
+      }
+
       async function initPage() {
         hasFamilyProfile = false;
         hasCaregiverProfile = false;
@@ -1044,6 +1188,7 @@
         if (!session) return;
 
         const user = session.user;
+        currentUserId = user.id;
         accountEmail.textContent = user.email || "Unknown email";
 
         await Promise.all([
@@ -1064,6 +1209,8 @@
 
         window.location.href = "./login.html";
       });
+
+      myJobsGroups?.addEventListener("click", handleJobActionClick);
 
       window.addEventListener("DOMContentLoaded", initPage);
     })();
