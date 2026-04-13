@@ -127,6 +127,7 @@ async function callModerationEngine(action, payload, actorUserId = null) {
 function getModerationMessage(result) {
   switch (result?.content_status) {
     case "posted":
+    case "published":
     case "approved":
       return "Submitted successfully.";
     case "queued":

@@ -159,9 +159,8 @@
       async function getCurrentUserFamilyProfileId() {
         const { data, error } = await window.db
           .from("family_profiles")
-          .select("id, current_visible_version_id")
+          .select("id, current_visible_version_id, current_pending_version_id")
           .eq("user_id", currentUser.id)
-          .not("current_visible_version_id", "is", null)
           .maybeSingle();
 
         if (error) {
@@ -169,15 +168,18 @@
           return null;
         }
 
-        return data?.id || null;
+        if (!data) return null;
+
+        return (data.current_visible_version_id || data.current_pending_version_id)
+          ? data.id
+          : null;
       }
 
       async function getCurrentUserCaregiverProfileId() {
         const { data, error } = await window.db
           .from("caregiver_profiles")
-          .select("id, current_visible_version_id")
+          .select("id, current_visible_version_id, current_pending_version_id")
           .eq("user_id", currentUser.id)
-          .not("current_visible_version_id", "is", null)
           .maybeSingle();
 
         if (error) {
@@ -185,7 +187,11 @@
           return null;
         }
 
-        return data?.id || null;
+        if (!data) return null;
+
+        return (data.current_visible_version_id || data.current_pending_version_id)
+          ? data.id
+          : null;
       }
 
       async function findExistingConversation(targetUserId, familyProfileId, caregiverProfileId) {
@@ -730,6 +736,7 @@
       function getMessageSubmissionText(result) {
         switch (result?.content_status) {
           case "posted":
+          case "published":
           case "approved":
             return null;
           case "queued":
@@ -827,7 +834,7 @@
               is_suspicious: false,
               reason: null,
               summary: "Message submitted",
-              success_status: "posted"
+              success_status: "published"
             },
             p_actor_user_id: currentUser.id
           });
@@ -857,7 +864,7 @@
           document.getElementById("messageText")?.focus();
         } catch (err) {
           console.error("Send message error:", err);
-          alert("Message send failed.");
+          alert(err?.message ? `Message send failed: ${err.message}` : "Message send failed.");
         } finally {
           if (sendButton) {
             sendButton.disabled = false;
