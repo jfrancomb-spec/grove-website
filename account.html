@@ -79,6 +79,54 @@
       box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
     }
 
+    .role-card {
+      background: white;
+      border-radius: 16px;
+      padding: 24px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
+      margin-bottom: 24px;
+      text-align: center;
+    }
+
+    .role-toggle {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 14px;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .role-toggle .button {
+      width: auto;
+      flex: 0 0 auto;
+    }
+
+    .role-note {
+      color: #6b7280;
+      line-height: 1.5;
+      margin-top: 10px;
+    }
+
+    .role-guidance {
+      margin: 12px auto 0;
+      max-width: 680px;
+      color: #6b7280;
+      line-height: 1.6;
+      text-align: left;
+      padding-left: 20px;
+    }
+
+    .role-guidance li + li {
+      margin-top: 6px;
+    }
+
+    .role-note:first-of-type {
+      margin-top: 0;
+      margin-bottom: 12px;
+      text-align: left;
+    }
+
     .status-label {
       font-size: 14px;
       font-weight: bold;
@@ -415,6 +463,18 @@
       </p>
     </section>
 
+    <section class="role-card" id="actingRoleCard" style="display:none;">
+      <div class="status-label">Viewing As</div>
+      <div class="status-value" id="actingRoleValue">Loading...</div>
+      <ul class="role-guidance" id="actingRoleDetail">
+        <li>Buttons and shortcuts through-out Grove will update based on the profile you are using.</li>
+        <li>Click the My Account menu to switch profiles at any time.</li>
+        <li>Messages, jobs, and reviews are associated to the profile you are using when you create them.</li>
+      </ul>
+      <div class="role-toggle" id="actingRoleToggle"></div>
+      <div class="role-note" id="actingRoleNote"></div>
+    </section>
+
     <section class="welcome-card" id="welcomeCard">
       <h2>Welcome to Grove</h2>
       <p>
@@ -429,14 +489,14 @@
     </section>
 
     <section class="status-grid">
-      <div class="status-card">
+      <div class="status-card" id="caregiverProfileCard">
         <div class="status-label">Caregiver Profile</div>
         <div class="status-value" id="caregiverStatus">Loading...</div>
         <div class="status-detail" id="caregiverDetail">Checking your caregiver profile.</div>
         <div class="status-action" id="caregiverActionWrap"></div>
       </div>
 
-      <div class="status-card">
+      <div class="status-card" id="familyProfileCard">
         <div class="status-label">Family Profile</div>
         <div class="status-value" id="familyStatus">Loading...</div>
         <div class="status-detail" id="familyDetail">Checking your family profile.</div>
@@ -448,12 +508,12 @@
         <div class="status-value" id="messageCount">Loading...</div>
         <div class="status-detail" id="messageDetail">Checking your conversations.</div>
         <div class="status-action">
-          <a class="button button-secondary" href="./messages.html">Open Messages</a>
+          <a class="button button-secondary" id="messagesLink" href="./messages.html">Open Messages</a>
         </div>
       </div>
     </section>
 
-    <section class="jobs-card">
+    <section class="jobs-card" id="jobsCard">
       <div class="jobs-card-header">
         <div>
           <h2>Your Job Posts</h2>
@@ -488,22 +548,22 @@
           <small id="familyQuickLinkText">Loading family profile actions.</small>
         </a>
 
-        <a class="quick-link" href="./messages.html">
+        <a class="quick-link" id="messagesQuickLink" href="./messages.html">
           View messages
-          <small>Open your conversations and check for new replies.</small>
+          <small id="messagesQuickLinkText">Open your conversations and check for new replies.</small>
         </a>
 
-        <a class="quick-link" href="./jobs.html">
+        <a class="quick-link" id="jobsQuickLink" href="./jobs.html">
           Browse jobs
-          <small>See available family job posts and explore opportunities.</small>
+          <small id="jobsQuickLinkText">See available family job posts and explore opportunities.</small>
         </a>
 
-        <a class="quick-link" href="./caregivers.html">
+        <a class="quick-link" id="caregiversQuickLink" href="./caregivers.html">
           Browse caregivers
           <small>View public caregiver listings across Grove.</small>
         </a>
 
-        <a class="quick-link" href="./families.html">
+        <a class="quick-link" id="familiesQuickLink" href="./families.html">
           Browse families
           <small>View public family listings across Grove.</small>
         </a>
@@ -525,16 +585,33 @@
       const caregiverStatus = document.getElementById("caregiverStatus");
       const caregiverDetail = document.getElementById("caregiverDetail");
       const caregiverActionWrap = document.getElementById("caregiverActionWrap");
+      const caregiverProfileCard = document.getElementById("caregiverProfileCard");
 
       const familyStatus = document.getElementById("familyStatus");
       const familyDetail = document.getElementById("familyDetail");
       const familyActionWrap = document.getElementById("familyActionWrap");
+      const familyProfileCard = document.getElementById("familyProfileCard");
 
       const messageCount = document.getElementById("messageCount");
       const messageDetail = document.getElementById("messageDetail");
+      const messagesLink = document.getElementById("messagesLink");
+      const jobsCard = document.getElementById("jobsCard");
+      const actingRoleCard = document.getElementById("actingRoleCard");
+      const actingRoleValue = document.getElementById("actingRoleValue");
+      const actingRoleDetail = document.getElementById("actingRoleDetail");
+      const actingRoleToggle = document.getElementById("actingRoleToggle");
+      const actingRoleNote = document.getElementById("actingRoleNote");
 
       const caregiverQuickLinkText = document.getElementById("caregiverQuickLinkText");
       const familyQuickLinkText = document.getElementById("familyQuickLinkText");
+      const messagesQuickLink = document.getElementById("messagesQuickLink");
+      const messagesQuickLinkText = document.getElementById("messagesQuickLinkText");
+      const jobsQuickLink = document.getElementById("jobsQuickLink");
+      const jobsQuickLinkText = document.getElementById("jobsQuickLinkText");
+      const caregiversQuickLink = document.getElementById("caregiversQuickLink");
+      const familiesQuickLink = document.getElementById("familiesQuickLink");
+      const caregiverQuickLink = document.getElementById("caregiverQuickLink");
+      const familyQuickLink = document.getElementById("familyQuickLink");
 
       const myJobsLoading = document.getElementById("myJobsLoading");
       const myJobsMessage = document.getElementById("myJobsMessage");
@@ -544,6 +621,8 @@
       let hasCaregiverProfile = false;
       let currentUserId = null;
       let jobActionInProgress = false;
+      let actingRole = null;
+      let availableRoles = [];
 
       function showError(message) {
         errorBox.style.display = "block";
@@ -639,6 +718,97 @@
 
         const showWelcome = !hasFamilyProfile && !hasCaregiverProfile;
         welcomeCard.style.display = showWelcome ? "block" : "none";
+      }
+
+      function getRoleLabel(role) {
+        return role === "family" ? "Family" : "Caregiver";
+      }
+
+      function getRoleMessagesHref() {
+        const active = availableRoles.find((role) => role.type === actingRole);
+        if (!active) return "./messages.html";
+        return `./messages.html?profileType=${encodeURIComponent(active.type)}&profileId=${encodeURIComponent(active.id)}`;
+      }
+
+      function setVisible(element, visible) {
+        if (!element) return;
+        element.style.display = visible ? "" : "none";
+      }
+
+      function renderActingRoleUI() {
+        if (!actingRoleCard || !actingRoleToggle) return;
+
+        if (!hasFamilyProfile && !hasCaregiverProfile) {
+          actingRoleCard.style.display = "none";
+          return;
+        }
+
+        actingRoleCard.style.display = "";
+        actingRoleToggle.innerHTML = "";
+        actingRoleValue.textContent = actingRole ? getRoleLabel(actingRole) : "Choose a Role";
+        actingRoleDetail.innerHTML = `
+          <li>Buttons and shortcuts through-out Grove will update based on the profile you are using.</li>
+          <li>Click the My Account menu to switch profiles at any time.</li>
+          <li>Messages, jobs, and reviews are associated to the profile you are using when you create them.</li>
+        `;
+
+        availableRoles.forEach((role) => {
+          const button = document.createElement("button");
+          button.type = "button";
+          button.className = role.type === actingRole
+            ? "button button-secondary"
+            : role.type === "family"
+              ? "button button-family"
+              : "button button-caregiver";
+          button.textContent = `Switch to ${getRoleLabel(role.type)}`;
+          button.addEventListener("click", () => {
+            actingRole = role.type;
+            window.setStoredActingRole(actingRole);
+            renderActingRoleUI();
+            applyActingRoleVisibility();
+            window.updateHeaderAuth?.();
+          });
+          actingRoleToggle.appendChild(button);
+        });
+
+        actingRoleNote.textContent = "";
+      }
+
+      function applyActingRoleVisibility() {
+        const isFamily = actingRole === "family";
+        const isCaregiver = actingRole === "caregiver";
+
+        setVisible(familyProfileCard, isFamily || !actingRole);
+        setVisible(caregiverProfileCard, isCaregiver || !actingRole);
+        setVisible(jobsCard, isFamily);
+        setVisible(familyQuickLink, isFamily || !actingRole);
+        setVisible(caregiverQuickLink, isCaregiver || !actingRole);
+        setVisible(caregiversQuickLink, isFamily || !actingRole);
+        setVisible(familiesQuickLink, isCaregiver || !actingRole);
+        setVisible(jobsQuickLink, isCaregiver || !actingRole);
+
+        if (messagesLink) {
+          messagesLink.href = getRoleMessagesHref();
+          messagesLink.textContent = "Open Messages";
+        }
+
+        if (messagesQuickLink) {
+          messagesQuickLink.href = getRoleMessagesHref();
+        }
+
+        if (messagesQuickLinkText) {
+          messagesQuickLinkText.textContent = actingRole === "family"
+            ? "Open conversations tied to your family profile."
+            : actingRole === "caregiver"
+              ? "Open conversations tied to your caregiver profile."
+              : "Open your conversations and check for new replies.";
+        }
+
+        if (jobsQuickLinkText) {
+          jobsQuickLinkText.textContent = isCaregiver
+            ? "See family job posts that match your availability."
+            : "See available family job posts and explore opportunities.";
+        }
       }
 
       async function requireSession() {
@@ -1147,6 +1317,15 @@
           loadMessageSummary(user.id),
           loadMyJobs(user.id)
         ]);
+
+        availableRoles = await window.getAvailableActingRoles(user.id);
+        actingRole = window.resolveActingRole(availableRoles);
+        if (actingRole) {
+          window.setStoredActingRole(actingRole);
+        }
+        renderActingRoleUI();
+        applyActingRoleVisibility();
+        window.updateHeaderAuth?.();
       }
 
       myJobsGroups?.addEventListener("click", handleJobActionClick);

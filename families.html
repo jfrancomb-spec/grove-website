@@ -18,8 +18,8 @@
         Browse local families in the Grove network and learn more before deciding whether a care opportunity is a fit.
       </div>
 
-      <a class="button" href="./jobs.html">Browse Care Opportunities</a>
-      <a class="button" href="./caregiver.html">Create Caregiver Profile</a>
+      <a class="button button-caregiver" href="./jobs.html">Browse Care Opportunities</a>
+      <a class="button button-caregiver" href="./caregiver.html">Create Caregiver Profile</a>
     </div>
 
     <section>
@@ -69,7 +69,7 @@
             </div>
 
             <div class="filter-actions">
-              <button type="button" class="button" id="famApplyBtn">Apply Filters</button>
+              <button type="button" class="button button-family" id="famApplyBtn">Apply Filters</button>
               <button type="button" class="button filter-clear-button" id="famClearBtn">Clear Filters</button>
             </div>
           </div>
@@ -79,7 +79,7 @@
           <div class="browse-topbar">
             <button
               type="button"
-              class="button filter-toggle-button"
+              class="button button-family filter-toggle-button"
               id="familyFilterOpen"
               data-open-filters
             >
@@ -196,7 +196,7 @@
               label: "Message",
               targetUserId: profile.user_id,
               familyProfileId: profile.id,
-              className: "button"
+              className: "button button-family"
             });
           }
 

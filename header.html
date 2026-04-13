@@ -18,9 +18,7 @@
     </button>
 
     <nav class="nav" id="mainNav" aria-label="Primary navigation">
-      <a href="./caregivers.html">Browse Caregivers</a>
-      <a href="./families.html">Browse Families</a>
-      <a href="./jobs.html">Care Opportunities</a>
+      <a href="./caregivers.html" id="navBrowseLink">Browse Caregivers</a>
 
       <a href="./login.html" id="navLoginLink">Login</a>
 
@@ -28,23 +26,45 @@
 
       <a href="./admin.html" id="navAdminLink" style="display:none;">Admin</a>
 
-      <a
-        href="./account.html"
-        id="navAccountLink"
-        class="nav-account-link"
-        style="display:none;"
-      >
-        Account
-      </a>
+      <div id="navAccountMenu" class="nav-account-menu" style="display:none;">
+        <button
+          type="button"
+          id="navAccountMenuButton"
+          class="nav-account-link nav-account-button"
+          aria-expanded="false"
+          aria-haspopup="true"
+        >
+          My Dashboard
+        </button>
 
-      <button
-        type="button"
-        id="navSignOutBtn"
-        class="nav-signout-link"
-        style="display:none;"
-      >
-        Sign Out
-      </button>
+        <div id="navAccountDropdown" class="nav-account-dropdown">
+          <a
+            href="./account.html"
+            id="navAccountLink"
+            class="nav-account-dropdown-link"
+          >
+            My Dashboard
+          </a>
+
+          <a
+            href="./chooser.html"
+            id="navRoleSwitchLink"
+            class="nav-account-dropdown-link"
+            style="display:none;"
+          >
+            Switch Role
+          </a>
+
+          <button
+            type="button"
+            id="navSignOutBtn"
+            class="nav-account-dropdown-link nav-signout-link"
+            style="display:none;"
+          >
+            Sign Out
+          </button>
+        </div>
+      </div>
     </nav>
   </div>
 </header>

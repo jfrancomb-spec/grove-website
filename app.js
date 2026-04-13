@@ -24,6 +24,8 @@ window.db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 console.log("SUPABASE URL:", SUPABASE_URL);
 console.log("KEY PREFIX:", SUPABASE_ANON_KEY.slice(0, 20));
 
+const GROVE_ACTING_ROLE_KEY = "groveActingRole";
+
 // ======================================================
 // Header auth state (NEW)
 // ======================================================
@@ -32,8 +34,11 @@ async function updateHeaderAuth() {
   if (!window.db || !window.db.auth) return;
 
   const loginLink = document.getElementById("navLoginLink");
+  const browseLink = document.getElementById("navBrowseLink");
   const messagesLink = document.getElementById("navMessagesLink");
   const adminLink = document.getElementById("navAdminLink");
+  const accountMenu = document.getElementById("navAccountMenu");
+  const roleSwitchLink = document.getElementById("navRoleSwitchLink");
   const accountLink = document.getElementById("navAccountLink");
   const signOutBtn = document.getElementById("navSignOutBtn");
 
@@ -42,22 +47,77 @@ async function updateHeaderAuth() {
     const session = data?.session || null;
     const user = session?.user || null;
     const isSignedIn = !!user;
+    let actingRole = null;
+    let actingRoleMessageHref = "./messages.html";
     let isAdmin = false;
     if (user && typeof window.getAdminRecord === "function") {
       const adminRecord = await window.getAdminRecord(user.id);
       isAdmin = !!adminRecord;
     }
+    if (user && typeof window.getAvailableActingRoles === "function") {
+      const availableRoles = await window.getAvailableActingRoles(user.id);
+      actingRole = window.resolveActingRole(availableRoles);
+      const activeProfile = availableRoles.find((role) => role.type === actingRole);
+      if (activeProfile) {
+        actingRoleMessageHref = `./messages.html?profileType=${encodeURIComponent(activeProfile.type)}&profileId=${encodeURIComponent(activeProfile.id)}`;
+      }
+    }
     if (loginLink) {
       loginLink.style.display = isSignedIn ? "none" : "";
     }
+    if (browseLink) {
+      if (!isSignedIn || actingRole === "family" || !actingRole) {
+        browseLink.style.display = "";
+        browseLink.href = "./caregivers.html";
+        browseLink.textContent = "Browse Caregivers";
+      } else if (actingRole === "caregiver") {
+        browseLink.style.display = "";
+        browseLink.href = "./jobs.html";
+        browseLink.textContent = "Browse Opportunities";
+      }
+    }
     if (messagesLink) {
       messagesLink.style.display = isSignedIn ? "" : "none";
+      messagesLink.href = actingRoleMessageHref;
+      messagesLink.textContent = "Messages";
+    }
+    if (accountMenu) {
+      accountMenu.style.display = isSignedIn ? "" : "none";
+    }
+    if (roleSwitchLink) {
+      const availableRoles = user && typeof window.getAvailableActingRoles === "function"
+        ? await window.getAvailableActingRoles(user.id)
+        : [];
+      roleSwitchLink.style.display = isSignedIn && availableRoles.length > 1 ? "" : "none";
+      roleSwitchLink.href = "./account.html";
+      roleSwitchLink.onclick = null;
+      if (availableRoles.length > 1) {
+        const targetRoleKey = actingRole === "family"
+          ? "caregiver"
+          : actingRole === "caregiver"
+            ? "family"
+            : null;
+        const targetRole = targetRoleKey === "caregiver"
+          ? "Caregiver"
+          : targetRoleKey === "family"
+            ? "Family"
+            : "Role";
+        roleSwitchLink.textContent = `Switch to ${targetRole}`;
+        if (targetRoleKey) {
+          roleSwitchLink.onclick = (event) => {
+            event.preventDefault();
+            window.setStoredActingRole(targetRoleKey);
+            window.location.href = "./account.html";
+          };
+        }
+      }
     }
     if (adminLink) {
       adminLink.style.display = isSignedIn && isAdmin ? "" : "none";
     }
     if (accountLink) {
       accountLink.style.display = isSignedIn ? "" : "none";
+      accountLink.textContent = "My Dashboard";
     }
     if (signOutBtn) {
       signOutBtn.style.display = isSignedIn ? "" : "none";
@@ -74,6 +134,7 @@ async function updateHeaderAuth() {
     console.error("Header auth error:", err);
   }
 }
+window.updateHeaderAuth = updateHeaderAuth;
 window.getCurrentSessionUser = getCurrentSessionUser;
 window.getAdminRecord = getAdminRecord;
 window.requireAdminUser = requireAdminUser;
@@ -127,6 +188,7 @@ async function callModerationEngine(action, payload, actorUserId = null) {
 function getModerationMessage(result) {
   switch (result?.content_status) {
     case "posted":
+    case "published":
     case "approved":
       return "Submitted successfully.";
     case "queued":
@@ -143,6 +205,101 @@ function getModerationMessage(result) {
 // ======================================================
 // Auth / role helpers
 // ======================================================
+function getStoredActingRole() {
+  try {
+    const value = window.localStorage.getItem(GROVE_ACTING_ROLE_KEY);
+    return value === "family" || value === "caregiver" ? value : null;
+  } catch {
+    return null;
+  }
+}
+
+function setStoredActingRole(role) {
+  try {
+    if (role === "family" || role === "caregiver") {
+      window.localStorage.setItem(GROVE_ACTING_ROLE_KEY, role);
+    } else {
+      window.localStorage.removeItem(GROVE_ACTING_ROLE_KEY);
+    }
+  } catch {
+    // Ignore storage failures.
+  }
+}
+
+async function getAvailableActingRoles(userId) {
+  if (!userId) return [];
+
+  const [familyResult, caregiverResult] = await Promise.all([
+    window.db
+      .from("family_profiles")
+      .select("id, current_visible_version_id, current_pending_version_id")
+      .eq("user_id", userId)
+      .maybeSingle(),
+    window.db
+      .from("caregiver_profiles")
+      .select("id, current_visible_version_id, current_pending_version_id")
+      .eq("user_id", userId)
+      .maybeSingle()
+  ]);
+
+  const roles = [];
+  const familyProfile = familyResult.data;
+  const caregiverProfile = caregiverResult.data;
+
+  if (familyProfile && (familyProfile.current_visible_version_id || familyProfile.current_pending_version_id)) {
+    roles.push({ type: "family", id: familyProfile.id });
+  }
+
+  if (caregiverProfile && (caregiverProfile.current_visible_version_id || caregiverProfile.current_pending_version_id)) {
+    roles.push({ type: "caregiver", id: caregiverProfile.id });
+  }
+
+  return roles;
+}
+
+function resolveActingRole(availableRoles = []) {
+  const storedRole = getStoredActingRole();
+  if (storedRole && availableRoles.some((role) => role.type === storedRole)) {
+    return storedRole;
+  }
+
+  if (availableRoles.some((role) => role.type === "family")) {
+    return "family";
+  }
+
+  if (availableRoles.some((role) => role.type === "caregiver")) {
+    return "caregiver";
+  }
+
+  return storedRole;
+}
+
+function getRoleHomeHref(role) {
+  if (role === "family") return "./findcare.html";
+  if (role === "caregiver") return "./jobs.html";
+  return "./account.html";
+}
+
+function getChooserHref() {
+  return "./chooser.html";
+}
+
+async function getPostLoginDestination(userId, { forceChoiceOnMultiple = false } = {}) {
+  const availableRoles = await getAvailableActingRoles(userId);
+
+  if (forceChoiceOnMultiple && availableRoles.length > 1) {
+    return getChooserHref();
+  }
+
+  const actingRole = resolveActingRole(availableRoles);
+  if (actingRole) {
+    setStoredActingRole(actingRole);
+    return getRoleHomeHref(actingRole);
+  }
+
+  return "./account.html";
+}
+
 async function getCurrentSessionUser() {
   const { data, error } = await window.db.auth.getSession();
 
@@ -194,6 +351,7 @@ async function loadPart(id, file) {
   if (id === "header-placeholder") {
     highlightCurrentNav();
     wireMobileMenu();
+    wireRoleAwareBrowseLinks(el);
     updateHeaderAuth();
   }
 }
@@ -218,12 +376,38 @@ function highlightCurrentNav() {
   });
 }
 
+function wireRoleAwareBrowseLinks(root = document) {
+  const links = root.querySelectorAll("a[href]");
+
+  links.forEach((link) => {
+    if (link.dataset.roleAwareBrowseWired === "1") return;
+
+    const label = (link.textContent || "").replace(/\s+/g, " ").trim().toLowerCase();
+
+    let targetRole = null;
+    if (label === "browse caregivers") {
+      targetRole = "family";
+    } else if (label === "browse families") {
+      targetRole = "caregiver";
+    }
+
+    if (!targetRole) return;
+
+    link.dataset.roleAwareBrowseWired = "1";
+    link.addEventListener("click", () => {
+      window.setStoredActingRole?.(targetRole);
+    });
+  });
+}
+
 // ======================================================
 // Mobile hamburger menu
 // ======================================================
 function wireMobileMenu() {
   const toggle = document.getElementById("menuToggle");
   const nav = document.getElementById("mainNav");
+  const accountMenu = document.getElementById("navAccountMenu");
+  const accountMenuButton = document.getElementById("navAccountMenuButton");
 
   if (!toggle || !nav) return;
   if (toggle.dataset.wired === "1") return;
@@ -239,10 +423,40 @@ function wireMobileMenu() {
     setExpanded(open);
   });
 
+  const closeAccountMenu = () => {
+    if (!accountMenu || !accountMenuButton) return;
+    accountMenu.classList.remove("open");
+    accountMenuButton.setAttribute("aria-expanded", "false");
+  };
+
+  if (accountMenu && accountMenuButton) {
+    accountMenuButton.addEventListener("click", (event) => {
+      event.stopPropagation();
+      const open = accountMenu.classList.toggle("open");
+      accountMenuButton.setAttribute("aria-expanded", open ? "true" : "false");
+    });
+
+    accountMenu.querySelectorAll("a, button").forEach((element) => {
+      if (element === accountMenuButton) return;
+      element.addEventListener("click", () => {
+        closeAccountMenu();
+        nav.classList.remove("open");
+        setExpanded(false);
+      });
+    });
+
+    document.addEventListener("click", (event) => {
+      if (!accountMenu.contains(event.target)) {
+        closeAccountMenu();
+      }
+    });
+  }
+
   nav.querySelectorAll("a").forEach((a) => {
     a.addEventListener("click", () => {
       nav.classList.remove("open");
       setExpanded(false);
+      closeAccountMenu();
     });
   });
 
@@ -585,6 +799,13 @@ async function resolveQueueItem(queueId, resolutionAction, options = {}) {
 window.getCurrentSessionUser = getCurrentSessionUser;
 window.getAdminRecord = getAdminRecord;
 window.requireAdminUser = requireAdminUser;
+window.getStoredActingRole = getStoredActingRole;
+window.setStoredActingRole = setStoredActingRole;
+window.getAvailableActingRoles = getAvailableActingRoles;
+window.resolveActingRole = resolveActingRole;
+window.getRoleHomeHref = getRoleHomeHref;
+window.getChooserHref = getChooserHref;
+window.getPostLoginDestination = getPostLoginDestination;
 window.resolveQueueItem = resolveQueueItem;
 
 // ======================================================
@@ -612,6 +833,7 @@ async function deleteProfile(tableName, profileId) {
 // Page initialization
 // ======================================================
 window.addEventListener("DOMContentLoaded", () => {
+  wireRoleAwareBrowseLinks(document);
   loadPart("header-placeholder", "./header.html");
   loadPart("footer-placeholder", "./footer.html");
 

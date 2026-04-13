@@ -43,14 +43,14 @@
         <!-- Family path -->
         <div class="card path-card path-card-family">
           <div class="path-label path-label-family">For Families</div>
-          <h3>Find dependable help with more confidence</h3>
+          <h3>Find dependable help with confidence</h3>
           <p>
             Browse caregiver profiles, review qualifications, and connect directly with people who may be a good fit for your home.
           </p>
 
           <div class="path-actions">
             <a class="button button-family" href="./caregivers.html">Browse Caregivers</a>
-            <a class="button button-family" href="./family.html">Create Family Profile</a>
+            <a class="button button-family" id="familyProfileCta" href="./family.html">Create Family Profile</a>
           </div>
         </div>
 
@@ -64,7 +64,7 @@
 
           <div class="path-actions">
             <a class="button button-caregiver" href="./families.html">Browse Families</a>
-            <a class="button button-caregiver" href="./caregiver.html">Create Caregiver Profile</a>
+            <a class="button button-caregiver" id="caregiverProfileCta" href="./caregiver.html">Create Caregiver Profile</a>
           </div>
         </div>
       </div>
@@ -157,5 +157,36 @@
   <!-- Scripts -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
   <script src="./app.js"></script>
+  <script>
+    (function () {
+      async function updateHomepageProfileButtons() {
+        const familyButton = document.getElementById("familyProfileCta");
+        const caregiverButton = document.getElementById("caregiverProfileCta");
+
+        if (!familyButton && !caregiverButton) return;
+
+        try {
+          const user = await window.getCurrentSessionUser();
+          if (!user) return;
+
+          const roles = await window.getAvailableActingRoles(user.id);
+
+          if (familyButton && roles.some((role) => role.type === "family")) {
+            familyButton.textContent = "View Your Family Profile";
+            familyButton.href = "./family.html";
+          }
+
+          if (caregiverButton && roles.some((role) => role.type === "caregiver")) {
+            caregiverButton.textContent = "View Your Caregiver Profile";
+            caregiverButton.href = "./caregiver.html";
+          }
+        } catch (error) {
+          console.error("Homepage profile CTA update failed:", error);
+        }
+      }
+
+      window.addEventListener("DOMContentLoaded", updateHomepageProfileButtons);
+    })();
+  </script>
 </body>
 </html>
