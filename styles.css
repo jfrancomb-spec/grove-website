@@ -40,7 +40,7 @@ main {
 
 section {
   max-width: 900px;
-  margin: 40px auto;
+  margin: 24px auto;
   padding: 0 20px;
 }
 
@@ -107,7 +107,7 @@ main {
 
 section {
   max-width: 900px;
-  margin: 40px auto;
+  margin: 24px auto;
   padding: 0 20px;
 }
 
@@ -148,6 +148,7 @@ header,
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 28px;
 }
 
 .site-header {
@@ -166,6 +167,7 @@ header,
 
 .logo-link {
   text-decoration: none;
+  padding-right: 10px;
 }
 
 .brand-logo {
@@ -188,6 +190,8 @@ header,
 .nav {
   display: flex;
   align-items: center;
+  justify-content: flex-end;
+  flex: 1;
   gap: 18px;
 }
 
@@ -205,6 +209,63 @@ header,
   font-weight: 700;
   border-bottom: 2px solid var(--primary);
   padding-bottom: 2px;
+}
+
+.nav-account-menu {
+  position: relative;
+}
+
+.nav-account-button {
+  appearance: none;
+  border: none;
+  background: none;
+  color: var(--text);
+  font: inherit;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 0;
+}
+
+.nav-account-button:hover {
+  color: var(--primary);
+}
+
+.nav-account-dropdown {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  min-width: 180px;
+  background: #fff;
+  border: 1px solid var(--card-border);
+  border-radius: 12px;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.12);
+  padding: 8px;
+  display: none;
+  z-index: 40;
+}
+
+.nav-account-menu.open .nav-account-dropdown {
+  display: block;
+}
+
+.nav-account-dropdown-link {
+  width: 100%;
+  display: block;
+  text-align: left;
+  padding: 10px 12px;
+  border-radius: 8px;
+  color: var(--text);
+  text-decoration: none;
+  font: inherit;
+  font-weight: 500;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+.nav-account-dropdown-link:hover {
+  background: #f3f4f6;
+  color: var(--primary);
 }
 
 .nav-button {
@@ -241,14 +302,14 @@ header,
    Hero
 ===================================================== */
 .hero {
-  padding: 80px 20px;
+  padding: 28px 20px;
   text-align: center;
   background: #e9f1ec;
 }
 
 .subtitle {
   font-size: 20px;
-  margin-bottom: 30px;
+  margin-bottom: 16px;
 }
 
 /* =====================================================
@@ -264,7 +325,7 @@ header,
 }
 
 .hero-home {
-  padding: 90px 20px 70px;
+  padding: 56px 20px 40px;
 }
 
 .hero-home-inner {
@@ -1400,12 +1461,34 @@ textarea:focus {
     padding: 6px 0;
   }
 
+  .nav-account-menu {
+    width: 100%;
+  }
+
+  .nav-account-button {
+    width: 100%;
+    text-align: left;
+    padding: 6px 0;
+  }
+
+  .nav-account-dropdown {
+    position: static;
+    min-width: 0;
+    border: none;
+    box-shadow: none;
+    padding: 6px 0 0;
+  }
+
+  .nav-account-dropdown-link {
+    padding: 8px 0 8px 14px;
+  }
+
   .hero {
-    padding: 56px 20px;
+    padding: 20px 20px;
   }
 
   .hero-home {
-    padding: 70px 20px 50px;
+    padding: 34px 20px 24px;
   }
 
   h1 {
@@ -1455,14 +1538,14 @@ textarea:focus {
    Hero
 ===================================================== */
 .hero {
-  padding: 80px 20px;
+  padding: 28px 20px;
   text-align: center;
   background: #e9f1ec;
 }
 
 .subtitle {
   font-size: 20px;
-  margin-bottom: 30px;
+  margin-bottom: 16px;
 }
 
 /* =====================================================
@@ -1478,7 +1561,7 @@ textarea:focus {
 }
 
 .hero-home {
-  padding: 90px 20px 70px;
+  padding: 56px 20px 40px;
 }
 
 .hero-home-inner {
@@ -2615,11 +2698,11 @@ textarea:focus {
   }
 
   .hero {
-    padding: 56px 20px;
+    padding: 20px 20px;
   }
 
   .hero-home {
-    padding: 70px 20px 50px;
+    padding: 34px 20px 24px;
   }
 
   h1 {

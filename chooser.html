@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Grove | What Do You Want To Do Today?</title>
+  <link rel="stylesheet" href="./styles.css" />
+  <link rel="icon" type="image/png" href="./MainIcon.png" />
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #f5f7fa;
+      color: #1f2937;
+    }
+
+    .chooser-page {
+      max-width: 920px;
+      margin: 48px auto 64px;
+      padding: 0 20px;
+    }
+
+    .chooser-card {
+      background: white;
+      border-radius: 18px;
+      padding: 28px;
+      box-shadow: 0 10px 28px rgba(0, 0, 0, 0.08);
+    }
+
+    .chooser-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 18px;
+      margin-top: 22px;
+    }
+
+    .chooser-option {
+      border-radius: 16px;
+      padding: 22px;
+      text-decoration: none;
+      color: inherit;
+      border: 2px solid transparent;
+      transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+      display: block;
+    }
+
+    .chooser-option:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 24px rgba(0, 0, 0, 0.08);
+    }
+
+    .chooser-option h2 {
+      margin-top: 0;
+      margin-bottom: 8px;
+    }
+
+    .chooser-option p {
+      margin: 0 0 18px;
+      line-height: 1.6;
+    }
+
+    .chooser-option-family {
+      background: #eaf3fb;
+      border-color: #4f7fa8;
+    }
+
+    .chooser-option-caregiver {
+      background: #eaf7f4;
+      border-color: #409088;
+    }
+
+    .chooser-meta {
+      font-size: 14px;
+      color: #6b7280;
+      margin-top: 18px;
+    }
+
+    .chooser-actions {
+      margin-top: 22px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+  </style>
+</head>
+<body>
+  <div id="header-placeholder"></div>
+
+  <main class="chooser-page">
+    <div class="chooser-card">
+      <div class="status-label">Choose Your Role</div>
+      <h1>What do you want to do today?</h1>
+      <p id="chooserIntro" class="subtitle" style="margin-bottom:0;">
+        Pick the side of Grove you want to use right now. You can switch again anytime.
+      </p>
+
+      <div id="chooserGrid" class="chooser-grid"></div>
+
+      <div class="chooser-actions">
+        <a class="button button-secondary" href="./account.html">Go to Account</a>
+      </div>
+
+      <div id="chooserMeta" class="chooser-meta"></div>
+    </div>
+  </main>
+
+  <div id="footer-placeholder"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script src="./app.js"></script>
+  <script>
+    (function () {
+      const chooserGrid = document.getElementById("chooserGrid");
+      const chooserMeta = document.getElementById("chooserMeta");
+
+      function buildOption({ role, title, description, buttonText, className }) {
+        const card = document.createElement("a");
+        card.className = `chooser-option ${className}`;
+        card.href = "#";
+        card.innerHTML = `
+          <h2>${title}</h2>
+          <p>${description}</p>
+          <span class="button ${role === "family" ? "button-family" : "button-caregiver"}">${buttonText}</span>
+        `;
+
+        card.addEventListener("click", (event) => {
+          event.preventDefault();
+          window.setStoredActingRole(role);
+          window.location.href = window.getRoleHomeHref(role);
+        });
+
+        return card;
+      }
+
+      async function initChooser() {
+        const user = await window.getCurrentSessionUser();
+        if (!user) {
+          window.location.href = "./login.html";
+          return;
+        }
+
+        const availableRoles = await window.getAvailableActingRoles(user.id);
+
+        if (availableRoles.length <= 1) {
+          const destination = await window.getPostLoginDestination(user.id, {
+            forceChoiceOnMultiple: false
+          });
+          window.location.href = destination;
+          return;
+        }
+
+        chooserGrid.innerHTML = "";
+
+        if (availableRoles.some((role) => role.type === "family")) {
+          chooserGrid.appendChild(buildOption({
+            role: "family",
+            title: "Find a Caregiver",
+            description: "Use your family profile to post care needs, message caregivers, and manage family-side activity.",
+            buttonText: "Switch to Family",
+            className: "chooser-option-family"
+          }));
+        }
+
+        if (availableRoles.some((role) => role.type === "caregiver")) {
+          chooserGrid.appendChild(buildOption({
+            role: "caregiver",
+            title: "Find a Job",
+            description: "Use your caregiver profile to browse jobs, message families, and manage caregiver-side activity.",
+            buttonText: "Switch to Caregiver",
+            className: "chooser-option-caregiver"
+          }));
+        }
+
+        chooserMeta.textContent = "Your choice will control which profile-specific pages and shortcuts Grove shows you until you switch again.";
+        window.updateHeaderAuth?.();
+      }
+
+      window.addEventListener("DOMContentLoaded", initChooser);
+    })();
+  </script>
+</body>
+</html>

@@ -21,6 +21,16 @@
     </div>
 
     <section>
+      <div id="profileScopeCard" class="form-card mb-16" style="display:none;">
+        <div class="flex-between">
+          <div>
+            <h2 class="mt-0">Profile Inbox</h2>
+            <div id="profileScopeText" class="text-muted">Choose which profile you want to message from.</div>
+          </div>
+        </div>
+        <div id="profileScopeActions" class="button-row mt-16"></div>
+      </div>
+
       <div class="messages-layout">
         <div class="form-card">
           <div class="flex-between">
@@ -59,6 +69,9 @@
       let messagesByConversationId = {};
       let participantMap = {};
       let userInfoMap = {};
+      let availableProfiles = [];
+      let activeProfileId = null;
+      let activeProfileType = null;
 
       function formatMessageTime(ts) {
         try {
@@ -76,6 +89,156 @@
           .replaceAll(">", "&gt;")
           .replaceAll('"', "&quot;")
           .replaceAll("'", "&#39;");
+      }
+
+      function getProfileLabel(type) {
+        return type === "family" ? "Family profile" : "Caregiver profile";
+      }
+
+      function setProfileScopeMessage(message) {
+        const scopeText = document.getElementById("profileScopeText");
+        if (scopeText) scopeText.textContent = message;
+      }
+
+      function renderProfileScopeCard() {
+        const card = document.getElementById("profileScopeCard");
+        const actions = document.getElementById("profileScopeActions");
+        if (!card || !actions) return;
+
+        if (!availableProfiles.length) {
+          card.style.display = "none";
+          return;
+        }
+
+        card.style.display = "block";
+        actions.innerHTML = "";
+
+        availableProfiles.forEach((profile) => {
+          const link = document.createElement("a");
+          link.className = profile.id === activeProfileId
+            ? "button"
+            : "button button-secondary";
+          link.href = `./messages.html?profileType=${encodeURIComponent(profile.type)}&profileId=${encodeURIComponent(profile.id)}`;
+          link.textContent = getProfileLabel(profile.type);
+          actions.appendChild(link);
+        });
+
+        if (activeProfileId && activeProfileType) {
+          setProfileScopeMessage(`Viewing conversations for your ${getProfileLabel(activeProfileType).toLowerCase()}.`);
+        } else if (availableProfiles.length === 1) {
+          setProfileScopeMessage(`Viewing conversations for your ${getProfileLabel(availableProfiles[0].type).toLowerCase()}.`);
+        } else {
+          setProfileScopeMessage("Choose which profile you want to message from.");
+        }
+      }
+
+      async function loadAvailableProfiles() {
+        availableProfiles = [];
+
+        const [familyProfileId, caregiverProfileId] = await Promise.all([
+          getCurrentUserFamilyProfileId(),
+          getCurrentUserCaregiverProfileId()
+        ]);
+
+        if (familyProfileId) {
+          availableProfiles.push({ type: "family", id: familyProfileId });
+        }
+
+        if (caregiverProfileId) {
+          availableProfiles.push({ type: "caregiver", id: caregiverProfileId });
+        }
+      }
+
+      function setActiveProfile(type, id, { replaceUrl = true } = {}) {
+        activeProfileType = type || null;
+        activeProfileId = id || null;
+
+        if (!replaceUrl) return;
+
+        const url = new URL(window.location.href);
+
+        if (activeProfileType && activeProfileId) {
+          url.searchParams.set("profileType", activeProfileType);
+          url.searchParams.set("profileId", activeProfileId);
+        } else {
+          url.searchParams.delete("profileType");
+          url.searchParams.delete("profileId");
+        }
+
+        window.history.replaceState({}, "", url);
+      }
+
+      function updateConversationUrl(conversationId) {
+        const url = new URL(window.location.href);
+
+        if (activeProfileType && activeProfileId) {
+          url.searchParams.set("profileType", activeProfileType);
+          url.searchParams.set("profileId", activeProfileId);
+        }
+
+        if (conversationId) {
+          url.searchParams.delete("targetUser");
+          url.searchParams.delete("familyProfileId");
+          url.searchParams.delete("caregiverProfileId");
+          url.searchParams.set("conversation", conversationId);
+        } else {
+          url.searchParams.delete("conversation");
+        }
+
+        window.history.replaceState({}, "", url);
+      }
+
+      function getOwnedProfile(type) {
+        return availableProfiles.find((profile) => profile.type === type) || null;
+      }
+
+      function resolveProfileFromParams(params) {
+        const requestedProfileType = params.get("profileType");
+        const requestedProfileId = params.get("profileId");
+
+        if (requestedProfileType && requestedProfileId) {
+          const matched = availableProfiles.find((profile) =>
+            profile.type === requestedProfileType && profile.id === requestedProfileId
+          );
+          if (matched) return matched;
+        }
+
+        const requestedFamilyId = params.get("familyProfileId");
+        const requestedCaregiverId = params.get("caregiverProfileId");
+
+        if (requestedFamilyId && !requestedCaregiverId) {
+          return getOwnedProfile("caregiver");
+        }
+
+        if (requestedCaregiverId && !requestedFamilyId) {
+          return getOwnedProfile("family");
+        }
+
+        if (availableProfiles.length === 1) {
+          return availableProfiles[0];
+        }
+
+        return null;
+      }
+
+      async function resolveProfileFromConversation(conversationId) {
+        if (!conversationId) return null;
+
+        const { data, error } = await window.db
+          .from("conversation_participants")
+          .select("profile_id")
+          .eq("conversation_id", conversationId)
+          .eq("user_id", currentUser.id)
+          .maybeSingle();
+
+        if (error) {
+          console.error(error);
+          return null;
+        }
+
+        if (!data?.profile_id) return null;
+
+        return availableProfiles.find((profile) => profile.id === data.profile_id) || null;
       }
 
       function formatCaregiverName(profile) {
@@ -198,7 +361,8 @@
         const { data: myParticipants, error: myParticipantsError } = await window.db
           .from("conversation_participants")
           .select("conversation_id")
-          .eq("user_id", currentUser.id);
+          .eq("user_id", currentUser.id)
+          .eq("profile_id", activeProfileId);
 
         if (myParticipantsError) {
           console.error(myParticipantsError);
@@ -249,31 +413,38 @@
         let targetRole = "";
         let targetProfileId = null;
 
-        const myFamilyProfileId = await getCurrentUserFamilyProfileId();
-        const myCaregiverProfileId = await getCurrentUserCaregiverProfileId();
-
-        if (myFamilyProfileId && myFamilyProfileId === familyProfileId) {
+        if (activeProfileType === "family" && activeProfileId && activeProfileId === familyProfileId) {
           myRole = "family";
           myProfileId = familyProfileId;
           targetRole = "caregiver";
           targetProfileId = caregiverProfileId;
-        } else if (myCaregiverProfileId && myCaregiverProfileId === caregiverProfileId) {
+        } else if (activeProfileType === "caregiver" && activeProfileId && activeProfileId === caregiverProfileId) {
           myRole = "caregiver";
           myProfileId = caregiverProfileId;
           targetRole = "family";
           targetProfileId = familyProfileId;
         } else if (familyProfileId && caregiverProfileId) {
-          if (myFamilyProfileId) {
+          if (activeProfileType === "family" && activeProfileId) {
             myRole = "family";
-            myProfileId = myFamilyProfileId;
+            myProfileId = activeProfileId;
             targetRole = "caregiver";
             targetProfileId = caregiverProfileId;
-          } else if (myCaregiverProfileId) {
+          } else if (activeProfileType === "caregiver" && activeProfileId) {
             myRole = "caregiver";
-            myProfileId = myCaregiverProfileId;
+            myProfileId = activeProfileId;
             targetRole = "family";
             targetProfileId = familyProfileId;
           }
+        }
+
+        if (!myRole || !myProfileId || !targetRole || !targetProfileId) {
+          console.error("Unable to resolve conversation profiles.", {
+            activeProfileType,
+            activeProfileId,
+            familyProfileId,
+            caregiverProfileId
+          });
+          return null;
         }
 
         const { data: conversation, error: conversationError } = await window.db
@@ -333,6 +504,21 @@
 
         const requestedConversationId = params.get("conversation");
         if (requestedConversationId) {
+          if (!activeProfileId || !activeProfileType) {
+            const resolvedProfile = await resolveProfileFromConversation(requestedConversationId);
+            if (resolvedProfile) {
+              setActiveProfile(resolvedProfile.type, resolvedProfile.id, { replaceUrl: true });
+              renderProfileScopeCard();
+            }
+          }
+
+          if (!activeProfileId || !activeProfileType) {
+            selectedConversationId = null;
+            document.getElementById("threadHeader").textContent =
+              "Choose a profile to view this conversation.";
+            return;
+          }
+
           selectedConversationId = requestedConversationId;
           return;
         }
@@ -343,12 +529,20 @@
 
         if (!targetUserId) return;
 
-        if (!familyProfileId && caregiverProfileId) {
-          familyProfileId = await getCurrentUserFamilyProfileId();
+        if (!activeProfileId || !activeProfileType) {
+          document.getElementById("threadHeader").textContent =
+            availableProfiles.length > 1
+              ? "Choose the profile you want to use for messaging."
+              : "Create a profile before starting a conversation.";
+          return;
         }
 
-        if (!caregiverProfileId && familyProfileId) {
-          caregiverProfileId = await getCurrentUserCaregiverProfileId();
+        if (activeProfileType === "family" && !familyProfileId) {
+          familyProfileId = activeProfileId;
+        }
+
+        if (activeProfileType === "caregiver" && !caregiverProfileId) {
+          caregiverProfileId = activeProfileId;
         }
 
         if (!familyProfileId || !caregiverProfileId) {
@@ -361,11 +555,7 @@
 
         if (existing?.id) {
           selectedConversationId = existing.id;
-
-          const url = new URL(window.location.href);
-          url.search = "";
-          url.searchParams.set("conversation", selectedConversationId);
-          window.history.replaceState({}, "", url);
+          updateConversationUrl(selectedConversationId);
           return;
         }
 
@@ -373,11 +563,7 @@
 
         if (created?.id) {
           selectedConversationId = created.id;
-
-          const url = new URL(window.location.href);
-          url.search = "";
-          url.searchParams.set("conversation", selectedConversationId);
-          window.history.replaceState({}, "", url);
+          updateConversationUrl(selectedConversationId);
         } else {
           document.getElementById("threadHeader").textContent =
             "Unable to create the conversation right now.";
@@ -385,10 +571,20 @@
       }
 
       async function loadConversations() {
+        if (!activeProfileId) {
+          conversations = [];
+          participantMap = {};
+          messagesByConversationId = {};
+          renderConversationList();
+          renderSelectedThread();
+          return;
+        }
+
         const { data: myParticipants, error: participantError } = await window.db
           .from("conversation_participants")
           .select("*")
           .eq("user_id", currentUser.id)
+          .eq("profile_id", activeProfileId)
           .eq("is_archived", false);
 
         if (participantError) {
@@ -635,11 +831,7 @@
 
           button.addEventListener("click", async () => {
             selectedConversationId = conversation.id;
-
-            const url = new URL(window.location.href);
-            url.search = "";
-            url.searchParams.set("conversation", conversation.id);
-            window.history.replaceState({}, "", url);
+            updateConversationUrl(conversation.id);
 
             await markConversationRead(conversation.id);
             await loadConversations();
@@ -661,13 +853,22 @@
 
         if (!selectedConversationId) {
           if (targetUser) {
+            if (!activeProfileId || !activeProfileType) {
+              threadHeader.textContent = "Choose a profile to start a conversation.";
+              threadEl.innerHTML = "<p>Select the profile you want to use first.</p>";
+              composer.style.display = "none";
+              return;
+            }
+
             threadHeader.textContent = "Start a new conversation";
             threadEl.innerHTML = "<p>Write your first message below.</p>";
             composer.style.display = "block";
             return;
           }
 
-          threadHeader.textContent = "Select a conversation to view messages.";
+          threadHeader.textContent = activeProfileId
+            ? "Select a conversation to view messages."
+            : "Choose a profile to view messages.";
           composer.style.display = "none";
           return;
         }
@@ -756,6 +957,11 @@
 
         if (!text) return;
 
+        if (!activeProfileId || !activeProfileType) {
+          alert("Choose which profile you want to send this message from first.");
+          return;
+        }
+
         if (!selectedConversationId) {
           const params = new URLSearchParams(window.location.search);
           const targetUserId = params.get("targetUser");
@@ -767,12 +973,12 @@
             return;
           }
 
-          if (!familyProfileId && caregiverProfileId) {
-            familyProfileId = await getCurrentUserFamilyProfileId();
+          if (activeProfileType === "family" && !familyProfileId) {
+            familyProfileId = activeProfileId;
           }
 
-          if (!caregiverProfileId && familyProfileId) {
-            caregiverProfileId = await getCurrentUserCaregiverProfileId();
+          if (activeProfileType === "caregiver" && !caregiverProfileId) {
+            caregiverProfileId = activeProfileId;
           }
 
           if (!familyProfileId || !caregiverProfileId) {
@@ -792,11 +998,7 @@
             }
             selectedConversationId = created.id;
           }
-
-          const url = new URL(window.location.href);
-          url.search = "";
-          url.searchParams.set("conversation", selectedConversationId);
-          window.history.replaceState({}, "", url);
+          updateConversationUrl(selectedConversationId);
         }
 
         const sendButton = document.getElementById("sendMessageBtn");
@@ -888,6 +1090,14 @@
       window.addEventListener("DOMContentLoaded", async () => {
         const ok = await requireSession();
         if (!ok) return;
+
+        await loadAvailableProfiles();
+        const params = new URLSearchParams(window.location.search);
+        const resolvedProfile = resolveProfileFromParams(params);
+        if (resolvedProfile) {
+          setActiveProfile(resolvedProfile.type, resolvedProfile.id, { replaceUrl: true });
+        }
+        renderProfileScopeCard();
 
         document.getElementById("sendMessageBtn")?.addEventListener("click", sendMessage);
         wireComposerShortcuts();

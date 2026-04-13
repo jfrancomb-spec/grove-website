@@ -19,8 +19,8 @@
         Browse local caregivers in the Grove network and reach out directly when someone feels like a good fit.
       </div>
 
-      <a class="button" href="./findcare.html">Post a Care Request</a>
-      <a class="button" href="./jobs.html">Browse Care Opportunities</a>
+      <a class="button button-family" href="./findcare.html">Post a Care Request</a>
+      <a class="button button-caregiver" href="./jobs.html">Browse Care Opportunities</a>
     </div>
 
     <section>
@@ -70,7 +70,7 @@
             </div>
 
             <div class="filter-actions">
-              <button type="button" class="button" id="cgApplyBtn">Apply Filters</button>
+              <button type="button" class="button button-caregiver" id="cgApplyBtn">Apply Filters</button>
               <button type="button" class="button filter-clear-button" id="cgClearBtn">Clear Filters</button>
             </div>
           </div>
@@ -80,7 +80,7 @@
           <div class="browse-topbar">
             <button
               type="button"
-              class="button filter-toggle-button"
+              class="button button-caregiver filter-toggle-button"
               id="caregiverFilterOpen"
               data-open-filters
             >
@@ -196,7 +196,7 @@
               label: "Message",
               targetUserId: profile.user_id,
               caregiverProfileId: profile.id,
-              className: "button"
+              className: "button button-caregiver"
             });
           }
 

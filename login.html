@@ -166,7 +166,10 @@
           }
 
           if (data?.session?.user) {
-            window.location.href = "./account.html";
+            const destination = await window.getPostLoginDestination(data.session.user.id, {
+              forceChoiceOnMultiple: true
+            });
+            window.location.href = destination;
           }
         } catch (error) {
           console.error("Session check failed:", error);
@@ -203,8 +206,13 @@
             return;
           }
 
+          const user = await window.getCurrentSessionUser();
+          const destination = await window.getPostLoginDestination(user?.id, {
+            forceChoiceOnMultiple: true
+          });
+
           successMessage.textContent = "Login successful. Redirecting...";
-          window.location.href = "./account.html";
+          window.location.href = destination;
         } catch (error) {
           console.error(error);
           errorMessage.textContent = "Something went wrong during sign in.";
