@@ -1,14 +1,16 @@
 const { test, expect } = require("@playwright/test");
 const { stubExternalDeps } = require("./helpers");
 
-test("jobs page hides hero buttons and renders published opportunities", async ({ page }) => {
+test("family profile page shows visible jobs posted by that family", async ({ page }) => {
   await stubExternalDeps(page, {
     familyProfile: {
       id: "family-1",
       user_id: "family-user-1",
       current_visible_version_id: "fam-v1",
       current_pending_version_id: null,
-      is_active: true
+      is_active: true,
+      average_response_minutes: 30,
+      confirmed_encounters: 2
     },
     familyProfileVersions: [{
       id: "fam-v1",
@@ -21,9 +23,14 @@ test("jobs page hides hero buttons and renders published opportunities", async (
     jobPosts: [{
       id: "job-1",
       user_id: "family-user-1",
+      title: "After-school childcare",
+      care_type: "childcare",
+      location: "Austin",
+      schedule: "Weekdays 3pm-6pm",
+      pay_range: "$20-$25/hr",
       current_visible_version_id: "job-v1",
       is_active: true,
-      content_status: "queued",
+      content_status: "published",
       created_at: "2026-04-01T12:00:00Z"
     }],
     jobPostVersions: [{
@@ -39,13 +46,10 @@ test("jobs page hides hero buttons and renders published opportunities", async (
     }]
   });
 
-  await page.goto("/jobs.html");
+  await page.goto("/family-profile.html?id=family-1");
 
-  await expect(page.getByRole("heading", { name: "Care Jobs" })).toBeVisible();
-  await expect(page.locator(".hero .button")).toHaveCount(0);
+  await expect(page.getByRole("heading", { name: "Posted Jobs" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "After-school childcare" })).toBeVisible();
-  await expect(page.getByText("Austin")).toBeVisible();
   await expect(page.getByRole("link", { name: "View Details" })).toBeVisible();
-  await expect(page.getByRole("link", { name: "View Family" })).toHaveAttribute("href", "./family-profile.html?id=family-1&returnTo=jobs");
   await expect(page.getByRole("link", { name: "Login to Apply" })).toBeVisible();
 });

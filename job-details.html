@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Grove | Job Details</title>
+
+  <link rel="stylesheet" href="./styles.css" />
+  <link rel="icon" type="image/png" href="./MainIcon.png" />
+</head>
+
+<body>
+  <div id="header-placeholder"></div>
+
+  <main>
+    <div class="hero">
+      <h1 id="jobTitle">Job Details</h1>
+      <div class="subtitle" id="jobSubtitle">Loading job details...</div>
+    </div>
+
+    <section>
+      <div class="form-card" id="jobCard" style="display:none;">
+        <div id="jobContent"></div>
+
+        <div class="button-row mt-22" id="jobActions">
+          <a class="button button-secondary" id="viewFamilyBtn" href="#" style="display:none;">View Family</a>
+          <a class="button button-family" id="applyBtn" href="./login.html">Login to Apply</a>
+          <a class="button button-secondary" href="./jobs.html">Back to Jobs</a>
+        </div>
+      </div>
+
+      <div id="jobError" style="display:none;">
+        <p>Unable to load this job.</p>
+        <p class="mt-16">
+          <a href="./jobs.html">Back to Jobs</a>
+        </p>
+      </div>
+    </section>
+  </main>
+
+  <div id="footer-placeholder"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script src="./app.js"></script>
+
+  <script>
+    (function () {
+      function escapeHtml(value) {
+        if (value === null || value === undefined) return "";
+        return String(value)
+          .replaceAll("&", "&amp;")
+          .replaceAll("<", "&lt;")
+          .replaceAll(">", "&gt;")
+          .replaceAll('"', "&quot;")
+          .replaceAll("'", "&#39;");
+      }
+
+      function isVisibleJobVersion(version) {
+        if (!version) return false;
+
+        const status = String(version.content_status || "").toLowerCase();
+        const isLive = version.is_live === true;
+
+        if (["deleted", "rejected", "flagged"].includes(status)) {
+          return false;
+        }
+
+        if (isLive) return true;
+
+        return ["published", "approved", "visible"].includes(status);
+      }
+
+      function renderJob(parentRow, versionRow, familyProfileId, isSignedIn) {
+        const job = {
+          ...parentRow,
+          ...versionRow
+        };
+
+        const title = job.title || "Care Opportunity";
+        const careType = job.care_type || "Not specified";
+        const location = job.location || "Location not listed";
+        const schedule = job.schedule || "Schedule not listed";
+        const payRange = job.pay_range || "";
+        const description = job.description || "";
+        const postedDate = job.submitted_at || job.created_at
+          ? new Date(job.submitted_at || job.created_at).toLocaleDateString()
+          : "";
+
+        document.getElementById("jobTitle").textContent = title;
+        document.getElementById("jobSubtitle").textContent = `${location} • ${careType}`;
+
+        document.getElementById("jobContent").innerHTML = `
+          <p><strong>Location:</strong> ${escapeHtml(location)}</p>
+          <p><strong>Care Type:</strong> ${escapeHtml(careType)}</p>
+          <p><strong>Schedule:</strong> ${escapeHtml(schedule)}</p>
+          ${payRange ? `<p><strong>Pay:</strong> ${escapeHtml(payRange)}</p>` : ""}
+          ${postedDate ? `<p><strong>Posted:</strong> ${escapeHtml(postedDate)}</p>` : ""}
+          ${description ? `<p><strong>Details:</strong></p><p>${escapeHtml(description)}</p>` : ""}
+        `;
+
+        const applyBtn = document.getElementById("applyBtn");
+        applyBtn.textContent = isSignedIn ? "Apply for this job" : "Login to Apply";
+        applyBtn.href = isSignedIn
+          ? `./apply.html?job_id=${encodeURIComponent(parentRow.id)}`
+          : "./login.html";
+
+        const viewFamilyBtn = document.getElementById("viewFamilyBtn");
+        if (familyProfileId) {
+          viewFamilyBtn.style.display = "";
+          viewFamilyBtn.href = `./family-profile.html?id=${encodeURIComponent(familyProfileId)}`;
+        }
+
+        document.getElementById("jobCard").style.display = "block";
+      }
+
+      async function loadJobDetails() {
+        const params = new URLSearchParams(window.location.search);
+        const jobId = params.get("job_id");
+
+        if (!jobId) {
+          document.getElementById("jobError").style.display = "block";
+          return;
+        }
+
+        let tries = 0;
+        while (!window.db && tries < 40) {
+          await new Promise((resolve) => setTimeout(resolve, 50));
+          tries++;
+        }
+
+        if (!window.db) {
+          document.getElementById("jobError").style.display = "block";
+          return;
+        }
+
+        const isSignedIn = !!(await window.getCurrentSessionUser().catch(() => null));
+
+        const { data: parentRow, error: parentError } = await window.db
+          .from("job_posts")
+          .select("id, user_id, title, care_type, location, schedule, description, pay_range, current_visible_version_id, content_status, created_at")
+          .eq("id", jobId)
+          .maybeSingle();
+
+        if (parentError || !parentRow) {
+          console.error(parentError);
+          document.getElementById("jobError").style.display = "block";
+          return;
+        }
+
+        let versionRow = null;
+        if (parentRow.current_visible_version_id) {
+          const { data, error } = await window.db
+            .from("job_post_versions")
+            .select("*")
+            .eq("id", parentRow.current_visible_version_id)
+            .maybeSingle();
+
+          if (!error && isVisibleJobVersion(data)) {
+            versionRow = data;
+          }
+        }
+
+        let familyProfileId = null;
+        if (parentRow.user_id) {
+          const { data: familyRow, error: familyError } = await window.db
+            .from("family_profiles")
+            .select("id, user_id, current_visible_version_id, is_active")
+            .eq("user_id", parentRow.user_id)
+            .not("current_visible_version_id", "is", null)
+            .eq("is_active", true)
+            .maybeSingle();
+
+          if (!familyError && familyRow?.id) {
+            familyProfileId = familyRow.id;
+          }
+        }
+
+        renderJob(parentRow, versionRow, familyProfileId, isSignedIn);
+      }
+
+      window.addEventListener("DOMContentLoaded", loadJobDetails);
+    })();
+  </script>
+</body>
+</html>

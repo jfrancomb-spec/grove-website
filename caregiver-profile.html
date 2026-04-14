@@ -23,15 +23,15 @@
         <div id="profileContent"></div>
 
         <div class="profile-actions mt-22" id="profileActions">
-          <a class="button button-caregiver" id="contactBtn" href="#">Contact This Caregiver</a>
-          <a class="button button-secondary" href="./caregivers.html">Back to Caregivers</a>
+          <a class="button button-caregiver" id="contactBtn" href="#">Message Caregiver</a>
+          <a class="button button-secondary" id="backLinkBtn" href="./caregivers.html">Back to Caregivers</a>
         </div>
       </div>
 
       <div id="profileError" style="display: none;">
         <p>Unable to load this caregiver profile.</p>
         <p class="mt-16">
-          <a href="./caregivers.html">← Back to Caregivers</a>
+          <a id="backLinkInline" href="./caregivers.html">← Back to Caregivers</a>
         </p>
       </div>
     </section>
@@ -49,6 +49,42 @@
       let currentCaregiverVersion = null;
       let currentReviews = [];
       let currentPhotoIndex = 0;
+      let isSignedIn = false;
+
+      function getBackConfig() {
+        const params = new URLSearchParams(window.location.search);
+        const returnTo = (params.get("returnTo") || "").toLowerCase();
+
+        if (returnTo === "jobs") {
+          return {
+            href: "./jobs.html",
+            label: "Back to Jobs",
+            inlineLabel: "← Back to Jobs"
+          };
+        }
+
+        return {
+          href: "./caregivers.html",
+          label: "Back to Caregivers",
+          inlineLabel: "← Back to Caregivers"
+        };
+      }
+
+      function applyBackLinks() {
+        const config = getBackConfig();
+        const backLinkBtn = document.getElementById("backLinkBtn");
+        const backLinkInline = document.getElementById("backLinkInline");
+
+        if (backLinkBtn) {
+          backLinkBtn.href = config.href;
+          backLinkBtn.textContent = config.label;
+        }
+
+        if (backLinkInline) {
+          backLinkInline.href = config.href;
+          backLinkInline.textContent = config.inlineLabel;
+        }
+      }
 
       function formatDisplayName(profile) {
         return formatBrowseDisplayName(profile);
@@ -220,7 +256,8 @@
 
         if (parent.user_id) {
           contactBtn.style.display = "";
-          contactBtn.href = "#";
+          contactBtn.textContent = isSignedIn ? "Message Caregiver" : "Login to Message";
+          contactBtn.href = isSignedIn ? "#" : "./login.html";
           contactBtn.onclick = async (event) => {
             event.preventDefault();
 
@@ -286,6 +323,8 @@
           return;
         }
 
+        isSignedIn = !!(await window.getCurrentSessionUser().catch(() => null));
+
         const { data: caregiverParent, error: caregiverParentError } = await window.db
           .from("caregiver_profiles")
           .select("id, user_id, current_visible_version_id, average_response_minutes, confirmed_encounters")
@@ -304,7 +343,7 @@
           .select("*")
           .eq("id", caregiverParent.current_visible_version_id)
           .eq("is_live", true)
-          .in("content_status", ["visible", "approved"])
+          .in("content_status", ["visible", "approved", "published"])
           .maybeSingle();
 
         if (caregiverVersionError || !caregiverVersion) {
@@ -318,7 +357,7 @@
           .select("*")
           .eq("caregiver_profile_id", caregiverId)
           .eq("is_visible", true)
-          .in("content_status", ["visible", "approved"])
+          .in("content_status", ["visible", "approved", "published"])
           .order("created_at", { ascending: false });
 
         if (reviewError) {
@@ -335,6 +374,7 @@
       }
 
       window.addEventListener("DOMContentLoaded", () => {
+        applyBackLinks();
         loadProfile();
       });
     })();

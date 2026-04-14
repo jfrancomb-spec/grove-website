@@ -512,6 +512,36 @@ button.button {
   color: #fff;
 }
 
+body.button-theme-family .button:not(.button-admin),
+body.button-theme-family .button-family,
+body.button-theme-family .button-caregiver,
+body.button-theme-family .button-secondary {
+  background: var(--family) !important;
+  color: #fff !important;
+}
+
+body.button-theme-family .button:not(.button-admin):hover,
+body.button-theme-family .button-family:hover,
+body.button-theme-family .button-caregiver:hover,
+body.button-theme-family .button-secondary:hover {
+  background: #3f6d93 !important;
+}
+
+body.button-theme-caregiver .button:not(.button-admin),
+body.button-theme-caregiver .button-family,
+body.button-theme-caregiver .button-caregiver,
+body.button-theme-caregiver .button-secondary {
+  background: var(--caregiver) !important;
+  color: #fff !important;
+}
+
+body.button-theme-caregiver .button:not(.button-admin):hover,
+body.button-theme-caregiver .button-family:hover,
+body.button-theme-caregiver .button-caregiver:hover,
+body.button-theme-caregiver .button-secondary:hover {
+  background: #32756e !important;
+}
+
 /* =====================================================
    Forms
 ===================================================== */

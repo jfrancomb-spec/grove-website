@@ -25,6 +25,8 @@ console.log("SUPABASE URL:", SUPABASE_URL);
 console.log("KEY PREFIX:", SUPABASE_ANON_KEY.slice(0, 20));
 
 const GROVE_ACTING_ROLE_KEY = "groveActingRole";
+const BUTTON_THEME_FAMILY_CLASS = "button-theme-family";
+const BUTTON_THEME_CAREGIVER_CLASS = "button-theme-caregiver";
 
 // ======================================================
 // Header auth state (NEW)
@@ -63,6 +65,7 @@ async function updateHeaderAuth() {
         actingRoleMessageHref = `./messages.html?profileType=${encodeURIComponent(activeProfile.type)}&profileId=${encodeURIComponent(activeProfile.id)}`;
       }
     }
+    setButtonTheme(pageUsesGlobalButtonTheme() ? (isSignedIn ? actingRole : getPublicButtonTheme()) : null);
     if (loginLink) {
       loginLink.style.display = isSignedIn ? "none" : "";
     }
@@ -230,6 +233,72 @@ function setStoredActingRole(role) {
   } catch {
     // Ignore storage failures.
   }
+}
+
+function setButtonTheme(themeRole = null) {
+  if (!document.body) return;
+
+  document.body.classList.remove(BUTTON_THEME_FAMILY_CLASS, BUTTON_THEME_CAREGIVER_CLASS);
+
+  if (themeRole === "family") {
+    document.body.classList.add(BUTTON_THEME_FAMILY_CLASS);
+  } else if (themeRole === "caregiver") {
+    document.body.classList.add(BUTTON_THEME_CAREGIVER_CLASS);
+  }
+}
+
+function getPublicButtonTheme(fileName = getCurrentFileName()) {
+  const caregiverThemePages = new Set([
+    "jobs.html",
+    "job-details.html",
+    "families.html",
+    "family-profile.html",
+    "apply.html"
+  ]);
+
+  const familyThemePages = new Set([
+    "caregivers.html",
+    "caregiver-profile.html"
+  ]);
+
+  if (caregiverThemePages.has(fileName)) {
+    return "caregiver";
+  }
+
+  if (familyThemePages.has(fileName)) {
+    return "family";
+  }
+
+  return null;
+}
+
+function pageUsesGlobalButtonTheme(fileName = getCurrentFileName()) {
+  return fileName !== "index.html";
+}
+
+async function applyButtonTheme() {
+  if (!pageUsesGlobalButtonTheme()) {
+    setButtonTheme(null);
+    return;
+  }
+
+  let themeRole = getPublicButtonTheme();
+
+  if (window.db?.auth) {
+    try {
+      const { data } = await window.db.auth.getSession();
+      const user = data?.session?.user || null;
+
+      if (user && typeof window.getAvailableActingRoles === "function") {
+        const availableRoles = await window.getAvailableActingRoles(user.id);
+        themeRole = window.resolveActingRole(availableRoles) || themeRole;
+      }
+    } catch (error) {
+      console.error("Button theme error:", error);
+    }
+  }
+
+  setButtonTheme(themeRole);
 }
 
 async function getAvailableActingRoles(userId) {
@@ -818,6 +887,7 @@ window.resolveActingRole = resolveActingRole;
 window.getRoleHomeHref = getRoleHomeHref;
 window.getChooserHref = getChooserHref;
 window.getPostLoginDestination = getPostLoginDestination;
+window.applyButtonTheme = applyButtonTheme;
 window.resolveQueueItem = resolveQueueItem;
 
 // ======================================================
@@ -851,6 +921,7 @@ window.addEventListener("DOMContentLoaded", () => {
 
   highlightCurrentNav();
   wireMobileMenu();
+  applyButtonTheme();
 
   prefillFromQuery();
   wireFindCareForm();

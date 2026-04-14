@@ -110,6 +110,8 @@
   <script>
     (function () {
       let allJobs = [];
+      let isSignedIn = false;
+      let familyProfileIdsByUserId = {};
 
       function truncateText(text, maxLength = 180) {
         const clean = String(text || "").replace(/\s+/g, " ").trim();
@@ -124,7 +126,8 @@
           id: parentRow.id,
           job_post_id: parentRow.id,
           current_visible_version_id: parentRow.current_visible_version_id,
-          user_id: parentRow.user_id
+          user_id: parentRow.user_id,
+          family_profile_id: parentRow.user_id ? familyProfileIdsByUserId[parentRow.user_id] || null : null
         };
       }
 
@@ -171,6 +174,11 @@
           const schedule = job.schedule || "Schedule not listed";
           const payRange = job.pay_range || "";
           const description = truncateText(job.description || "", 220);
+          const applyHref = isSignedIn ? `./apply.html?job_id=${job.id}` : "./login.html";
+          const applyLabel = isSignedIn ? "Apply for this job" : "Login to Apply";
+          const familyAction = job.family_profile_id
+            ? `<a class="button button-secondary" href="./family-profile.html?id=${job.family_profile_id}&returnTo=jobs">View Family</a>`
+            : "";
 
           card.innerHTML = `
             <div class="browse-card-body">
@@ -182,7 +190,9 @@
               ${postedDate ? `<p class="browse-card-meta">Posted ${postedDate}</p>` : ""}
             </div>
             <div class="browse-card-actions">
-              <a class="button button-family" href="./apply.html?job_id=${job.id}">Apply for this job</a>
+              <a class="button button-secondary" href="./job-details.html?job_id=${job.id}">View Details</a>
+              ${familyAction}
+              <a class="button button-family" href="${applyHref}">${applyLabel}</a>
             </div>
           `;
 
@@ -243,6 +253,9 @@
           return;
         }
 
+        isSignedIn = !!(await window.getCurrentSessionUser().catch(() => null));
+        familyProfileIdsByUserId = {};
+
         const { data: parentRows, error: parentError } = await window.db
           .from("job_posts")
           .select("id, user_id, title, care_type, location, schedule, description, pay_range, current_visible_version_id, is_active, content_status, created_at")
@@ -260,6 +273,27 @@
         const versionIds = (parentRows || [])
           .map((row) => row.current_visible_version_id)
           .filter(Boolean);
+
+        const familyUserIds = Array.from(new Set(
+          (parentRows || []).map((row) => row.user_id).filter(Boolean)
+        ));
+
+        if (familyUserIds.length) {
+          const { data: familyRows, error: familyError } = await window.db
+            .from("family_profiles")
+            .select("id, user_id, current_visible_version_id, is_active")
+            .in("user_id", familyUserIds)
+            .not("current_visible_version_id", "is", null)
+            .eq("is_active", true);
+
+          if (familyError) {
+            console.error(familyError);
+          } else {
+            (familyRows || []).forEach((row) => {
+              if (row.user_id) familyProfileIdsByUserId[row.user_id] = row.id;
+            });
+          }
+        }
 
         if (!versionIds.length) {
           allJobs = [];
