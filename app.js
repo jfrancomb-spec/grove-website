@@ -117,7 +117,7 @@ async function updateHeaderAuth() {
     }
     if (accountLink) {
       accountLink.style.display = isSignedIn ? "" : "none";
-      accountLink.textContent = "My Dashboard";
+      accountLink.textContent = "Dashboard";
     }
     if (signOutBtn) {
       signOutBtn.style.display = isSignedIn ? "" : "none";

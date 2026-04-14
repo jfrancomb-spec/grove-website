@@ -14,11 +14,11 @@ test("homepage updates profile CTA labels for signed-in users with profiles", as
   await expect(page.getByRole("link", { name: "View Your Caregiver Profile" })).toBeVisible();
 });
 
-test("homepage keeps create profile labels for signed-out users", async ({ page }) => {
+test("homepage shows get started labels for signed-out users", async ({ page }) => {
   await stubExternalDeps(page);
 
   await page.goto("/");
 
-  await expect(page.getByRole("link", { name: "Create Family Profile" })).toBeVisible();
-  await expect(page.getByRole("link", { name: "Create Caregiver Profile" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Get Started as a Family" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Get Started as a Caregiver" })).toBeVisible();
 });
