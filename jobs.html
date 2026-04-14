@@ -18,9 +18,6 @@
       <div class="subtitle">
         Browse local care opportunities in the Grove network and apply directly when a job fits your availability.
       </div>
-
-      <a class="button button-family" href="./findcare.html">Post a Care Request</a>
-      <a class="button button-caregiver" href="./caregivers.html">Browse Caregivers</a>
     </div>
 
     <section>
@@ -131,6 +128,21 @@
         };
       }
 
+      function isVisibleJobVersion(version) {
+        if (!version) return false;
+
+        const status = String(version.content_status || "").toLowerCase();
+        const isLive = version.is_live === true;
+
+        if (["deleted", "rejected", "flagged"].includes(status)) {
+          return false;
+        }
+
+        if (isLive) return true;
+
+        return ["published", "approved", "visible"].includes(status);
+      }
+
       function renderJobs(list) {
         const container = document.getElementById("jobsContainer");
         const countEl = document.getElementById("jobsCount");
@@ -233,10 +245,10 @@
 
         const { data: parentRows, error: parentError } = await window.db
           .from("job_posts")
-          .select("id, user_id, current_visible_version_id, is_active, content_status, created_at")
+          .select("id, user_id, title, care_type, location, schedule, description, pay_range, current_visible_version_id, is_active, content_status, created_at")
           .not("current_visible_version_id", "is", null)
           .eq("is_active", true)
-          .eq("content_status", "published")
+          .neq("content_status", "deleted")
           .order("created_at", { ascending: false });
 
         if (parentError) {
@@ -258,13 +270,17 @@
         const { data: versionRows, error: versionError } = await window.db
           .from("job_post_versions")
           .select("*")
-          .in("id", versionIds)
-          .eq("is_live", true)
-          .eq("content_status", "published");
+          .in("id", versionIds);
 
         if (versionError) {
           console.error(versionError);
-          showLoadError("Unable to load jobs right now.");
+        }
+
+        if (!versionRows?.length) {
+          allJobs = (parentRows || [])
+            .filter((parent) => String(parent.content_status || "").toLowerCase() === "published")
+            .map((parent) => normalizeJob(parent, null));
+          applyFilters();
           return;
         }
 
@@ -276,8 +292,15 @@
         allJobs = (parentRows || [])
           .map((parent) => {
             const version = versionMap[parent.current_visible_version_id];
-            if (!version) return null;
-            return normalizeJob(parent, version);
+            if (isVisibleJobVersion(version)) {
+              return normalizeJob(parent, version);
+            }
+
+            if (String(parent.content_status || "").toLowerCase() === "published") {
+              return normalizeJob(parent, null);
+            }
+
+            return null;
           })
           .filter(Boolean);
 

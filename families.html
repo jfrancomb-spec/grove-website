@@ -112,6 +112,7 @@
     (function () {
       let allFamilies = [];
       const familyReviewsByProfileId = {};
+      let isSignedIn = false;
 
       function buildFamilyBadges(profile) {
         const badges = [];
@@ -193,7 +194,7 @@
           if (profile.user_id) {
             actions.push({
               action: "message",
-              label: "Message",
+              label: isSignedIn ? "Message" : "Login to Message",
               targetUserId: profile.user_id,
               familyProfileId: profile.id,
               className: "button button-family"
@@ -333,6 +334,8 @@
           }
           return;
         }
+
+        isSignedIn = !!(await window.getCurrentSessionUser().catch(() => null));
 
         const { data: parentRows, error: parentError } = await window.db
           .from("family_profiles")

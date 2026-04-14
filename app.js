@@ -35,6 +35,7 @@ async function updateHeaderAuth() {
 
   const loginLink = document.getElementById("navLoginLink");
   const browseLink = document.getElementById("navBrowseLink");
+  const browseOpportunitiesLink = document.getElementById("navBrowseOpportunitiesLink");
   const messagesLink = document.getElementById("navMessagesLink");
   const adminLink = document.getElementById("navAdminLink");
   const accountMenu = document.getElementById("navAccountMenu");
@@ -75,6 +76,11 @@ async function updateHeaderAuth() {
         browseLink.href = "./jobs.html";
         browseLink.textContent = "Browse Opportunities";
       }
+    }
+    if (browseOpportunitiesLink) {
+      browseOpportunitiesLink.style.display = isSignedIn ? "none" : "";
+      browseOpportunitiesLink.href = "./jobs.html";
+      browseOpportunitiesLink.textContent = "Browse Opportunities";
     }
     if (messagesLink) {
       messagesLink.style.display = isSignedIn ? "" : "none";
@@ -387,7 +393,7 @@ function wireRoleAwareBrowseLinks(root = document) {
     let targetRole = null;
     if (label === "browse caregivers") {
       targetRole = "family";
-    } else if (label === "browse families") {
+    } else if (label === "browse families" || label === "browse opportunities") {
       targetRole = "caregiver";
     }
 
@@ -649,6 +655,12 @@ async function openGroveConversation({
   caregiverProfileId = null
 }) {
   if (!targetUserId) return;
+
+  const currentUser = await getCurrentSessionUser().catch(() => null);
+  if (!currentUser) {
+    window.location.href = "./login.html";
+    return;
+  }
 
   const params = new URLSearchParams();
   params.set("targetUser", targetUserId);

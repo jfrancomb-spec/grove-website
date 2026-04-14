@@ -19,6 +19,11 @@ test("homepage shows get started labels for signed-out users", async ({ page }) 
 
   await page.goto("/");
 
-  await expect(page.getByRole("link", { name: "Get Started as a Family" })).toBeVisible();
-  await expect(page.getByRole("link", { name: "Get Started as a Caregiver" })).toBeVisible();
+  const familyButtons = page.getByRole("link", { name: "Get Started as a Family" });
+  const caregiverButtons = page.getByRole("link", { name: "Get Started as a Caregiver" });
+
+  await expect(familyButtons.first()).toBeVisible();
+  await expect(caregiverButtons.first()).toBeVisible();
+  await expect(familyButtons.first()).toHaveAttribute("href", "./login.html");
+  await expect(caregiverButtons.first()).toHaveAttribute("href", "./login.html");
 });

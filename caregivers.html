@@ -18,9 +18,6 @@
       <div class="subtitle">
         Browse local caregivers in the Grove network and reach out directly when someone feels like a good fit.
       </div>
-
-      <a class="button button-family" href="./findcare.html">Post a Care Request</a>
-      <a class="button button-caregiver" href="./jobs.html">Browse Care Opportunities</a>
     </div>
 
     <section>
@@ -114,6 +111,7 @@
     (function () {
       let allCaregivers = [];
       const caregiverReviewsByProfileId = {};
+      let isSignedIn = false;
 
       function buildCaregiverBadges(profile) {
         const badges = [];
@@ -193,7 +191,7 @@
           if (profile.user_id) {
             actions.push({
               action: "message",
-              label: "Message",
+              label: isSignedIn ? "Message" : "Login to Message",
               targetUserId: profile.user_id,
               caregiverProfileId: profile.id,
               className: "button button-caregiver"
@@ -333,6 +331,8 @@
           }
           return;
         }
+
+        isSignedIn = !!(await window.getCurrentSessionUser().catch(() => null));
 
         const { data: parentRows, error: parentError } = await window.db
           .from("caregiver_profiles")

@@ -27,7 +27,7 @@
 
         <div class="hero-actions">
           <a class="button button-family" href="./caregivers.html">Browse Caregivers</a>
-          <a class="button button-caregiver" href="./families.html">Browse Families</a>
+          <a class="button button-caregiver" href="./jobs.html">Browse Opportunities</a>
         </div>
       </div>
     </section>
@@ -50,7 +50,7 @@
 
           <div class="path-actions">
             <a class="button button-family" href="./caregivers.html">Browse Caregivers</a>
-            <a class="button button-family" id="familyProfileCta" href="./family.html">Get Started as a Family</a>
+            <a class="button button-family" id="familyProfileCta" data-get-started-role="family" href="./family.html">Get Started as a Family</a>
           </div>
         </div>
 
@@ -63,8 +63,8 @@
           </p>
 
           <div class="path-actions">
-            <a class="button button-caregiver" href="./families.html">Browse Families</a>
-            <a class="button button-caregiver" id="caregiverProfileCta" href="./caregiver.html">Get Started as a Caregiver</a>
+            <a class="button button-caregiver" href="./jobs.html">Browse Opportunities</a>
+            <a class="button button-caregiver" id="caregiverProfileCta" data-get-started-role="caregiver" href="./caregiver.html">Get Started as a Caregiver</a>
           </div>
         </div>
       </div>
@@ -145,8 +145,8 @@
       </div>
 
       <div class="hero-actions">
-        <a class="button button-family" href="./family.html">Family Dashboard</a>
-        <a class="button button-caregiver" href="./caregiver.html">Caregiver Dashboard</a>
+        <a class="button button-family" data-get-started-role="family" href="./family.html">Get Started as a Family</a>
+        <a class="button button-caregiver" data-get-started-role="caregiver" href="./caregiver.html">Get Started as a Caregiver</a>
       </div>
     </section>
   </main>
@@ -157,17 +157,28 @@
   <!-- Scripts -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
   <script src="./app.js"></script>
-  <script>
+    <script>
     (function () {
       async function updateHomepageProfileButtons() {
         const familyButton = document.getElementById("familyProfileCta");
         const caregiverButton = document.getElementById("caregiverProfileCta");
+        const getStartedButtons = Array.from(document.querySelectorAll("[data-get-started-role]"));
 
-        if (!familyButton && !caregiverButton) return;
+        if (!familyButton && !caregiverButton && !getStartedButtons.length) return;
+
+        getStartedButtons.forEach((button) => {
+          const role = button.getAttribute("data-get-started-role");
+          button.href = role === "caregiver" ? "./caregiver.html" : "./family.html";
+        });
 
         try {
           const user = await window.getCurrentSessionUser();
-          if (!user) return;
+          if (!user) {
+            getStartedButtons.forEach((button) => {
+              button.href = "./login.html";
+            });
+            return;
+          }
 
           const roles = await window.getAvailableActingRoles(user.id);
 

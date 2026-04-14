@@ -1,6 +1,17 @@
 const { test, expect } = require("@playwright/test");
 const { stubExternalDeps } = require("./helpers");
 
+test("signed-out header shows both public browse links and login", async ({ page }) => {
+  await stubExternalDeps(page);
+
+  await page.goto("/");
+
+  await expect(page.locator("#navBrowseLink")).toHaveText("Browse Caregivers");
+  await expect(page.locator("#navBrowseOpportunitiesLink")).toHaveText("Browse Opportunities");
+  await expect(page.locator("#navLoginLink")).toHaveText("Login");
+  await expect(page.locator("#navMessagesLink")).toBeHidden();
+});
+
 test("signed-in family role header shows browse caregivers, messages, and my account", async ({ page }) => {
   await stubExternalDeps(page, {
     sessionUser: { id: "user-1", email: "jenni@example.com" },

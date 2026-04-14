@@ -2,6 +2,12 @@ function buildSupabaseStubScript({
   sessionUser = null,
   familyProfile = null,
   caregiverProfile = null,
+  familyProfileVersions = [],
+  caregiverProfileVersions = [],
+  jobPosts = [],
+  jobPostVersions = [],
+  familyReviews = [],
+  caregiverReviews = [],
   adminUser = null,
   conversationParticipants = [],
   conversations = [],
@@ -27,6 +33,12 @@ function buildSupabaseStubScript({
       const fixtures = {
         familyProfile: ${JSON.stringify(normalizedFamilyProfile)},
         caregiverProfile: ${JSON.stringify(normalizedCaregiverProfile)},
+        familyProfileVersions: ${JSON.stringify(familyProfileVersions)},
+        caregiverProfileVersions: ${JSON.stringify(caregiverProfileVersions)},
+        jobPosts: ${JSON.stringify(jobPosts)},
+        jobPostVersions: ${JSON.stringify(jobPostVersions)},
+        familyReviews: ${JSON.stringify(familyReviews)},
+        caregiverReviews: ${JSON.stringify(caregiverReviews)},
         adminUser: ${JSON.stringify(adminUser)},
         conversationParticipants: ${JSON.stringify(conversationParticipants)},
         conversations: ${JSON.stringify(conversations)},
@@ -47,6 +59,9 @@ function buildSupabaseStubScript({
           if (filter.type === "not-null") {
             return row?.[filter.column] != null;
           }
+          if (filter.type === "not-eq") {
+            return row?.[filter.column] !== filter.value;
+          }
           return true;
         });
       }
@@ -57,6 +72,18 @@ function buildSupabaseStubScript({
             return fixtures.familyProfile ? [fixtures.familyProfile] : [];
           case "caregiver_profiles":
             return fixtures.caregiverProfile ? [fixtures.caregiverProfile] : [];
+          case "family_profile_versions":
+            return fixtures.familyProfileVersions || [];
+          case "caregiver_profile_versions":
+            return fixtures.caregiverProfileVersions || [];
+          case "job_posts":
+            return fixtures.jobPosts || [];
+          case "job_post_versions":
+            return fixtures.jobPostVersions || [];
+          case "family_reviews":
+            return fixtures.familyReviews || [];
+          case "caregiver_reviews":
+            return fixtures.caregiverReviews || [];
           case "admin_users":
             return fixtures.adminUser ? [fixtures.adminUser] : [];
           case "conversation_participants":
@@ -92,6 +119,8 @@ function buildSupabaseStubScript({
           not(column, operator, value) {
             if (operator === "is" && value === null) {
               state.filters.push({ type: "not-null", column });
+            } else if (operator === "is") {
+              state.filters.push({ type: "not-eq", column, value });
             }
             return query;
           },
