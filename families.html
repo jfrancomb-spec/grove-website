@@ -316,6 +316,11 @@
 
           familyReviewsByProfileId[profileId].push(review);
         });
+
+        allFamilies.forEach((profile) => {
+          if (!profile?.id || familyReviewsByProfileId[profile.id]?.length) return;
+          familyReviewsByProfileId[profile.id] = window.getDisplayReviews("family", profile, []);
+        });
       }
 
       async function loadFamiliesOnce() {

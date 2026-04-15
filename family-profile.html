@@ -206,7 +206,10 @@
           return "<p>No reviews yet.</p>";
         }
 
+        const isMockOnly = reviews.every((review) => review.is_mock);
+
         return `
+          ${isMockOnly ? `<p class="role-note">Sample reviews shown for preview.</p>` : ""}
           <div class="review-list">
             ${reviews.map((review) => `
               <div class="review-card">
@@ -549,7 +552,7 @@
 
         currentFamilyParent = familyParent;
         currentFamilyVersion = familyVersion;
-        currentReviews = reviews || [];
+        currentReviews = window.getDisplayReviews("family", { ...familyParent, ...familyVersion }, reviews || []);
         currentJobs = jobs;
         currentPhotoIndex = 0;
 

@@ -156,7 +156,10 @@
           return "<p>No reviews yet.</p>";
         }
 
+        const isMockOnly = reviews.every((review) => review.is_mock);
+
         return `
+          ${isMockOnly ? `<p class="role-note">Sample reviews shown for preview.</p>` : ""}
           <div class="review-list">
             ${reviews.map((review) => `
               <div class="review-card">
@@ -366,7 +369,7 @@
 
         currentCaregiverParent = caregiverParent;
         currentCaregiverVersion = caregiverVersion;
-        currentReviews = reviews || [];
+        currentReviews = window.getDisplayReviews("caregiver", { ...caregiverParent, ...caregiverVersion }, reviews || []);
         currentPhotoIndex = 0;
 
         document.getElementById("profileCard").style.display = "block";

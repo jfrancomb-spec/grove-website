@@ -9,7 +9,7 @@
   <link rel="icon" type="image/png" href="./MainIcon.png" />
 </head>
 
-<body>
+<body class="caregiver-browse-page">
   <div id="header-placeholder"></div>
 
   <main>
@@ -312,6 +312,11 @@
           }
 
           caregiverReviewsByProfileId[profileId].push(review);
+        });
+
+        allCaregivers.forEach((profile) => {
+          if (!profile?.id || caregiverReviewsByProfileId[profile.id]?.length) return;
+          caregiverReviewsByProfileId[profile.id] = window.getDisplayReviews("caregiver", profile, []);
         });
       }
 

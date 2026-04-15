@@ -16,7 +16,8 @@ test("jobs page hides hero buttons and renders published opportunities", async (
       content_status: "published",
       first_name: "Casey",
       last_name: "Home",
-      location: "Austin"
+      location: "Austin",
+      photo_url: "https://example.com/family-photo.jpg"
     }],
     jobPosts: [{
       id: "job-1",
@@ -45,6 +46,7 @@ test("jobs page hides hero buttons and renders published opportunities", async (
   await expect(page.locator(".hero .button")).toHaveCount(0);
   await expect(page.getByRole("heading", { name: "After-school childcare" })).toBeVisible();
   await expect(page.getByText("Austin")).toBeVisible();
+  await expect(page.locator(".job-family-avatar")).toHaveAttribute("src", "https://example.com/family-photo.jpg");
   await expect(page.getByRole("link", { name: "View Details" })).toBeVisible();
   await expect(page.getByRole("link", { name: "View Family" })).toHaveAttribute("href", "./family-profile.html?id=family-1&returnTo=jobs");
   await expect(page.getByRole("link", { name: "Login to Apply" })).toBeVisible();

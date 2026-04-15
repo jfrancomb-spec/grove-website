@@ -105,6 +105,7 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
   <script src="./app.js"></script>
+  <script src="./browse-helpers.js"></script>
   <script src="./browse-common.js"></script>
 
   <script>
@@ -112,14 +113,17 @@
       let allJobs = [];
       let isSignedIn = false;
       let familyProfileIdsByUserId = {};
+      let familyProfilesById = {};
 
-      function truncateText(text, maxLength = 180) {
+      function truncateText(text, maxLength = 140) {
         const clean = String(text || "").replace(/\s+/g, " ").trim();
         if (!clean) return "";
         return clean.length <= maxLength ? clean : clean.slice(0, maxLength - 1) + "…";
       }
 
       function normalizeJob(parentRow, versionRow) {
+        const familyProfileId = parentRow.user_id ? familyProfileIdsByUserId[parentRow.user_id] || null : null;
+
         return {
           ...parentRow,
           ...versionRow,
@@ -127,7 +131,8 @@
           job_post_id: parentRow.id,
           current_visible_version_id: parentRow.current_visible_version_id,
           user_id: parentRow.user_id,
-          family_profile_id: parentRow.user_id ? familyProfileIdsByUserId[parentRow.user_id] || null : null
+          family_profile_id: familyProfileId,
+          family_profile: familyProfileId ? familyProfilesById[familyProfileId] || null : null
         };
       }
 
@@ -173,16 +178,25 @@
           const location = job.location || "Location not listed";
           const schedule = job.schedule || "Schedule not listed";
           const payRange = job.pay_range || "";
-          const description = truncateText(job.description || "", 220);
+          const description = truncateText(job.description || "", 140);
           const applyHref = isSignedIn ? `./apply.html?job_id=${job.id}` : "./login.html";
           const applyLabel = isSignedIn ? "Apply for this job" : "Login to Apply";
+          const familyDisplayName = job.family_profile && typeof formatBrowseDisplayName === "function"
+            ? formatBrowseDisplayName(job.family_profile)
+            : "Family";
+          const familyPhoto = job.family_profile && typeof getProfilePhotoArray === "function"
+            ? (getProfilePhotoArray(job.family_profile)[0] || "")
+            : "";
           const familyAction = job.family_profile_id
             ? `<a class="button button-secondary" href="./family-profile.html?id=${job.family_profile_id}&returnTo=jobs">View Family</a>`
             : "";
 
           card.innerHTML = `
             <div class="browse-card-body">
-              <h3>${job.title || "Care Opportunity"}</h3>
+              <div class="job-card-header">
+                ${familyPhoto ? `<img class="job-family-avatar" src="${familyPhoto}" alt="${familyDisplayName}">` : ""}
+                <h3 class="job-card-title">${job.title || "Care Opportunity"}</h3>
+              </div>
               <p class="browse-card-meta">${location} • ${careType}</p>
               <p><strong>Schedule:</strong> ${schedule}</p>
               ${payRange ? `<p><strong>Pay:</strong> ${payRange}</p>` : ""}
@@ -255,6 +269,7 @@
 
         isSignedIn = !!(await window.getCurrentSessionUser().catch(() => null));
         familyProfileIdsByUserId = {};
+        familyProfilesById = {};
 
         const { data: parentRows, error: parentError } = await window.db
           .from("job_posts")
@@ -292,6 +307,34 @@
             (familyRows || []).forEach((row) => {
               if (row.user_id) familyProfileIdsByUserId[row.user_id] = row.id;
             });
+
+            const familyVersionIds = (familyRows || [])
+              .map((row) => row.current_visible_version_id)
+              .filter(Boolean);
+
+            if (familyVersionIds.length) {
+              const { data: familyVersionRows, error: familyVersionError } = await window.db
+                .from("family_profile_versions")
+                .select("id, first_name, last_name, name_display, photo_url, photo_urls, location")
+                .in("id", familyVersionIds)
+                .eq("is_live", true)
+                .eq("content_status", "published");
+
+              if (familyVersionError) {
+                console.error(familyVersionError);
+              } else {
+                const familyVersionMap = {};
+                (familyVersionRows || []).forEach((version) => {
+                  familyVersionMap[version.id] = version;
+                });
+
+                (familyRows || []).forEach((row) => {
+                  const version = familyVersionMap[row.current_visible_version_id];
+                  if (!version) return;
+                  familyProfilesById[row.id] = { ...row, ...version };
+                });
+              }
+            }
           }
         }
 
