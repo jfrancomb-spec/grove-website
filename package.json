@@ -1,0 +1,25 @@
+{
+  "name": "new-project",
+  "version": "1.0.0",
+  "description": "",
+  "main": "app.js",
+  "scripts": {
+    "test": "playwright test",
+    "test:headed": "playwright test --headed"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jfrancomb-spec/grove-website.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/jfrancomb-spec/grove-website/issues"
+  },
+  "homepage": "https://github.com/jfrancomb-spec/grove-website#readme",
+  "devDependencies": {
+    "@playwright/test": "^1.59.1"
+  }
+}

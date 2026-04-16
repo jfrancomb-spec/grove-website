@@ -13,6 +13,116 @@ function formatBrowseDisplayName(profile) {
   return "Profile";
 }
 
+function createStableHash(value) {
+  const text = String(value || "");
+  let hash = 0;
+
+  for (let index = 0; index < text.length; index += 1) {
+    hash = (hash * 31 + text.charCodeAt(index)) >>> 0;
+  }
+
+  return hash;
+}
+
+function rotateItems(items, seed, count = items.length) {
+  if (!Array.isArray(items) || !items.length) return [];
+
+  const start = seed % items.length;
+  const rotated = items.slice(start).concat(items.slice(0, start));
+  return rotated.slice(0, Math.min(count, rotated.length));
+}
+
+function buildMockReviewDate(seed, index) {
+  const month = (seed + index) % 12;
+  const day = 5 + ((seed * 3 + index * 7) % 22);
+  return new Date(Date.UTC(2025, month, day, 15, 0, 0)).toISOString();
+}
+
+function getMockCaregiverReviewTemplates(profile = {}) {
+  const firstName = (profile.first_name || profile.name_display || "This caregiver").toString().trim().split(/\s+/)[0];
+  const caregiverName = firstName || "This caregiver";
+  const location = profile.location || "our area";
+
+  return [
+    {
+      reviewer_name: "The Martinez Family",
+      rating: 5,
+      review_text: `${caregiverName} was dependable, calm, and easy to communicate with. We always felt prepared and supported.`
+    },
+    {
+      reviewer_name: "A Grove Parent",
+      rating: 5,
+      review_text: `Wonderful with routines and transitions. ${caregiverName} brought a steady presence and genuine warmth every visit.`
+    },
+    {
+      reviewer_name: "The Johnsons",
+      rating: 4,
+      review_text: `Very responsive and thoughtful. We especially appreciated the clear updates after each shift in ${location}.`
+    },
+    {
+      reviewer_name: "Repeat Family Client",
+      rating: 5,
+      review_text: `${caregiverName} is the kind of caregiver you hope to find: punctual, kind, and attentive to details that matter.`
+    }
+  ];
+}
+
+function getMockFamilyReviewTemplates(profile = {}) {
+  const familyName = formatBrowseDisplayName(profile);
+  const location = profile.location || "their area";
+
+  return [
+    {
+      reviewer_name: "A Grove Caregiver",
+      rating: 5,
+      review_text: `${familyName} was welcoming, organized, and very clear about what support was needed. Communication was easy from the start.`
+    },
+    {
+      reviewer_name: "Returning Caregiver",
+      rating: 5,
+      review_text: `This was a respectful family to work with. Expectations were thoughtful, and the schedule details were always clear.`
+    },
+    {
+      reviewer_name: "Local Care Professional",
+      rating: 4,
+      review_text: `Kind household and smooth coordination in ${location}. I appreciated how prepared the family was for each visit.`
+    },
+    {
+      reviewer_name: "Grove Community Member",
+      rating: 5,
+      review_text: `${familyName} created a warm environment and made it easy to step in and help right away.`
+    }
+  ];
+}
+
+function buildMockReviews(profileType, profile = {}, count = 3) {
+  const profileId = profile.id || profile.user_id || profile.current_visible_version_id || profile.name_display || profile.first_name || "profile";
+  const seed = createStableHash(`${profileType}:${profileId}`);
+  const templates = profileType === "caregiver"
+    ? getMockCaregiverReviewTemplates(profile)
+    : getMockFamilyReviewTemplates(profile);
+
+  return rotateItems(templates, seed, count).map((template, index) => ({
+    id: `mock-${profileType}-${profileId}-${index}`,
+    [`${profileType}_profile_id`]: profile.id || null,
+    reviewer_name: template.reviewer_name,
+    rating: template.rating,
+    review_text: template.review_text,
+    content_status: "published",
+    is_visible: true,
+    is_mock: true,
+    created_at: buildMockReviewDate(seed, index)
+  }));
+}
+
+function getDisplayReviews(profileType, profile, reviews) {
+  if (Array.isArray(reviews) && reviews.length) {
+    return reviews;
+  }
+
+  return buildMockReviews(profileType, profile);
+}
+
 function getProfilePhotoArray(profile) {
   const photos =
     Array.isArray(profile.photo_urls) && profile.photo_urls.length
@@ -81,3 +191,6 @@ function formatResponseTime(minutes) {
 
   return `${hours} hr response`;
 }
+
+window.buildMockReviews = buildMockReviews;
+window.getDisplayReviews = getDisplayReviews;

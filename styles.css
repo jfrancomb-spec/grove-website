@@ -24,7 +24,7 @@
 
 body {
   margin: 0;
-  font-family: system-ui, -apple-system, Arial, sans-serif;
+  font-family: Calibri, Candara, "Segoe UI", Arial, sans-serif;
   background: var(--bg);
   color: var(--text);
   line-height: 1.6;
@@ -458,7 +458,9 @@ header,
   background: var(--primary);
   color: #fff;
   text-decoration: none;
-  font-weight: 600;
+  font-family: Calibri, Candara, "Segoe UI", Arial, sans-serif;
+  font-size: 14px;
+  font-weight: 400;
   cursor: pointer;
   transition: background 0.2s ease;
 }
@@ -493,7 +495,9 @@ button.button {
   border-radius: 10px;
   background: #e5e7eb;
   color: #222;
-  font: inherit;
+  font-family: Calibri, Candara, "Segoe UI", Arial, sans-serif;
+  font-size: 14px;
+  font-weight: 400;
   cursor: pointer;
 }
 
@@ -510,6 +514,36 @@ button.button {
 .button-delete {
   background: #333;
   color: #fff;
+}
+
+body.button-theme-family .button:not(.button-admin),
+body.button-theme-family .button-family,
+body.button-theme-family .button-caregiver,
+body.button-theme-family .button-secondary {
+  background: var(--family) !important;
+  color: #fff !important;
+}
+
+body.button-theme-family .button:not(.button-admin):hover,
+body.button-theme-family .button-family:hover,
+body.button-theme-family .button-caregiver:hover,
+body.button-theme-family .button-secondary:hover {
+  background: #3f6d93 !important;
+}
+
+body.button-theme-caregiver .button:not(.button-admin),
+body.button-theme-caregiver .button-family,
+body.button-theme-caregiver .button-caregiver,
+body.button-theme-caregiver .button-secondary {
+  background: var(--caregiver) !important;
+  color: #fff !important;
+}
+
+body.button-theme-caregiver .button:not(.button-admin):hover,
+body.button-theme-caregiver .button-family:hover,
+body.button-theme-caregiver .button-caregiver:hover,
+body.button-theme-caregiver .button-secondary:hover {
+  background: #32756e !important;
 }
 
 /* =====================================================
@@ -624,6 +658,63 @@ textarea:focus {
 .browse-results {
   display: grid;
   gap: 1rem;
+}
+
+.job-card-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 6px;
+}
+
+.job-card-title {
+  margin: 0;
+  min-height: 60px;
+  display: flex;
+  align-items: center;
+  line-height: 1.25;
+}
+
+.job-family-avatar {
+  width: 60px;
+  height: 60px;
+  border-radius: 999px;
+  object-fit: cover;
+  display: block;
+  flex: 0 0 60px;
+  margin: 0;
+  border: 2px solid #e5e7eb;
+}
+
+.browse-card {
+  padding: 14px;
+}
+
+.browse-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.browse-card-body p {
+  margin: 0;
+  line-height: 1.35;
+}
+
+.browse-card-meta {
+  font-size: 0.92rem;
+}
+
+.browse-card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.browse-card-actions .button {
+  margin: 0;
+  padding: 10px 14px;
 }
 
 .empty-state {
@@ -993,6 +1084,80 @@ textarea:focus {
   width: auto;
   margin: 0;
   text-align: center;
+}
+
+body.caregiver-browse-page .profile-card {
+  grid-template-columns: 172px 1fr;
+  gap: 0.85rem;
+  padding: 0.85rem;
+}
+
+body.caregiver-browse-page .profile-card-body {
+  gap: 0.5rem;
+}
+
+body.caregiver-browse-page .profile-main-photo {
+  height: 172px;
+}
+
+body.caregiver-browse-page .profile-gallery img {
+  width: 52px;
+  height: 52px;
+}
+
+body.caregiver-browse-page .profile-name,
+body.caregiver-browse-page .profile-card h3 {
+  font-size: 1.02rem;
+  margin-bottom: 0.15rem;
+}
+
+body.caregiver-browse-page .profile-meta,
+body.caregiver-browse-page .profile-summary,
+body.caregiver-browse-page .profile-review-summary,
+body.caregiver-browse-page .profile-recent-review {
+  font-size: 0.9rem;
+  line-height: 1.35;
+}
+
+body.caregiver-browse-page .profile-summary {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+}
+
+body.caregiver-browse-page .profile-badges {
+  gap: 6px;
+}
+
+body.caregiver-browse-page .profile-actions {
+  flex-wrap: nowrap;
+  gap: 8px;
+}
+
+body.caregiver-browse-page .profile-actions .button {
+  flex: 1 1 0;
+  min-width: 0;
+  padding: 10px 12px;
+}
+
+@media (max-width: 760px) {
+  body.caregiver-browse-page .profile-card {
+    grid-template-columns: 132px 1fr;
+    gap: 0.75rem;
+  }
+
+  body.caregiver-browse-page .profile-main-photo {
+    height: 132px;
+  }
+
+  body.caregiver-browse-page .profile-actions {
+    flex-direction: row;
+  }
+
+  body.caregiver-browse-page .profile-actions .button {
+    width: auto;
+  }
 }
 
 /* =====================================================
@@ -1694,7 +1859,9 @@ textarea:focus {
   background: var(--primary);
   color: #fff;
   text-decoration: none;
-  font-weight: 600;
+  font-family: Calibri, Candara, "Segoe UI", Arial, sans-serif;
+  font-size: 14px;
+  font-weight: 400;
   cursor: pointer;
   transition: background 0.2s ease;
 }
@@ -1729,7 +1896,9 @@ button.button {
   border-radius: 10px;
   background: #e5e7eb;
   color: #222;
-  font: inherit;
+  font-family: Calibri, Candara, "Segoe UI", Arial, sans-serif;
+  font-size: 14px;
+  font-weight: 400;
   cursor: pointer;
 }
 

@@ -25,6 +25,8 @@ console.log("SUPABASE URL:", SUPABASE_URL);
 console.log("KEY PREFIX:", SUPABASE_ANON_KEY.slice(0, 20));
 
 const GROVE_ACTING_ROLE_KEY = "groveActingRole";
+const BUTTON_THEME_FAMILY_CLASS = "button-theme-family";
+const BUTTON_THEME_CAREGIVER_CLASS = "button-theme-caregiver";
 
 // ======================================================
 // Header auth state (NEW)
@@ -35,6 +37,7 @@ async function updateHeaderAuth() {
 
   const loginLink = document.getElementById("navLoginLink");
   const browseLink = document.getElementById("navBrowseLink");
+  const browseOpportunitiesLink = document.getElementById("navBrowseOpportunitiesLink");
   const messagesLink = document.getElementById("navMessagesLink");
   const adminLink = document.getElementById("navAdminLink");
   const accountMenu = document.getElementById("navAccountMenu");
@@ -62,6 +65,7 @@ async function updateHeaderAuth() {
         actingRoleMessageHref = `./messages.html?profileType=${encodeURIComponent(activeProfile.type)}&profileId=${encodeURIComponent(activeProfile.id)}`;
       }
     }
+    setButtonTheme(pageUsesGlobalButtonTheme() ? (isSignedIn ? actingRole : getPublicButtonTheme()) : null);
     if (loginLink) {
       loginLink.style.display = isSignedIn ? "none" : "";
     }
@@ -75,6 +79,11 @@ async function updateHeaderAuth() {
         browseLink.href = "./jobs.html";
         browseLink.textContent = "Browse Opportunities";
       }
+    }
+    if (browseOpportunitiesLink) {
+      browseOpportunitiesLink.style.display = isSignedIn ? "none" : "";
+      browseOpportunitiesLink.href = "./jobs.html";
+      browseOpportunitiesLink.textContent = "Browse Opportunities";
     }
     if (messagesLink) {
       messagesLink.style.display = isSignedIn ? "" : "none";
@@ -117,7 +126,7 @@ async function updateHeaderAuth() {
     }
     if (accountLink) {
       accountLink.style.display = isSignedIn ? "" : "none";
-      accountLink.textContent = "My Dashboard";
+      accountLink.textContent = "Dashboard";
     }
     if (signOutBtn) {
       signOutBtn.style.display = isSignedIn ? "" : "none";
@@ -224,6 +233,72 @@ function setStoredActingRole(role) {
   } catch {
     // Ignore storage failures.
   }
+}
+
+function setButtonTheme(themeRole = null) {
+  if (!document.body) return;
+
+  document.body.classList.remove(BUTTON_THEME_FAMILY_CLASS, BUTTON_THEME_CAREGIVER_CLASS);
+
+  if (themeRole === "family") {
+    document.body.classList.add(BUTTON_THEME_FAMILY_CLASS);
+  } else if (themeRole === "caregiver") {
+    document.body.classList.add(BUTTON_THEME_CAREGIVER_CLASS);
+  }
+}
+
+function getPublicButtonTheme(fileName = getCurrentFileName()) {
+  const caregiverThemePages = new Set([
+    "jobs.html",
+    "job-details.html",
+    "families.html",
+    "family-profile.html",
+    "apply.html"
+  ]);
+
+  const familyThemePages = new Set([
+    "caregivers.html",
+    "caregiver-profile.html"
+  ]);
+
+  if (caregiverThemePages.has(fileName)) {
+    return "caregiver";
+  }
+
+  if (familyThemePages.has(fileName)) {
+    return "family";
+  }
+
+  return null;
+}
+
+function pageUsesGlobalButtonTheme(fileName = getCurrentFileName()) {
+  return fileName !== "index.html";
+}
+
+async function applyButtonTheme() {
+  if (!pageUsesGlobalButtonTheme()) {
+    setButtonTheme(null);
+    return;
+  }
+
+  let themeRole = getPublicButtonTheme();
+
+  if (window.db?.auth) {
+    try {
+      const { data } = await window.db.auth.getSession();
+      const user = data?.session?.user || null;
+
+      if (user && typeof window.getAvailableActingRoles === "function") {
+        const availableRoles = await window.getAvailableActingRoles(user.id);
+        themeRole = window.resolveActingRole(availableRoles) || themeRole;
+      }
+    } catch (error) {
+      console.error("Button theme error:", error);
+    }
+  }
+
+  setButtonTheme(themeRole);
 }
 
 async function getAvailableActingRoles(userId) {
@@ -387,7 +462,7 @@ function wireRoleAwareBrowseLinks(root = document) {
     let targetRole = null;
     if (label === "browse caregivers") {
       targetRole = "family";
-    } else if (label === "browse families") {
+    } else if (label === "browse families" || label === "browse opportunities") {
       targetRole = "caregiver";
     }
 
@@ -650,6 +725,12 @@ async function openGroveConversation({
 }) {
   if (!targetUserId) return;
 
+  const currentUser = await getCurrentSessionUser().catch(() => null);
+  if (!currentUser) {
+    window.location.href = "./login.html";
+    return;
+  }
+
   const params = new URLSearchParams();
   params.set("targetUser", targetUserId);
 
@@ -806,6 +887,7 @@ window.resolveActingRole = resolveActingRole;
 window.getRoleHomeHref = getRoleHomeHref;
 window.getChooserHref = getChooserHref;
 window.getPostLoginDestination = getPostLoginDestination;
+window.applyButtonTheme = applyButtonTheme;
 window.resolveQueueItem = resolveQueueItem;
 
 // ======================================================
@@ -839,6 +921,7 @@ window.addEventListener("DOMContentLoaded", () => {
 
   highlightCurrentNav();
   wireMobileMenu();
+  applyButtonTheme();
 
   prefillFromQuery();
   wireFindCareForm();
