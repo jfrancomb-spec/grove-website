@@ -6,6 +6,215 @@
   <title>Grove | Caregiver Profile</title>
   <link rel="stylesheet" href="./styles.css" />
   <link rel="icon" type="image/png" href="./MainIcon.png" />
+  <style>
+    .profile-view-shell {
+      max-width: 1100px;
+      margin: 0 auto 48px;
+      padding: 0 20px;
+    }
+
+    .profile-view-shell section {
+      max-width: none;
+      padding: 0;
+    }
+
+    .profile-view-grid {
+      display: grid;
+      gap: 24px;
+    }
+
+    .profile-view-card,
+    .profile-view-empty {
+      background: #fff;
+      border: 1px solid var(--card-border);
+      border-radius: 20px;
+      box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+    }
+
+    .profile-view-card {
+      overflow: hidden;
+    }
+
+    .profile-hero-card {
+      padding: 28px;
+      background: linear-gradient(135deg, #f7fbfa 0%, #ffffff 55%, #eef7f4 100%);
+    }
+
+    .profile-hero-grid {
+      display: grid;
+      grid-template-columns: 150px 1fr;
+      gap: 24px;
+      align-items: start;
+    }
+
+    .profile-avatar {
+      width: 150px;
+      height: 150px;
+      border-radius: 24px;
+      overflow: hidden;
+      border: 1px solid var(--card-border);
+      background: #eef6f4;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #52606d;
+      font-weight: 700;
+      text-align: center;
+      padding: 14px;
+    }
+
+    .profile-avatar img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .profile-eyebrow {
+      margin: 0 0 8px;
+      color: var(--caregiver);
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .profile-name {
+      margin: 0;
+      font-size: 34px;
+      line-height: 1.08;
+      color: #102a43;
+    }
+
+    .profile-subtitle,
+    .profile-body-copy,
+    .profile-empty-copy {
+      margin: 10px 0 0;
+      color: #52606d;
+      line-height: 1.6;
+    }
+
+    .profile-chip-row,
+    .profile-badge-row,
+    .profile-action-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .profile-chip,
+    .profile-signal {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: #fff;
+      border: 1px solid #dbe7e3;
+      color: #234;
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .profile-chip-muted,
+    .profile-signal-muted {
+      color: #667788;
+      background: #f8fbfa;
+      font-weight: 600;
+    }
+
+    .profile-stats-grid,
+    .profile-sections-grid {
+      display: grid;
+      gap: 16px;
+    }
+
+    .profile-stats-grid {
+      grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+      padding: 24px 28px 0;
+    }
+
+    .profile-stat,
+    .profile-section {
+      background: #fff;
+      border: 1px solid var(--card-border);
+      border-radius: 18px;
+      padding: 18px;
+    }
+
+    .profile-stat-label {
+      margin-bottom: 8px;
+      color: #6b7280;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+
+    .profile-stat-value {
+      color: #102a43;
+      font-size: 22px;
+      font-weight: 700;
+      line-height: 1.2;
+    }
+
+    .profile-sections-grid {
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      padding: 0 28px 28px;
+    }
+
+    .profile-reviews-shell {
+      padding: 0 28px 28px;
+    }
+
+    .profile-section h3 {
+      margin: 0 0 12px;
+      color: #102a43;
+      font-size: 20px;
+    }
+
+    .profile-list {
+      margin: 0;
+      padding-left: 20px;
+      color: #345;
+      line-height: 1.7;
+    }
+
+    .profile-list li + li {
+      margin-top: 6px;
+    }
+
+    .profile-view-empty {
+      padding: 28px;
+    }
+
+    .profile-actions-shell {
+      padding: 0 28px 28px;
+    }
+
+    @media (max-width: 800px) {
+      .profile-hero-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .profile-avatar {
+        width: 128px;
+        height: 128px;
+      }
+
+      .profile-name {
+        font-size: 28px;
+      }
+
+      .profile-stats-grid,
+      .profile-sections-grid,
+      .profile-reviews-shell,
+      .profile-actions-shell {
+        padding-left: 20px;
+        padding-right: 20px;
+      }
+    }
+  </style>
 </head>
 
 <body>
@@ -14,136 +223,30 @@
   <main>
     <div class="hero">
       <h1>Caregiver Profile</h1>
-      <div class="subtitle">
-        Sign in to create, review, and update your caregiver profile.
+      <div class="subtitle" id="caregiverHeroSubtitle">
+        Sign in to view your caregiver profile or create one.
       </div>
     </div>
 
-    <section>
-      <div class="form-card" id="authCard">
-        <h2 class="mt-0">Sign In</h2>
-        <p class="mt-0">
-          Enter your email and we’ll send you a secure sign-in link.
-        </p>
+    <div class="profile-view-shell">
+      <section class="profile-view-grid">
+        <div class="form-card" id="authCard">
+          <h2 class="mt-0">Sign In</h2>
+          <p class="mt-0">
+            Enter your email and we'll send you a secure sign-in link so you can view your caregiver profile.
+          </p>
 
-        <div class="row">
-          <input id="cg_auth_email" type="email" placeholder="Email Address" />
+          <div class="row">
+            <input id="cg_auth_email" type="email" placeholder="Email Address" />
+          </div>
+
+          <button class="button button-caregiver" type="button" id="sendLinkBtn">Send Sign-In Link</button>
+          <p id="authMessage" class="success"></p>
         </div>
 
-        <button class="button button-caregiver" type="button" id="sendLinkBtn">Send Sign-In Link</button>
-        <p id="authMessage" class="success"></p>
-      </div>
-
-      <div class="form-card" id="profileCard" style="display:none;">
-        <div class="flex-between">
-          <h2 class="mb-0">Your Caregiver Dashboard</h2>
-          <button class="button button-caregiver" type="button" id="signOutBtn">Sign Out</button>
-        </div>
-
-        <p class="mt-10" id="signedInText"></p>
-
-        <div class="dashboard-stats">
-          <div class="dashboard-stat">
-            <div class="dashboard-label">Profile Status</div>
-            <div class="dashboard-value" id="dashProfileStatus">—</div>
-          </div>
-
-          <div class="dashboard-stat">
-            <div class="dashboard-label">Confirmed Encounters</div>
-            <div class="dashboard-value" id="dashConfirmedEncounters">0</div>
-          </div>
-
-          <div class="dashboard-stat">
-            <div class="dashboard-label">Average Response Time</div>
-            <div class="dashboard-value" id="dashResponseTime">—</div>
-          </div>
-
-          <div class="dashboard-stat">
-            <div class="dashboard-label">Messages</div>
-            <div class="dashboard-value" id="dashMessages">0</div>
-          </div>
-        </div>
-
-        <h3 class="mt-22">Your Profile</h3>
-
-        <form id="caregiverProfileForm">
-          <div class="row">
-            <input id="cg_first_name" type="text" placeholder="First Name" required />
-          </div>
-
-          <div class="row">
-            <input id="cg_last_name" type="text" placeholder="Last Name" required />
-          </div>
-
-          <div class="row">
-            <input id="cg_email" type="email" placeholder="Best Email Address" required disabled />
-          </div>
-
-          <div class="row">
-            <input id="cg_phone" type="text" placeholder="Phone Number" inputmode="numeric" />
-          </div>
-
-          <div class="row">
-            <input id="cg_location" type="text" placeholder="City or Neighborhood" required />
-          </div>
-
-          <div class="row">
-            <label class="mb-6"><strong>Types of Care You Provide</strong></label>
-            <div class="checkbox-group">
-              <label><input type="checkbox" name="cg_care_types" value="Childcare" /> Childcare</label>
-              <label><input type="checkbox" name="cg_care_types" value="Senior Care" /> Senior Care</label>
-              <label><input type="checkbox" name="cg_care_types" value="Pet Care" /> Pet Care</label>
-              <label><input type="checkbox" name="cg_care_types" value="Household Help" /> Household Help</label>
-              <label><input type="checkbox" name="cg_care_types" value="Other" /> Other</label>
-            </div>
-          </div>
-
-          <div class="row">
-            <select id="cg_years_experience" required>
-              <option value="">Years of Experience</option>
-              <option value="none">None</option>
-              <option value="1-2">1–2</option>
-              <option value="2-5">2–5</option>
-              <option value="5-10">5–10</option>
-              <option value="10+">10+</option>
-            </select>
-          </div>
-
-          <div class="row">
-            <input id="cg_availability" type="text" placeholder="Availability (days/times)" />
-          </div>
-
-          <div class="row">
-            <label class="mb-6"><strong>Profile Details</strong></label>
-            <div class="checkbox-group">
-              <label><input id="cg_drivers_license" type="checkbox" /> Driver’s License</label>
-              <label><input id="cg_cpr_certified" type="checkbox" /> CPR Certified</label>
-              <label><input id="cg_non_smoker" type="checkbox" /> Non-Smoker</label>
-              <label><input id="cg_non_vaper" type="checkbox" /> Non-Vaper</label>
-              <label><input id="cg_comfortable_with_cats" type="checkbox" /> Comfortable with Cats</label>
-              <label><input id="cg_comfortable_with_dogs" type="checkbox" /> Comfortable with Dogs</label>
-            </div>
-          </div>
-
-          <div class="row">
-            <label for="cg_photos"><strong>Profile Photos (up to 5)</strong></label>
-            <input id="cg_photos" type="file" accept="image/*" multiple />
-          </div>
-
-          <div class="row" id="photoPreviewWrap" style="display:none;">
-            <div id="photoPreviewList" class="photo-preview-list"></div>
-          </div>
-
-          <div class="row">
-            <textarea id="cg_bio" placeholder="Tell families about your experience, personality, and the kind of care you provide" required></textarea>
-          </div>
-
-          <button class="button button-caregiver" type="submit" id="saveProfileBtn">Save Profile</button>
-        </form>
-
-        <p id="caregiverProfileSuccess" class="success">✅ Profile saved successfully.</p>
-      </div>
-    </section>
+        <div id="profileView" style="display:none;"></div>
+      </section>
+    </div>
   </main>
 
   <div id="footer-placeholder"></div>
@@ -151,10 +254,12 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
   <script src="./app.js"></script>
   <script src="./grove-profiles.js"></script>
+  <script src="./browse-helpers.js"></script>
 
   <script>
     (function () {
       let currentUser = null;
+      let currentReviews = [];
       let bundle = {
         parent: null,
         visibleVersion: null,
@@ -162,74 +267,246 @@
         workingVersion: null
       };
 
-      function renderPhotoPreview(urls) {
-        const wrap = document.getElementById("photoPreviewWrap");
-        const list = document.getElementById("photoPreviewList");
-        if (!wrap || !list) return;
+      function getDisplayName(profile) {
+        return profile?.name_display || window.GroveProfiles.buildDefaultDisplayName({
+          firstName: window.GroveProfiles.getAccountFirstName(currentUser, ""),
+          lastName: window.GroveProfiles.getAccountLastName(currentUser, "")
+        }) || "Your caregiver profile";
+      }
 
-        list.innerHTML = "";
+      function getResponseReadiness(parent) {
+        if (parent?.average_response_minutes != null) {
+          return `${parent.average_response_minutes} min average`;
+        }
 
-        if (!Array.isArray(urls) || !urls.length) {
-          wrap.style.display = "none";
+        return "Building response history";
+      }
+
+      function buildSignals(profile) {
+        const signals = [];
+
+        if (profile?.has_drivers_license) signals.push("Driver's License");
+        if (profile?.cpr_certified) signals.push("CPR Certified");
+        if (profile?.non_smoker) signals.push("Non-smoker");
+        if (profile?.non_vaper) signals.push("Non-vaper");
+        if (profile?.comfortable_with_cats) signals.push("Comfortable with cats");
+        if (profile?.comfortable_with_dogs) signals.push("Comfortable with dogs");
+
+        return signals;
+      }
+
+      function buildStarsLabel(avgRating) {
+        const numeric = Number(avgRating);
+        if (Number.isNaN(numeric) || numeric <= 0) return "";
+        return `${numeric.toFixed(1)} stars`;
+      }
+
+      function buildReviewSummary(reviews) {
+        if (!Array.isArray(reviews) || !reviews.length) {
+          return `<p class="profile-body-copy mt-0">No reviews yet.</p>`;
+        }
+
+        const ratings = reviews
+          .map((review) => Number(review.rating))
+          .filter((rating) => !Number.isNaN(rating));
+
+        if (!ratings.length) {
+          return `<p class="profile-body-copy mt-0">${reviews.length} review${reviews.length === 1 ? "" : "s"}</p>`;
+        }
+
+        const average = ratings.reduce((sum, rating) => sum + rating, 0) / ratings.length;
+
+        return `
+          <p class="profile-body-copy mt-0">
+            ${buildStarsLabel(average)} (${reviews.length} review${reviews.length === 1 ? "" : "s"})
+          </p>
+        `;
+      }
+
+      function buildReviews(reviews) {
+        if (!Array.isArray(reviews) || !reviews.length) {
+          return "";
+        }
+
+        const isMockOnly = reviews.every((review) => review.is_mock);
+
+        return `
+          ${isMockOnly ? `<p class="role-note">Sample reviews shown for preview.</p>` : ""}
+          <div class="review-list">
+            ${reviews.map((review) => `
+              <div class="review-card">
+                <p>
+                  <strong>${review.reviewer_name || "Anonymous"}</strong>
+                  ${review.rating ? ` - ${buildStarsLabel(review.rating)}` : ""}
+                </p>
+                ${review.review_text ? `<p>${review.review_text}</p>` : ""}
+              </div>
+            `).join("")}
+          </div>
+        `;
+      }
+
+      function buildStat(label, value, extraHtml = "") {
+        return `
+          <div class="profile-stat">
+            <div class="profile-stat-label">${label}</div>
+            <div class="profile-stat-value">${value}</div>
+            ${extraHtml}
+          </div>
+        `;
+      }
+
+      function buildList(items, emptyLabel) {
+        if (!items.length) {
+          return `<p class="profile-body-copy mt-0">${emptyLabel}</p>`;
+        }
+
+        return `
+          <ul class="profile-list">
+            ${items.map((item) => `<li>${item}</li>`).join("")}
+          </ul>
+        `;
+      }
+
+      function renderProfileView() {
+        const container = document.getElementById("profileView");
+        const profile = bundle.workingVersion;
+
+        if (!container) return;
+
+        if (!profile) {
+          container.innerHTML = `
+            <div class="profile-view-empty">
+              <h2 class="mt-0">Your caregiver profile is ready when you are.</h2>
+              <p class="profile-empty-copy">
+                Create your profile to show families your care style, experience, and availability.
+              </p>
+              <div class="profile-action-row mt-22">
+                <a class="button button-caregiver" href="./edit-caregiver.html">Create Caregiver Profile</a>
+                <a class="button button-secondary" href="./account.html">Back to Account</a>
+              </div>
+            </div>
+          `;
+          container.style.display = "block";
           return;
         }
 
-        urls.forEach((url) => {
-          const img = document.createElement("img");
-          img.src = url;
-          img.alt = "Profile photo";
-          img.className = "preview-photo";
-          list.appendChild(img);
-        });
+        const photos = window.GroveProfiles.getExistingPhotoUrls(profile);
+        const displayName = getDisplayName(profile);
+        const careTypes = Array.isArray(profile.care_types) ? profile.care_types : [];
+        const signals = buildSignals(profile);
 
-        wrap.style.display = "block";
+        container.innerHTML = `
+          <div class="profile-view-card">
+            <div class="profile-hero-card">
+              <div class="profile-hero-grid">
+                <div class="profile-avatar">
+                  ${photos.length
+                    ? `<img src="${photos[0]}" alt="${displayName}">`
+                    : "<span>Add a photo in Edit Profile</span>"}
+                </div>
+
+                <div>
+                  <p class="profile-eyebrow">Profile Preview</p>
+                  <h2 class="profile-name">${displayName}</h2>
+                  <p class="profile-subtitle">
+                    ${profile.location || "Add your location in Edit Profile"}
+                  </p>
+
+                  <div class="profile-chip-row mt-16">
+                    <span class="profile-chip">${careTypes.length ? careTypes.join(", ") : "Add care types"}</span>
+                    <span class="profile-chip profile-chip-muted">${getResponseReadiness(bundle.parent)}</span>
+                  </div>
+
+                  <div class="profile-badge-row mt-16">
+                    ${signals.length
+                      ? signals.map((signal) => `<span class="profile-signal">${signal}</span>`).join("")
+                      : '<span class="profile-signal profile-signal-muted">Add trust signals in Edit Profile</span>'}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="profile-stats-grid">
+              ${buildStat(
+                "Confirmed Encounters",
+                bundle.parent?.confirmed_encounters != null ? String(bundle.parent.confirmed_encounters) : "0"
+              )}
+            </div>
+
+            <div class="profile-sections-grid">
+              <div class="profile-section">
+                <h3>About You</h3>
+                <p class="profile-body-copy mt-0">
+                  ${profile.bio || "Add a warm introduction so families can get a feel for your care style."}
+                </p>
+              </div>
+
+              <div class="profile-section">
+                <h3>Care Fit</h3>
+                ${buildList([
+                  ...(careTypes.length ? [`Care types: ${careTypes.join(", ")}`] : []),
+                  ...(profile.years_experience ? [`Experience: ${profile.years_experience}`] : []),
+                  ...(profile.availability ? [`Availability: ${profile.availability}`] : [])
+                ], "Add care details in Edit Profile.")}
+              </div>
+
+              <div class="profile-section">
+                <h3>Preferences and Household Comfort</h3>
+                ${buildList(signals, "Add comfort and preference details in Edit Profile.")}
+              </div>
+            </div>
+
+            <div class="profile-reviews-shell">
+              <div class="profile-section">
+                <h3>Reviews</h3>
+                ${buildReviewSummary(currentReviews)}
+                ${buildReviews(currentReviews)}
+              </div>
+            </div>
+
+            <div class="profile-actions-shell">
+              <div class="profile-action-row">
+                <a class="button button-caregiver" href="./edit-caregiver.html">Edit Caregiver Profile</a>
+                <a class="button button-secondary" href="./account.html">Back to Account</a>
+              </div>
+            </div>
+          </div>
+        `;
+
+        container.style.display = "block";
       }
 
-      function fillProfileForm() {
-        const profile = bundle.workingVersion;
-
-        document.getElementById("dashProfileStatus").innerHTML =
-          window.GroveProfiles.getProfileStatusHtml(bundle);
-
-        document.getElementById("dashConfirmedEncounters").textContent =
-          bundle.parent?.confirmed_encounters != null ? bundle.parent.confirmed_encounters : 0;
-
-        document.getElementById("dashResponseTime").textContent =
-          bundle.parent?.average_response_minutes != null
-            ? `${bundle.parent.average_response_minutes} min`
-            : "—";
-
-        document.getElementById("cg_first_name").value = profile?.first_name || "";
-        document.getElementById("cg_last_name").value = profile?.last_name || "";
-        document.getElementById("cg_email").value = currentUser?.email || profile?.email || "";
-        document.getElementById("cg_phone").value = profile?.phone || "";
-        document.getElementById("cg_location").value = profile?.location || "";
-        document.getElementById("cg_years_experience").value = profile?.years_experience || "";
-        document.getElementById("cg_availability").value = profile?.availability || "";
-        document.getElementById("cg_bio").value = profile?.bio || "";
-
-        document.getElementById("cg_drivers_license").checked = !!profile?.has_drivers_license;
-        document.getElementById("cg_cpr_certified").checked = !!profile?.cpr_certified;
-        document.getElementById("cg_non_smoker").checked = !!profile?.non_smoker;
-        document.getElementById("cg_non_vaper").checked = !!profile?.non_vaper;
-        document.getElementById("cg_comfortable_with_cats").checked = !!profile?.comfortable_with_cats;
-        document.getElementById("cg_comfortable_with_dogs").checked = !!profile?.comfortable_with_dogs;
-
-        window.GroveProfiles.setCheckedValues('input[name="cg_care_types"]', profile?.care_types || []);
-        renderPhotoPreview(window.GroveProfiles.getExistingPhotoUrls(profile));
-      }
-
-      async function refreshBundle() {
+      async function refreshView() {
         bundle = await window.GroveProfiles.loadProfileBundle({
           parentTable: "caregiver_profiles",
           versionTable: "caregiver_profile_versions",
           userId: currentUser.id
         });
 
-        fillProfileForm();
+        currentReviews = [];
 
-        const messageCount = await window.GroveProfiles.loadMessageCount(currentUser.id);
-        document.getElementById("dashMessages").textContent = messageCount;
+        if (bundle.parent?.id) {
+          const { data: reviews, error: reviewError } = await window.db
+            .from("caregiver_reviews")
+            .select("*")
+            .eq("caregiver_profile_id", bundle.parent.id)
+            .eq("is_visible", true)
+            .in("content_status", ["visible", "approved", "published"])
+            .order("created_at", { ascending: false });
+
+          if (reviewError) {
+            console.error(reviewError);
+          } else {
+            currentReviews = window.getDisplayReviews(
+              "caregiver",
+              { ...bundle.parent, ...bundle.workingVersion },
+              reviews || []
+            );
+          }
+        }
+
+        renderProfileView();
       }
 
       async function sendMagicLink() {
@@ -259,111 +536,34 @@
         }
       }
 
-      async function saveProfile(e) {
-        e.preventDefault();
-
-        if (!currentUser) {
-          alert("Please sign in first.");
-          return;
-        }
-
-        const careTypes = window.GroveProfiles.getCheckedValues('input[name="cg_care_types"]');
-        if (!careTypes.length) {
-          alert("Please select at least one type of care.");
-          return;
-        }
-
-        const saveButton = document.getElementById("saveProfileBtn");
-        const originalButtonText = saveButton?.textContent || "Save Profile";
-
+      async function init() {
         try {
-          if (saveButton) {
-            saveButton.disabled = true;
-            saveButton.textContent = "Saving...";
-          }
+          currentUser = await window.GroveProfiles.getCurrentUser();
+          const authCard = document.getElementById("authCard");
+          const subtitle = document.getElementById("caregiverHeroSubtitle");
 
-          const photoUrls = await window.GroveProfiles.resolvePhotoUrls({
-            folder: "caregivers",
-            userId: currentUser.id,
-            files: document.getElementById("cg_photos")?.files,
-            existingVersion: bundle.workingVersion
-          });
-
-          await window.GroveProfiles.submitCaregiverProfile({
-            values: {
-              first_name: document.getElementById("cg_first_name").value.trim(),
-              last_name: document.getElementById("cg_last_name").value.trim(),
-              phone: document.getElementById("cg_phone").value.trim(),
-              location: document.getElementById("cg_location").value.trim(),
-              care_types: careTypes,
-              years_experience: document.getElementById("cg_years_experience").value,
-              availability: document.getElementById("cg_availability").value.trim(),
-              has_drivers_license: document.getElementById("cg_drivers_license").checked,
-              cpr_certified: document.getElementById("cg_cpr_certified").checked,
-              non_smoker: document.getElementById("cg_non_smoker").checked,
-              non_vaper: document.getElementById("cg_non_vaper").checked,
-              comfortable_with_cats: document.getElementById("cg_comfortable_with_cats").checked,
-              comfortable_with_dogs: document.getElementById("cg_comfortable_with_dogs").checked,
-              bio: document.getElementById("cg_bio").value.trim(),
-              photo_urls: photoUrls
+          if (!currentUser) {
+            if (authCard) authCard.style.display = "block";
+            if (subtitle) {
+              subtitle.textContent = "Sign in to view your caregiver profile or create one.";
             }
-          });
-
-          document.getElementById("caregiverProfileSuccess").style.display = "block";
-          await refreshBundle();
-        } catch (error) {
-          console.error(error);
-          handleError(error, "Profile save failed");
-        } finally {
-          if (saveButton) {
-            saveButton.disabled = false;
-            saveButton.textContent = originalButtonText;
+            return;
           }
+
+          if (authCard) authCard.style.display = "none";
+          if (subtitle) {
+            subtitle.textContent = "Review how your caregiver profile appears to families.";
+          }
+
+          await refreshView();
+        } catch (error) {
+          handleError(error, "Unable to load caregiver profile");
         }
       }
 
-      async function signOut() {
-        const { error } = await window.db.auth.signOut();
-        if (error) {
-          handleError(error, "Sign out failed");
-          return;
-        }
-        window.location.href = "./caregiver.html";
-      }
+      document.getElementById("sendLinkBtn")?.addEventListener("click", sendMagicLink);
 
-      async function checkSessionAndSetup() {
-        currentUser = await window.GroveProfiles.getCurrentUser();
-
-        const authCard = document.getElementById("authCard");
-        const profileCard = document.getElementById("profileCard");
-        const signedInText = document.getElementById("signedInText");
-        const phoneInput = document.getElementById("cg_phone");
-        const emailInput = document.getElementById("cg_email");
-
-        phoneInput?.addEventListener("input", (e) => {
-          e.target.value = window.GroveProfiles.formatPhoneNumber(e.target.value);
-        });
-
-        if (!currentUser) {
-          authCard.style.display = "block";
-          profileCard.style.display = "none";
-          return;
-        }
-
-        authCard.style.display = "none";
-        profileCard.style.display = "block";
-        signedInText.textContent = `Signed in as ${currentUser.email}. You can review and update your caregiver profile below.`;
-        emailInput.value = currentUser.email || "";
-
-        await refreshBundle();
-      }
-
-      window.addEventListener("DOMContentLoaded", () => {
-        document.getElementById("sendLinkBtn")?.addEventListener("click", sendMagicLink);
-        document.getElementById("signOutBtn")?.addEventListener("click", signOut);
-        document.getElementById("caregiverProfileForm")?.addEventListener("submit", saveProfile);
-        checkSessionAndSetup();
-      });
+      init();
     })();
   </script>
 </body>

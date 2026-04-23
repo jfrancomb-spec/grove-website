@@ -27,6 +27,49 @@
       return data?.session?.user || null;
     },
 
+    getAccountEmail(user) {
+      return user?.email || "";
+    },
+
+    getAccountFirstName(user, fallbackValue = "") {
+      return (user?.user_metadata?.first_name || fallbackValue || "").trim();
+    },
+
+    getAccountLastName(user, fallbackValue = "") {
+      return (user?.user_metadata?.last_name || fallbackValue || "").trim();
+    },
+
+    getAccountPhone(user, fallbackValue = "") {
+      const metadataPhone =
+        user?.user_metadata?.phone ||
+        user?.user_metadata?.phone_number ||
+        "";
+
+      return this.formatPhoneNumber(metadataPhone || fallbackValue || "");
+    },
+
+    buildDefaultDisplayName({ firstName = "", lastName = "" } = {}) {
+      const first = String(firstName || "").trim();
+      const last = String(lastName || "").trim();
+      const lastInitial = last ? `${last.charAt(0).toUpperCase()}.` : "";
+
+      return `${first}${first && lastInitial ? " " : ""}${lastInitial}`.trim();
+    },
+
+    async updateAccountProfile({ firstName = "", lastName = "", phone = "" } = {}) {
+      const normalizedPhone = this.formatPhoneNumber(phone);
+      const { data, error } = await window.db.auth.updateUser({
+        data: {
+          first_name: String(firstName || "").trim(),
+          last_name: String(lastName || "").trim(),
+          phone: normalizedPhone
+        }
+      });
+
+      if (error) throw error;
+      return data?.user || null;
+    },
+
     async loadParentProfile(tableName, userId) {
       const { data, error } = await window.db
         .from(tableName)
@@ -147,18 +190,24 @@
       return photoUrls;
     },
 
-    async resolvePhotoUrls({ folder, userId, files, existingVersion }) {
-      const uploadFiles = Array.from(files || []).slice(0, 5);
+    async resolvePhotoUrls({ folder, userId, files, existingVersion, retainedPhotoUrls = [] }) {
+      const keptPhotoUrls = Array.isArray(retainedPhotoUrls)
+        ? retainedPhotoUrls.filter(Boolean).slice(0, 5)
+        : this.getExistingPhotoUrls(existingVersion);
+      const remainingSlots = Math.max(0, 5 - keptPhotoUrls.length);
+      const uploadFiles = Array.from(files || []).slice(0, remainingSlots);
 
       if (!uploadFiles.length) {
-        return this.getExistingPhotoUrls(existingVersion);
+        return keptPhotoUrls;
       }
 
-      return await this.uploadPhotos({
+      const uploadedPhotoUrls = await this.uploadPhotos({
         folder,
         userId,
         files: uploadFiles
       });
+
+      return keptPhotoUrls.concat(uploadedPhotoUrls).slice(0, 5);
     },
 
 async submitCaregiverProfile({
@@ -172,9 +221,7 @@ async submitCaregiverProfile({
   }
 
   const payload = {
-    first_name: values.first_name,
-    last_name: values.last_name,
-    phone: values.phone || "",
+    name_display: values.name_display || "",
     location: values.location,
     care_types: Array.isArray(values.care_types) ? values.care_types : [],
     years_experience: values.years_experience || "",
@@ -195,13 +242,48 @@ async submitCaregiverProfile({
 
   console.log("Submitting caregiver profile for user:", user.id);
 
+  const {
+    data: { session },
+    error: sessionError
+  } = await window.db.auth.getSession();
+
+  if (sessionError) {
+    console.error("submit-caregiver-profile-version session error:", sessionError);
+    throw sessionError;
+  }
+
+  if (!session?.access_token) {
+    throw new Error("No active access token found.");
+  }
+
   const { data, error } = await window.db.functions.invoke(
     "submit-caregiver-profile-version",
-    { body: payload }
+    {
+      body: payload,
+      headers: {
+        Authorization: `Bearer ${session.access_token}`
+      }
+    }
   );
 
   if (error) {
     console.error("submit-caregiver-profile-version error:", error);
+    let details = "";
+    try {
+      if (error.context) {
+        const responseBody = await error.context.text();
+        if (responseBody) {
+          details = responseBody;
+        }
+      }
+    } catch (contextError) {
+      console.error("submit-caregiver-profile-version context read error:", contextError);
+    }
+
+    if (details) {
+      throw new Error(`submit-caregiver-profile-version failed: ${details}`);
+    }
+
     throw error;
   }
 
@@ -224,9 +306,7 @@ async submitFamilyProfile({
   }
 
   const payload = {
-    first_name: values.first_name,
-    last_name: values.last_name,
-    phone: values.phone || "",
+    name_display: values.name_display || "",
     location: values.location,
     care_types_needed: Array.isArray(values.care_types_needed)
       ? values.care_types_needed

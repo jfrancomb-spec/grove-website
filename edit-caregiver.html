@@ -6,6 +6,333 @@
   <title>Grove | Edit Caregiver Profile</title>
   <link rel="stylesheet" href="./styles.css" />
   <link rel="icon" type="image/png" href="./MainIcon.png" />
+  <style>
+    .edit-page-shell {
+      max-width: 1100px;
+      margin: 0 auto 48px;
+      padding: 0 20px;
+    }
+
+    .edit-page-shell section {
+      max-width: none;
+      padding: 0;
+    }
+
+    .edit-page-grid,
+    .section-stack {
+      display: grid;
+      gap: 24px;
+    }
+
+    .edit-topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+      margin-bottom: 20px;
+    }
+
+    .edit-intro {
+      margin: 0;
+      max-width: 760px;
+      color: #4b5563;
+    }
+
+    .edit-preview-card,
+    .edit-section-card {
+      background: #fff;
+      border: 1px solid var(--card-border);
+      border-radius: 20px;
+      box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+    }
+
+    .edit-preview-card {
+      padding: 28px;
+      background: linear-gradient(135deg, #f7fbfa 0%, #ffffff 55%, #eef7f4 100%);
+    }
+
+    .preview-header {
+      display: grid;
+      grid-template-columns: 140px 1fr;
+      gap: 22px;
+      align-items: start;
+    }
+
+    .preview-avatar {
+      width: 140px;
+      height: 140px;
+      border-radius: 22px;
+      overflow: hidden;
+      border: 1px solid var(--card-border);
+      background: #eef6f4;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #52606d;
+      font-weight: 700;
+      text-align: center;
+      padding: 14px;
+    }
+
+    .preview-avatar img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .preview-meta {
+      display: grid;
+      gap: 12px;
+    }
+
+    .preview-kicker {
+      margin: 0;
+      color: var(--caregiver);
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .preview-name {
+      margin: 0;
+      font-size: 34px;
+      line-height: 1.1;
+      color: #102a43;
+    }
+
+    .preview-subtitle {
+      margin: 0;
+      color: #52606d;
+      font-size: 16px;
+    }
+
+    .preview-chip-row,
+    .preview-signal-list,
+    .save-bar-actions,
+    .photo-upload-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .preview-chip,
+    .preview-signal {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: #fff;
+      border: 1px solid #dbe7e3;
+      color: #234;
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .preview-chip-muted,
+    .preview-signal-muted {
+      color: #667788;
+      font-weight: 600;
+      background: #f8fbfa;
+    }
+
+    .preview-stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 14px;
+      margin-top: 22px;
+    }
+
+    .preview-stat {
+      background: rgba(255, 255, 255, 0.92);
+      border: 1px solid #dbe7e3;
+      border-radius: 16px;
+      padding: 16px;
+    }
+
+    .preview-stat-label {
+      margin-bottom: 6px;
+      color: #6b7280;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+
+    .preview-stat-value {
+      color: #102a43;
+      font-size: 22px;
+      font-weight: 700;
+      line-height: 1.2;
+    }
+
+    .completion-meter {
+      height: 10px;
+      border-radius: 999px;
+      background: #dce9e5;
+      overflow: hidden;
+      margin-top: 8px;
+    }
+
+    .completion-meter-fill {
+      height: 100%;
+      width: 0;
+      border-radius: inherit;
+      background: linear-gradient(90deg, #409088 0%, #57b3a8 100%);
+      transition: width 0.2s ease;
+    }
+
+    .edit-section-card {
+      padding: 24px;
+    }
+
+    .edit-section-header {
+      margin-bottom: 18px;
+    }
+
+    .edit-section-header h3 {
+      margin: 0 0 8px;
+      font-size: 22px;
+      color: #102a43;
+    }
+
+    .edit-section-header p,
+    .section-hint,
+    .inline-helper,
+    .photo-grid-note,
+    .save-bar-copy {
+      color: #52606d;
+      line-height: 1.55;
+    }
+
+    .edit-two-col {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+    }
+
+    .edit-label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 700;
+      color: #243b53;
+    }
+
+    .section-hint,
+    .photo-upload-panel {
+      margin-top: 12px;
+      padding: 12px 14px;
+      border-radius: 14px;
+      background: #f7fbfa;
+      border: 1px solid #dce9e5;
+    }
+
+    .photo-file-list {
+      margin-top: 10px;
+      color: #38506b;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    .photo-library-list {
+      display: grid;
+      gap: 12px;
+      margin-top: 14px;
+    }
+
+    .photo-library-item {
+      display: grid;
+      grid-template-columns: 72px 1fr auto;
+      gap: 14px;
+      align-items: center;
+      padding: 12px;
+      border: 1px solid #dce9e5;
+      border-radius: 16px;
+      background: #fff;
+    }
+
+    .photo-library-thumb {
+      width: 72px;
+      height: 72px;
+      border-radius: 14px;
+      object-fit: cover;
+      display: block;
+      border: 1px solid var(--card-border);
+      background: #eef6f4;
+    }
+
+    .photo-library-copy {
+      color: #38506b;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    .photo-library-copy strong {
+      display: block;
+      color: #102a43;
+      margin-bottom: 4px;
+    }
+
+    .save-bar {
+      position: sticky;
+      bottom: 14px;
+      z-index: 20;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 14px;
+      flex-wrap: wrap;
+      margin-top: 24px;
+      padding: 16px 18px;
+      background: rgba(255, 255, 255, 0.96);
+      border: 1px solid #dce9e5;
+      border-radius: 18px;
+      box-shadow: 0 12px 28px rgba(15, 23, 42, 0.12);
+      backdrop-filter: blur(10px);
+    }
+
+    .save-toast {
+      position: fixed;
+      right: 20px;
+      bottom: 20px;
+      z-index: 60;
+      min-width: 260px;
+      max-width: 360px;
+      padding: 14px 16px;
+      border-radius: 16px;
+      background: #1f7a4d;
+      color: #fff;
+      box-shadow: 0 14px 32px rgba(0, 0, 0, 0.2);
+      opacity: 0;
+      transform: translateY(12px);
+      pointer-events: none;
+      transition: opacity 0.2s ease, transform 0.2s ease;
+    }
+
+    .save-toast.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    @media (max-width: 820px) {
+      .preview-header,
+      .edit-two-col {
+        grid-template-columns: 1fr;
+      }
+
+      .preview-avatar {
+        width: 120px;
+        height: 120px;
+      }
+
+      .preview-name {
+        font-size: 28px;
+      }
+    }
+  </style>
 </head>
 
 <body>
@@ -19,124 +346,206 @@
       </div>
     </div>
 
-    <section>
-      <div class="form-card" id="profileCard" style="display:none;">
-        <div class="flex-between">
-          <h2 class="mb-0">Your Caregiver Profile</h2>
-          <div class="button-row-inline">
+    <div class="edit-page-shell">
+      <section>
+        <div class="form-card" id="profileCard" style="display:none;">
+          <div class="edit-topbar">
+            <div>
+              <h2 class="mb-0">Caregiver Profile</h2>
+              <p class="edit-intro">
+                Lead with warmth, clarity, and trust. The strongest profiles make it easy for a family to quickly understand who you are, what care you provide, and how ready you are to respond.
+              </p>
+            </div>
             <a class="button button-secondary" href="./account.html">Back to Account</a>
-            <button class="button" type="button" id="signOutBtn">Sign Out</button>
           </div>
+
+          <div class="edit-page-grid">
+            <div class="edit-preview-card">
+              <div class="preview-header">
+                <div class="preview-avatar" id="previewAvatar">Add a photo</div>
+                <div class="preview-meta">
+                  <p class="preview-kicker">First Impression</p>
+                  <h3 class="preview-name" id="previewDisplayName">Your display name</h3>
+                  <p class="preview-subtitle" id="previewLocation">Add your location so families know where you work.</p>
+                  <div class="preview-chip-row">
+                    <span class="preview-chip" id="previewStatusChip">Status pending</span>
+                    <span class="preview-chip" id="previewCompletionChip">0% complete</span>
+                    <span class="preview-chip preview-chip-muted" id="previewResponseChip">Response readiness builds trust</span>
+                  </div>
+                  <div class="preview-chip-row" id="previewCareTypes">
+                    <span class="preview-chip preview-chip-muted">Choose care types</span>
+                  </div>
+                  <div class="preview-signal-list" id="previewTrustSignals">
+                    <span class="preview-signal preview-signal-muted">Trust signals will appear here</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="preview-stats">
+                <div class="preview-stat">
+                  <div class="preview-stat-label">Approval Status</div>
+                  <div class="preview-stat-value" id="dashProfileStatus">—</div>
+                </div>
+                <div class="preview-stat">
+                  <div class="preview-stat-label">Completion</div>
+                  <div class="preview-stat-value" id="previewCompletionValue">0%</div>
+                  <div class="completion-meter"><div class="completion-meter-fill" id="previewCompletionBar"></div></div>
+                </div>
+                <div class="preview-stat">
+                  <div class="preview-stat-label">Confirmed Encounters</div>
+                  <div class="preview-stat-value" id="dashConfirmedEncounters">0</div>
+                </div>
+                <div class="preview-stat">
+                  <div class="preview-stat-label">Average Response Time</div>
+                  <div class="preview-stat-value" id="dashResponseTime">—</div>
+                </div>
+                <div class="preview-stat">
+                  <div class="preview-stat-label">Messages</div>
+                  <div class="preview-stat-value" id="dashMessages">0</div>
+                </div>
+              </div>
+            </div>
+
+            <form id="caregiverProfileForm" class="section-stack">
+              <div class="edit-section-card">
+                <div class="edit-section-header">
+                  <h3>Basics</h3>
+                  <p>Your basics help families understand who you are at a glance. Keep this section clear and easy to trust.</p>
+                  <div class="section-hint"><strong>What families care about most:</strong> A real-sounding display name and a clear location make your profile feel more credible right away.</div>
+                </div>
+                <div class="edit-two-col">
+                  <div class="row">
+                    <label class="edit-label" for="cg_display_name">Display Name</label>
+                    <input id="cg_display_name" type="text" placeholder="For example: Sarah M." required />
+                    <span class="inline-helper">This is what families will see first.</span>
+                  </div>
+                  <div class="row">
+                    <label class="edit-label" for="cg_location">Location</label>
+                    <input id="cg_location" type="text" placeholder="City or neighborhood" required />
+                    <span class="inline-helper">Be specific enough to help families know if you are nearby.</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="edit-section-card">
+                <div class="edit-section-header">
+                  <h3>About You</h3>
+                  <p>Set the tone. This is where families get a feel for your style, personality, and the kind of care experience you create.</p>
+                  <div class="section-hint"><strong>What families care about most:</strong> A short, warm summary of your experience, communication style, and what makes you dependable.</div>
+                </div>
+                <div class="row">
+                  <label class="edit-label" for="cg_bio">About You</label>
+                  <textarea id="cg_bio" placeholder="Tell families about your experience, the kind of care you love providing, and what makes you a strong fit." required></textarea>
+                  <span class="inline-helper">Mention who you care for best, what families can count on from you, and what helps you feel approachable and prepared.</span>
+                </div>
+              </div>
+
+              <div class="edit-section-card">
+                <div class="edit-section-header">
+                  <h3>Care Types + Experience</h3>
+                  <p>Help families quickly decide whether your experience lines up with the care they need.</p>
+                  <div class="section-hint"><strong>What families care about most:</strong> Relevant care types and realistic experience matter more than trying to cover everything.</div>
+                </div>
+                <div class="row">
+                  <label class="edit-label"><strong>Types of Care You Provide</strong></label>
+                  <div class="checkbox-group">
+                    <label><input type="checkbox" name="cg_care_types" value="Childcare" /> Childcare</label>
+                    <label><input type="checkbox" name="cg_care_types" value="Senior Care" /> Senior Care</label>
+                    <label><input type="checkbox" name="cg_care_types" value="Pet Care" /> Pet Care</label>
+                    <label><input type="checkbox" name="cg_care_types" value="Household Help" /> Household Help</label>
+                    <label><input type="checkbox" name="cg_care_types" value="Other" /> Other</label>
+                  </div>
+                </div>
+                <div class="row">
+                  <label class="edit-label" for="cg_years_experience">Years of Experience</label>
+                  <select id="cg_years_experience" required>
+                    <option value="">Choose experience</option>
+                    <option value="none">None</option>
+                    <option value="1-2">1–2</option>
+                    <option value="2-5">2–5</option>
+                    <option value="5-10">5–10</option>
+                    <option value="10+">10+</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="edit-section-card">
+                <div class="edit-section-header">
+                  <h3>Availability</h3>
+                  <p>Show families how ready you are to respond and what kinds of schedules you can realistically support.</p>
+                  <div class="section-hint"><strong>What families care about most:</strong> Clear scheduling language saves time and makes you feel more responsive from the start.</div>
+                </div>
+                <div class="row">
+                  <label class="edit-label" for="cg_availability">Availability</label>
+                  <input id="cg_availability" type="text" placeholder="Weekdays, evenings, weekends, overnights, part-time, full-time..." />
+                </div>
+              </div>
+
+              <div class="edit-section-card">
+                <div class="edit-section-header">
+                  <h3>Preferences / Household Comfort</h3>
+                  <p>Give families confidence that you understand the day-to-day environment you are comfortable stepping into.</p>
+                  <div class="section-hint"><strong>What families care about most:</strong> Families want to know whether you are comfortable with pets and the realities of their household.</div>
+                </div>
+                <div class="checkbox-group">
+                  <label><input id="cg_comfortable_with_cats" type="checkbox" /> Comfortable with cats</label>
+                  <label><input id="cg_comfortable_with_dogs" type="checkbox" /> Comfortable with dogs</label>
+                </div>
+              </div>
+
+              <div class="edit-section-card">
+                <div class="edit-section-header">
+                  <h3>Photos</h3>
+                  <p>Photos do a lot of trust work. Choose clear, friendly images that help families feel like they are meeting a real person.</p>
+                  <div class="section-hint"><strong>What families care about most:</strong> A bright primary photo and a few natural, high-quality images usually matter more than quantity.</div>
+                </div>
+                <div class="photo-upload-panel">
+                  <label class="edit-label" for="cg_photos">Profile Photos (up to 5)</label>
+                  <input id="cg_photos" type="file" accept="image/*" multiple />
+                  <div class="photo-upload-meta">
+                    <span id="photoCountLabel">No photos selected yet</span>
+                    <span>Add more photos without losing the ones you keep. Remove any current photo before saving if you do not want it on your profile.</span>
+                  </div>
+                  <div class="photo-file-list" id="photoFileList"></div>
+                  <div class="photo-library-list" id="photoLibraryList" style="display:none;"></div>
+                </div>
+                <div class="row mt-16" id="photoPreviewWrap" style="display:none;">
+                  <p class="photo-grid-note">Preview how families will see your photos.</p>
+                  <div class="family-photo-gallery">
+                    <img id="caregiver-main-photo" class="family-main-photo" src="" alt="Caregiver photo" />
+                    <div id="photoPreviewList" class="family-thumbnails"></div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="edit-section-card">
+                <div class="edit-section-header">
+                  <h3>Trust Signals</h3>
+                  <p>These small details help families feel more secure about inviting you into their home.</p>
+                  <div class="section-hint"><strong>What families care about most:</strong> Certifications, transportation, and lifestyle preferences can quickly help a family decide if your profile feels like a fit.</div>
+                </div>
+                <div class="checkbox-group">
+                  <label><input id="cg_drivers_license" type="checkbox" /> Driver’s License</label>
+                  <label><input id="cg_cpr_certified" type="checkbox" /> CPR Certified</label>
+                  <label><input id="cg_non_smoker" type="checkbox" /> Non-Smoker</label>
+                  <label><input id="cg_non_vaper" type="checkbox" /> Non-Vaper</label>
+                </div>
+              </div>
+
+              <div class="save-bar">
+                <div class="save-bar-copy" id="saveBarText">Your changes are saved profile-by-profile, so take a moment to make this feel like you.</div>
+                <div class="save-bar-actions">
+                  <a class="button button-secondary" href="./caregiver.html">View Profile</a>
+                  <button class="button button-caregiver" type="submit" id="saveProfileBtn">Save Profile</button>
+                </div>
+              </div>
+            </form>
+          </div>
+
+          <div id="saveToast" class="save-toast" aria-live="polite">Profile saved.</div>
         </div>
-
-        <p class="mt-10" id="signedInText"></p>
-
-        <div class="dashboard-stats">
-          <div class="dashboard-stat">
-            <div class="dashboard-label">Profile Status</div>
-            <div class="dashboard-value" id="dashProfileStatus">—</div>
-          </div>
-
-          <div class="dashboard-stat">
-            <div class="dashboard-label">Confirmed Encounters</div>
-            <div class="dashboard-value" id="dashConfirmedEncounters">0</div>
-          </div>
-
-          <div class="dashboard-stat">
-            <div class="dashboard-label">Average Response Time</div>
-            <div class="dashboard-value" id="dashResponseTime">—</div>
-          </div>
-
-          <div class="dashboard-stat">
-            <div class="dashboard-label">Messages</div>
-            <div class="dashboard-value" id="dashMessages">0</div>
-          </div>
-        </div>
-
-        <h3 class="mt-22">Profile Details</h3>
-
-        <form id="caregiverProfileForm">
-          <div class="row">
-            <input id="cg_first_name" type="text" placeholder="First Name" required />
-          </div>
-
-          <div class="row">
-            <input id="cg_last_name" type="text" placeholder="Last Name" required />
-          </div>
-
-          <div class="row">
-            <input id="cg_email" type="email" placeholder="Email Address" required disabled />
-          </div>
-
-          <div class="row">
-            <input id="cg_phone" type="text" placeholder="Phone Number" inputmode="numeric" />
-          </div>
-
-          <div class="row">
-            <input id="cg_location" type="text" placeholder="City or Neighborhood" required />
-          </div>
-
-          <div class="row">
-            <label class="mb-6"><strong>Types of Care You Provide</strong></label>
-            <div class="checkbox-group">
-              <label><input type="checkbox" name="cg_care_types" value="Childcare" /> Childcare</label>
-              <label><input type="checkbox" name="cg_care_types" value="Senior Care" /> Senior Care</label>
-              <label><input type="checkbox" name="cg_care_types" value="Pet Care" /> Pet Care</label>
-              <label><input type="checkbox" name="cg_care_types" value="Household Help" /> Household Help</label>
-              <label><input type="checkbox" name="cg_care_types" value="Other" /> Other</label>
-            </div>
-          </div>
-
-          <div class="row">
-            <select id="cg_years_experience" required>
-              <option value="">Years of Experience</option>
-              <option value="none">None</option>
-              <option value="1-2">1–2</option>
-              <option value="2-5">2–5</option>
-              <option value="5-10">5–10</option>
-              <option value="10+">10+</option>
-            </select>
-          </div>
-
-          <div class="row">
-            <input id="cg_availability" type="text" placeholder="Availability (days/times)" />
-          </div>
-
-          <div class="row">
-            <label class="mb-6"><strong>Profile Details</strong></label>
-            <div class="checkbox-group">
-              <label><input id="cg_drivers_license" type="checkbox" /> Driver’s License</label>
-              <label><input id="cg_cpr_certified" type="checkbox" /> CPR Certified</label>
-              <label><input id="cg_non_smoker" type="checkbox" /> Non-Smoker</label>
-              <label><input id="cg_non_vaper" type="checkbox" /> Non-Vaper</label>
-              <label><input id="cg_comfortable_with_cats" type="checkbox" /> Comfortable with Cats</label>
-              <label><input id="cg_comfortable_with_dogs" type="checkbox" /> Comfortable with Dogs</label>
-            </div>
-          </div>
-
-          <div class="row">
-            <label for="cg_bio"><strong>About You</strong></label>
-            <textarea id="cg_bio" placeholder="Tell families about your experience" required></textarea>
-          </div>
-
-          <div class="row">
-            <label for="cg_photos"><strong>Profile Photos (up to 5)</strong></label>
-            <input id="cg_photos" type="file" accept="image/*" multiple />
-          </div>
-
-          <div class="row" id="photoPreviewWrap" style="display:none;">
-            <div class="family-photo-gallery">
-              <img id="caregiver-main-photo" class="family-main-photo" src="" alt="Caregiver photo" />
-              <div id="photoPreviewList" class="family-thumbnails"></div>
-            </div>
-          </div>
-
-          <button class="button" type="submit" id="saveProfileBtn">Save Profile</button>
-        </form>
-
-        <p id="caregiverProfileSuccess" class="success" style="display:none;">✅ Profile saved successfully.</p>
-      </div>
-    </section>
+      </section>
+    </div>
   </main>
 
   <div id="footer-placeholder"></div>
@@ -154,16 +563,150 @@
         pendingVersion: null,
         workingVersion: null
       };
+      let retainedPhotoUrls = [];
+      let previewPhotoUrls = [];
+      let isDirty = false;
+      let saveToastTimeout = null;
+
+      function escapeHtml(value) {
+        return String(value || "")
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;")
+          .replace(/'/g, "&#39;");
+      }
+
+      function getSelectedCareTypes() {
+        return window.GroveProfiles.getCheckedValues('input[name="cg_care_types"]');
+      }
+
+      function getExistingPhotoUrls() {
+        return retainedPhotoUrls.slice();
+      }
+
+      function getPhotoUrlsForPreview() {
+        const selectedFiles = Array.from(document.getElementById("cg_photos")?.files || []);
+        const existingPhotos = getExistingPhotoUrls();
+        const remainingSlots = Math.max(0, 5 - existingPhotos.length);
+        const newPreviewUrls = selectedFiles
+          .slice(0, remainingSlots)
+          .map((file) => URL.createObjectURL(file));
+
+        previewPhotoUrls.forEach((url) => URL.revokeObjectURL(url));
+        previewPhotoUrls = newPreviewUrls;
+
+        return existingPhotos.concat(newPreviewUrls);
+      }
+
+      function removeExistingPhoto(index) {
+        if (index < 0 || index >= retainedPhotoUrls.length) return;
+        retainedPhotoUrls = retainedPhotoUrls.filter((_, photoIndex) => photoIndex !== index);
+        updatePhotoSelectionMeta();
+        renderPhotoPreview(getPhotoUrlsForPreview());
+        markDirty();
+        updatePreviewSummary();
+      }
+
+      function renderExistingPhotoManager() {
+        const list = document.getElementById("photoLibraryList");
+        const existingPhotos = getExistingPhotoUrls();
+        if (!list) return;
+
+        if (!existingPhotos.length) {
+          list.innerHTML = "";
+          list.style.display = "none";
+          return;
+        }
+
+        list.innerHTML = existingPhotos.map((url, index) => `
+          <div class="photo-library-item">
+            <img class="photo-library-thumb" src="${url}" alt="Current profile photo ${index + 1}" />
+            <div class="photo-library-copy">
+              <strong>${index === 0 ? "Primary photo" : `Photo ${index + 1}`}</strong>
+              ${index === 0 ? "This photo appears first in your profile preview." : "Keep it, or remove it before saving."}
+            </div>
+            <button type="button" class="button button-secondary photo-remove-button" data-photo-index="${index}">Remove</button>
+          </div>
+        `).join("");
+
+        list.querySelectorAll(".photo-remove-button").forEach((button) => {
+          button.addEventListener("click", () => {
+            removeExistingPhoto(Number(button.dataset.photoIndex));
+          });
+        });
+
+        list.style.display = "grid";
+      }
+
+      function updatePhotoSelectionMeta() {
+        const selectedFiles = Array.from(document.getElementById("cg_photos")?.files || []);
+        const existingPhotos = getExistingPhotoUrls();
+        const countLabel = document.getElementById("photoCountLabel");
+        const fileList = document.getElementById("photoFileList");
+
+        const remainingSlots = Math.max(0, 5 - existingPhotos.length);
+        const usedFiles = selectedFiles.slice(0, remainingSlots);
+
+        if (selectedFiles.length) {
+          countLabel.textContent = `${existingPhotos.length} kept, ${usedFiles.length} new photo${usedFiles.length === 1 ? "" : "s"} ready`;
+          fileList.textContent = usedFiles.length
+            ? `${usedFiles.map((file) => file.name).join(", ")}${selectedFiles.length > usedFiles.length ? ` (${selectedFiles.length - usedFiles.length} skipped because profiles can only have 5 photos)` : ""}`
+            : "Your profile already has 5 photos. Remove one to add a new one.";
+          renderExistingPhotoManager();
+          return;
+        }
+
+        if (existingPhotos.length) {
+          countLabel.textContent = `${existingPhotos.length} current photo${existingPhotos.length === 1 ? "" : "s"} on your profile`;
+          fileList.textContent = "Use Remove to delete a current photo, or add more photos without replacing these.";
+          renderExistingPhotoManager();
+          return;
+        }
+
+        countLabel.textContent = "No photos selected yet";
+        fileList.textContent = "Add at least one clear photo to strengthen first impression and trust.";
+        renderExistingPhotoManager();
+      }
+
+      function getDraftProfileValues() {
+        return {
+          name_display: document.getElementById("cg_display_name").value.trim(),
+          location: document.getElementById("cg_location").value.trim(),
+          years_experience: document.getElementById("cg_years_experience").value,
+          availability: document.getElementById("cg_availability").value.trim(),
+          bio: document.getElementById("cg_bio").value.trim(),
+          has_drivers_license: document.getElementById("cg_drivers_license").checked,
+          cpr_certified: document.getElementById("cg_cpr_certified").checked,
+          non_smoker: document.getElementById("cg_non_smoker").checked,
+          non_vaper: document.getElementById("cg_non_vaper").checked,
+          comfortable_with_cats: document.getElementById("cg_comfortable_with_cats").checked,
+          comfortable_with_dogs: document.getElementById("cg_comfortable_with_dogs").checked
+        };
+      }
+
+      function getProfileCompletion(profile) {
+        const checks = [
+          !!profile.name_display,
+          !!profile.location,
+          !!getSelectedCareTypes().length,
+          !!profile.years_experience,
+          !!profile.availability,
+          !!profile.bio,
+          !!getPhotoUrlsForPreview().length,
+          !!profile.has_drivers_license || !!profile.cpr_certified || !!profile.non_smoker || !!profile.non_vaper,
+          !!profile.comfortable_with_cats || !!profile.comfortable_with_dogs
+        ];
+        return Math.round((checks.filter(Boolean).length / checks.length) * 100);
+      }
 
       function renderPhotoPreview(urls) {
         const wrap = document.getElementById("photoPreviewWrap");
         const list = document.getElementById("photoPreviewList");
         const mainImage = document.getElementById("caregiver-main-photo");
-
         if (!wrap || !list || !mainImage) return;
 
         const photos = Array.isArray(urls) ? urls.filter(Boolean) : [];
-
         if (!photos.length) {
           wrap.style.display = "none";
           list.innerHTML = "";
@@ -172,26 +715,13 @@
         }
 
         let activeIndex = 0;
-
         function drawGallery() {
           mainImage.src = photos[activeIndex];
           mainImage.alt = `Caregiver photo ${activeIndex + 1}`;
-
-          list.innerHTML = photos
-            .map((url, index) => {
-              const activeClass = index === activeIndex ? " active" : "";
-              return `
-                <button
-                  type="button"
-                  class="gallery-thumb${activeClass}"
-                  data-index="${index}"
-                  aria-label="View photo ${index + 1}"
-                >
-                  <img src="${url}" alt="Caregiver photo ${index + 1}" />
-                </button>
-              `;
-            })
-            .join("");
+          list.innerHTML = photos.map((url, index) => {
+            const activeClass = index === activeIndex ? " active" : "";
+            return `<button type="button" class="gallery-thumb${activeClass}" data-index="${index}" aria-label="View photo ${index + 1}"><img src="${url}" alt="Caregiver photo ${index + 1}" /></button>`;
+          }).join("");
 
           list.querySelectorAll(".gallery-thumb").forEach((button) => {
             button.addEventListener("click", () => {
@@ -205,29 +735,92 @@
         drawGallery();
       }
 
+      function updatePreviewSummary() {
+        const profile = getDraftProfileValues();
+        const displayName = profile.name_display || window.GroveProfiles.buildDefaultDisplayName({
+          firstName: window.GroveProfiles.getAccountFirstName(currentUser, bundle.workingVersion?.first_name || ""),
+          lastName: window.GroveProfiles.getAccountLastName(currentUser, bundle.workingVersion?.last_name || "")
+        }) || "Your display name";
+        const careTypes = getSelectedCareTypes();
+        const completion = getProfileCompletion(profile);
+        const responseMinutes = bundle.parent?.average_response_minutes;
+        const photoUrls = getPhotoUrlsForPreview();
+        const trustSignals = [];
+
+        if (profile.has_drivers_license) trustSignals.push("Driver’s License");
+        if (profile.cpr_certified) trustSignals.push("CPR Certified");
+        if (profile.non_smoker) trustSignals.push("Non-Smoker");
+        if (profile.non_vaper) trustSignals.push("Non-Vaper");
+        if (profile.comfortable_with_cats) trustSignals.push("Comfortable with Cats");
+        if (profile.comfortable_with_dogs) trustSignals.push("Comfortable with Dogs");
+
+        document.getElementById("previewDisplayName").textContent = displayName;
+        document.getElementById("previewLocation").textContent = profile.location || "Add your location so families know where you work.";
+        document.getElementById("previewCompletionValue").textContent = `${completion}%`;
+        document.getElementById("previewCompletionChip").textContent = `${completion}% complete`;
+        document.getElementById("previewCompletionBar").style.width = `${completion}%`;
+        document.getElementById("previewStatusChip").textContent = bundle.pendingVersion
+          ? "Pending review"
+          : bundle.visibleVersion
+            ? "Approved"
+            : "Not submitted";
+        document.getElementById("previewResponseChip").textContent = responseMinutes != null
+          ? `Responds in about ${responseMinutes} min`
+          : "Response readiness builds trust";
+
+        document.getElementById("previewCareTypes").innerHTML = careTypes.length
+          ? careTypes.map((type) => `<span class="preview-chip">${escapeHtml(type)}</span>`).join("")
+          : '<span class="preview-chip preview-chip-muted">Choose care types</span>';
+
+        document.getElementById("previewTrustSignals").innerHTML = trustSignals.length
+          ? trustSignals.map((signal) => `<span class="preview-signal">${escapeHtml(signal)}</span>`).join("")
+          : '<span class="preview-signal preview-signal-muted">Trust signals will appear here</span>';
+
+        document.getElementById("previewAvatar").innerHTML = photoUrls.length
+          ? `<img src="${photoUrls[0]}" alt="Profile preview photo" />`
+          : "Add a photo";
+      }
+
+      function updateSaveBar() {
+        document.getElementById("saveBarText").textContent = isDirty
+          ? "You have unsaved changes. Save when this profile feels clear, trustworthy, and ready for families to view."
+          : "Your profile is up to date. Small improvements to clarity and warmth can still strengthen first impression.";
+      }
+
+      function markDirty() {
+        isDirty = true;
+        updateSaveBar();
+      }
+
+      function clearDirty() {
+        isDirty = false;
+        updateSaveBar();
+      }
+
+      function showSaveToast(message) {
+        const toast = document.getElementById("saveToast");
+        toast.textContent = message;
+        toast.classList.add("visible");
+        if (saveToastTimeout) window.clearTimeout(saveToastTimeout);
+        saveToastTimeout = window.setTimeout(() => {
+          toast.classList.remove("visible");
+        }, 2600);
+      }
+
       function fillProfileForm() {
         const profile = bundle.workingVersion || {};
+        document.getElementById("dashProfileStatus").innerHTML = window.GroveProfiles.getProfileStatusHtml(bundle);
+        document.getElementById("dashConfirmedEncounters").textContent = bundle.parent?.confirmed_encounters != null ? bundle.parent.confirmed_encounters : 0;
+        document.getElementById("dashResponseTime").textContent = bundle.parent?.average_response_minutes != null ? `${bundle.parent.average_response_minutes} min` : "—";
 
-        document.getElementById("dashProfileStatus").innerHTML =
-          window.GroveProfiles.getProfileStatusHtml(bundle);
-
-        document.getElementById("dashConfirmedEncounters").textContent =
-          bundle.parent?.confirmed_encounters != null ? bundle.parent.confirmed_encounters : 0;
-
-        document.getElementById("dashResponseTime").textContent =
-          bundle.parent?.average_response_minutes != null
-            ? `${bundle.parent.average_response_minutes} min`
-            : "—";
-
-        document.getElementById("cg_first_name").value = profile.first_name || "";
-        document.getElementById("cg_last_name").value = profile.last_name || "";
-        document.getElementById("cg_email").value = currentUser?.email || profile.email || "";
-        document.getElementById("cg_phone").value = profile.phone || "";
+        document.getElementById("cg_display_name").value = profile.name_display || window.GroveProfiles.buildDefaultDisplayName({
+          firstName: window.GroveProfiles.getAccountFirstName(currentUser, profile.first_name || ""),
+          lastName: window.GroveProfiles.getAccountLastName(currentUser, profile.last_name || "")
+        });
         document.getElementById("cg_location").value = profile.location || "";
         document.getElementById("cg_years_experience").value = profile.years_experience || "";
         document.getElementById("cg_availability").value = profile.availability || "";
         document.getElementById("cg_bio").value = profile.bio || "";
-
         document.getElementById("cg_drivers_license").checked = !!profile.has_drivers_license;
         document.getElementById("cg_cpr_certified").checked = !!profile.cpr_certified;
         document.getElementById("cg_non_smoker").checked = !!profile.non_smoker;
@@ -235,12 +828,16 @@
         document.getElementById("cg_comfortable_with_cats").checked = !!profile.comfortable_with_cats;
         document.getElementById("cg_comfortable_with_dogs").checked = !!profile.comfortable_with_dogs;
 
-        window.GroveProfiles.setCheckedValues(
-          'input[name="cg_care_types"]',
-          profile.care_types || []
-        );
+        window.GroveProfiles.setCheckedValues('input[name="cg_care_types"]', profile.care_types || []);
+        retainedPhotoUrls = window.GroveProfiles.getExistingPhotoUrls(profile);
+        previewPhotoUrls.forEach((url) => URL.revokeObjectURL(url));
+        previewPhotoUrls = [];
+        document.getElementById("cg_photos").value = "";
 
-        renderPhotoPreview(window.GroveProfiles.getExistingPhotoUrls(profile));
+        updatePhotoSelectionMeta();
+        renderPhotoPreview(getExistingPhotoUrls());
+        updatePreviewSummary();
+        clearDirty();
       }
 
       async function refreshBundle() {
@@ -251,28 +848,21 @@
         });
 
         fillProfileForm();
-
-        const messageCount = await window.GroveProfiles.loadMessageCount(currentUser.id);
-        document.getElementById("dashMessages").textContent = messageCount;
+        document.getElementById("dashMessages").textContent = await window.GroveProfiles.loadMessageCount(currentUser.id);
+        updatePreviewSummary();
       }
 
       async function saveProfile(e) {
         e.preventDefault();
-
         if (!currentUser) {
           window.location.href = "./login.html";
           return;
         }
 
         const saveButton = document.getElementById("saveProfileBtn");
-        const successMessage = document.getElementById("caregiverProfileSuccess");
         const originalButtonText = saveButton?.textContent || "Save Profile";
 
         try {
-          if (successMessage) {
-            successMessage.style.display = "none";
-          }
-
           if (saveButton) {
             saveButton.disabled = true;
             saveButton.textContent = "Saving...";
@@ -282,17 +872,16 @@
             folder: "caregivers",
             userId: currentUser.id,
             files: document.getElementById("cg_photos")?.files,
-            existingVersion: bundle.workingVersion
+            existingVersion: bundle.workingVersion,
+            retainedPhotoUrls
           });
 
           await window.GroveProfiles.submitCaregiverProfile({
             caregiverProfileId: bundle.parent?.id || null,
             values: {
-              first_name: document.getElementById("cg_first_name").value.trim(),
-              last_name: document.getElementById("cg_last_name").value.trim(),
-              phone: document.getElementById("cg_phone").value.trim(),
+              name_display: document.getElementById("cg_display_name").value.trim(),
               location: document.getElementById("cg_location").value.trim(),
-              care_types: window.GroveProfiles.getCheckedValues('input[name="cg_care_types"]'),
+              care_types: getSelectedCareTypes(),
               years_experience: document.getElementById("cg_years_experience").value,
               availability: document.getElementById("cg_availability").value.trim(),
               has_drivers_license: document.getElementById("cg_drivers_license").checked,
@@ -306,11 +895,11 @@
             }
           });
 
-          if (successMessage) {
-            successMessage.style.display = "block";
-          }
-
+          document.getElementById("cg_photos").value = "";
+          previewPhotoUrls.forEach((url) => URL.revokeObjectURL(url));
+          previewPhotoUrls = [];
           await refreshBundle();
+          showSaveToast("Profile saved. Families will see your strongest updated details.");
         } catch (error) {
           console.error(error);
           handleError(error, "Profile save failed");
@@ -322,50 +911,53 @@
         }
       }
 
-      async function signOut() {
-        const { error } = await window.db.auth.signOut();
-
-        if (error) {
-          handleError(error, "Sign out failed");
-          return;
-        }
-
-        window.location.href = "./login.html";
-      }
-
       async function requireSession() {
         const user = await window.GroveProfiles.getCurrentUser();
-
         if (!user) {
           window.location.href = "./login.html";
           return null;
         }
-
         return user;
+      }
+
+      function wirePreviewListeners() {
+        const form = document.getElementById("caregiverProfileForm");
+        const photoInput = document.getElementById("cg_photos");
+
+        form.querySelectorAll("input, textarea, select").forEach((field) => {
+          field.addEventListener("input", () => {
+            markDirty();
+            updatePreviewSummary();
+          });
+          field.addEventListener("change", () => {
+            markDirty();
+            updatePreviewSummary();
+          });
+        });
+
+        photoInput?.addEventListener("change", () => {
+          updatePhotoSelectionMeta();
+          renderPhotoPreview(getPhotoUrlsForPreview());
+          markDirty();
+          updatePreviewSummary();
+        });
+
+        window.addEventListener("beforeunload", (event) => {
+          if (!isDirty) return;
+          event.preventDefault();
+          event.returnValue = "";
+        });
       }
 
       async function checkSessionAndSetup() {
         currentUser = await requireSession();
         if (!currentUser) return;
-
-        const profileCard = document.getElementById("profileCard");
-        const signedInText = document.getElementById("signedInText");
-        const emailInput = document.getElementById("cg_email");
-        const phoneInput = document.getElementById("cg_phone");
-
-        phoneInput?.addEventListener("input", (e) => {
-          e.target.value = window.GroveProfiles.formatPhoneNumber(e.target.value);
-        });
-
-        profileCard.style.display = "block";
-        signedInText.textContent = `Signed in as ${currentUser.email}. You can review and update your caregiver profile below.`;
-        emailInput.value = currentUser.email || "";
-
+        document.getElementById("profileCard").style.display = "block";
         await refreshBundle();
+        wirePreviewListeners();
       }
 
       window.addEventListener("DOMContentLoaded", () => {
-        document.getElementById("signOutBtn")?.addEventListener("click", signOut);
         document.getElementById("caregiverProfileForm")?.addEventListener("submit", saveProfile);
         checkSessionAndSetup();
       });

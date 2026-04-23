@@ -43,6 +43,7 @@ async function updateHeaderAuth() {
   const accountMenu = document.getElementById("navAccountMenu");
   const roleSwitchLink = document.getElementById("navRoleSwitchLink");
   const accountLink = document.getElementById("navAccountLink");
+  const profileLink = document.getElementById("navProfileLink");
   const signOutBtn = document.getElementById("navSignOutBtn");
 
   try {
@@ -127,6 +128,22 @@ async function updateHeaderAuth() {
     if (accountLink) {
       accountLink.style.display = isSignedIn ? "" : "none";
       accountLink.textContent = "Dashboard";
+    }
+    if (profileLink) {
+      let profileHref = "./account.html";
+      let showProfileLink = false;
+
+      if (actingRole === "family") {
+        profileHref = "./family.html";
+        showProfileLink = true;
+      } else if (actingRole === "caregiver") {
+        profileHref = "./caregiver.html";
+        showProfileLink = true;
+      }
+
+      profileLink.style.display = isSignedIn && showProfileLink ? "" : "none";
+      profileLink.textContent = "Profile";
+      profileLink.href = profileHref;
     }
     if (signOutBtn) {
       signOutBtn.style.display = isSignedIn ? "" : "none";
@@ -445,10 +462,30 @@ function getCurrentFileName() {
 function highlightCurrentNav() {
   const file = getCurrentFileName();
   document.querySelectorAll(".nav a").forEach((a) => {
+    a.classList.remove("active");
+  });
+
+  document.querySelectorAll(".nav > a[href]").forEach((a) => {
     const hrefRaw = a.getAttribute("href") || "";
     const href = hrefRaw.replace("./", "");
     a.classList.toggle("active", href === file);
   });
+
+  const accountLink = document.getElementById("navAccountLink");
+  const profileLink = document.getElementById("navProfileLink");
+  const roleSwitchLink = document.getElementById("navRoleSwitchLink");
+
+  if (accountLink) {
+    accountLink.classList.toggle("active", file === "account.html");
+  }
+
+  if (profileLink) {
+    profileLink.classList.toggle("active", file === "family.html" || file === "caregiver.html");
+  }
+
+  if (roleSwitchLink) {
+    roleSwitchLink.classList.toggle("active", file === "chooser.html");
+  }
 }
 
 function wireRoleAwareBrowseLinks(root = document) {

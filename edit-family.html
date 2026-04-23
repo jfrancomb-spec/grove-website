@@ -57,19 +57,7 @@
 
         <form id="familyProfileForm">
           <div class="row">
-            <input id="fam_first_name" type="text" placeholder="First Name" required />
-          </div>
-
-          <div class="row">
-            <input id="fam_last_name" type="text" placeholder="Last Name" required />
-          </div>
-
-          <div class="row">
-            <input id="fam_email" type="email" placeholder="Email Address" required disabled />
-          </div>
-
-          <div class="row">
-            <input id="fam_phone" type="text" placeholder="Phone Number" inputmode="numeric" />
+            <input id="fam_display_name" type="text" placeholder="Display Name" required />
           </div>
 
           <div class="row">
@@ -212,10 +200,10 @@
             ? `${bundle.parent.average_response_minutes} min`
             : "—";
 
-        document.getElementById("fam_first_name").value = profile.first_name || "";
-        document.getElementById("fam_last_name").value = profile.last_name || "";
-        document.getElementById("fam_email").value = currentUser?.email || profile.email || "";
-        document.getElementById("fam_phone").value = profile.phone || "";
+        document.getElementById("fam_display_name").value = profile.name_display || window.GroveProfiles.buildDefaultDisplayName({
+          firstName: window.GroveProfiles.getAccountFirstName(currentUser, profile.first_name || ""),
+          lastName: window.GroveProfiles.getAccountLastName(currentUser, profile.last_name || "")
+        });
         document.getElementById("fam_location").value = profile.location || "";
         document.getElementById("fam_household_description").value = profile.household_description || "";
         document.getElementById("fam_children_description").value = profile.children_description || "";
@@ -278,9 +266,7 @@
 
           await window.GroveProfiles.submitFamilyProfile({
             values: {
-              first_name: document.getElementById("fam_first_name").value.trim(),
-              last_name: document.getElementById("fam_last_name").value.trim(),
-              phone: document.getElementById("fam_phone").value.trim(),
+              name_display: document.getElementById("fam_display_name").value.trim(),
               location: document.getElementById("fam_location").value.trim(),
               care_types_needed: window.GroveProfiles.getCheckedValues('input[name="fam_care_types_needed"]'),
               has_cats: document.getElementById("fam_has_cats").checked,
@@ -338,16 +324,8 @@
 
         const profileCard = document.getElementById("profileCard");
         const signedInText = document.getElementById("signedInText");
-        const emailInput = document.getElementById("fam_email");
-        const phoneInput = document.getElementById("fam_phone");
-
-        phoneInput?.addEventListener("input", (e) => {
-          e.target.value = window.GroveProfiles.formatPhoneNumber(e.target.value);
-        });
-
         profileCard.style.display = "block";
         signedInText.textContent = `Signed in as ${currentUser.email}. You can review and update your family profile below.`;
-        emailInput.value = currentUser.email || "";
 
         await refreshBundle();
       }

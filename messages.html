@@ -242,12 +242,18 @@
       }
 
       function formatCaregiverName(profile) {
+        if (profile.name_display) {
+          return profile.name_display;
+        }
         const first = profile.first_name || "";
         const lastInitial = profile.last_name ? `${profile.last_name.charAt(0)}.` : "";
         return `${first} ${lastInitial}`.trim() || profile.name_display || "Caregiver";
       }
 
       function formatFamilyName(profile) {
+        if (profile.name_display) {
+          return profile.name_display;
+        }
         const first = profile.first_name || "";
         const lastInitial = profile.last_name ? `${profile.last_name.charAt(0)}.` : "";
         return `${first} ${lastInitial}`.trim() || profile.name_display || "Family";

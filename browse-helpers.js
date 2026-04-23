@@ -6,7 +6,7 @@ function formatBrowseDisplayName(profile) {
   const first = profile.first_name ? profile.first_name.trim() : "";
   const last = profile.last_name ? profile.last_name.trim() : "";
 
-  if (first && last) return `${first} ${last}`;
+  if (first && last) return `${first} ${last.charAt(0).toUpperCase()}.`;
   if (first) return first;
   if (last) return last;
 

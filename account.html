@@ -157,6 +157,7 @@
     }
 
     .links-card,
+    .contact-card,
     .jobs-card {
       background: white;
       border-radius: 16px;
@@ -166,10 +167,73 @@
     }
 
     .links-card h2,
+    .contact-card h2,
     .jobs-card h2 {
       margin-top: 0;
       margin-bottom: 16px;
       font-size: 22px;
+    }
+
+    .contact-card p {
+      margin-top: 0;
+      color: #6b7280;
+      line-height: 1.5;
+    }
+
+    .contact-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 14px;
+      margin-bottom: 14px;
+    }
+
+    .contact-field label {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 14px;
+      color: #374151;
+      font-weight: bold;
+    }
+
+    .contact-field input {
+      width: 100%;
+      box-sizing: border-box;
+      border: 1px solid #d1d5db;
+      border-radius: 10px;
+      padding: 12px 14px;
+      font-family: Calibri, Candara, "Segoe UI", Arial, sans-serif;
+      font-size: 14px;
+      color: #111827;
+      background: #fff;
+    }
+
+    .contact-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .contact-message {
+      display: none;
+      margin-top: 12px;
+      padding: 12px 14px;
+      border-radius: 10px;
+      font-size: 14px;
+    }
+
+    .contact-message.success {
+      display: block;
+      background: #ecfdf5;
+      border: 1px solid #bbf7d0;
+      color: #166534;
+    }
+
+    .contact-message.error {
+      display: block;
+      background: #fef2f2;
+      border: 1px solid #fecaca;
+      color: #991b1b;
     }
 
     .quick-links {
@@ -210,8 +274,8 @@
       border-radius: 10px;
       padding: 12px 18px;
       font-family: Calibri, Candara, "Segoe UI", Arial, sans-serif;
-      font-size: 14px;
-      font-weight: 400;
+      font-size: 16px;
+      font-weight: 700;
       cursor: pointer;
       text-decoration: none;
       display: inline-block;
@@ -476,6 +540,43 @@
       <div class="role-note" id="actingRoleNote"></div>
     </section>
 
+    <section class="contact-card">
+      <h2>Account Info</h2>
+      <p>
+        Your name, email address, and phone number belong to your Grove account, not to an individual family or caregiver profile.
+      </p>
+
+      <form id="accountContactForm">
+        <div class="contact-grid">
+          <div class="contact-field">
+            <label for="accountFirstNameInput">First Name</label>
+            <input id="accountFirstNameInput" type="text" placeholder="First Name" required />
+          </div>
+
+          <div class="contact-field">
+            <label for="accountLastNameInput">Last Name</label>
+            <input id="accountLastNameInput" type="text" placeholder="Last Name" required />
+          </div>
+
+          <div class="contact-field">
+            <label for="accountEmailInput">Email Address</label>
+            <input id="accountEmailInput" type="email" placeholder="Email Address" required />
+          </div>
+
+          <div class="contact-field">
+            <label for="accountPhoneInput">Phone Number</label>
+            <input id="accountPhoneInput" type="text" placeholder="Phone Number" inputmode="numeric" />
+          </div>
+        </div>
+
+        <div class="contact-actions">
+          <button class="button button-secondary" type="submit" id="saveAccountContactBtn">Save Contact Info</button>
+        </div>
+      </form>
+
+      <div id="accountContactMessage" class="contact-message"></div>
+    </section>
+
     <section class="welcome-card" id="welcomeCard">
       <h2>Welcome to Grove</h2>
       <p>
@@ -576,11 +677,19 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
   <script src="./app.js"></script>
+  <script src="./grove-profiles.js"></script>
 
   <script>
     (function () {
       const errorBox = document.getElementById("errorBox");
       const accountEmail = document.getElementById("accountEmail");
+      const accountContactForm = document.getElementById("accountContactForm");
+      const accountFirstNameInput = document.getElementById("accountFirstNameInput");
+      const accountLastNameInput = document.getElementById("accountLastNameInput");
+      const accountEmailInput = document.getElementById("accountEmailInput");
+      const accountPhoneInput = document.getElementById("accountPhoneInput");
+      const accountContactMessage = document.getElementById("accountContactMessage");
+      const saveAccountContactBtn = document.getElementById("saveAccountContactBtn");
       const welcomeCard = document.getElementById("welcomeCard");
 
       const caregiverStatus = document.getElementById("caregiverStatus");
@@ -621,6 +730,7 @@
       let hasFamilyProfile = false;
       let hasCaregiverProfile = false;
       let currentUserId = null;
+      let currentUser = null;
       let jobActionInProgress = false;
       let actingRole = null;
       let availableRoles = [];
@@ -633,6 +743,31 @@
       function hideError() {
         errorBox.style.display = "none";
         errorBox.textContent = "";
+      }
+
+      function setAccountContactMessage(message, type = "") {
+        if (!accountContactMessage) return;
+
+        accountContactMessage.className = "contact-message";
+        accountContactMessage.textContent = message || "";
+
+        if (!message) {
+          accountContactMessage.style.display = "none";
+          return;
+        }
+
+        accountContactMessage.classList.add(type || "success");
+      }
+
+      function fillAccountContactFields(user) {
+        if (!user) return;
+
+        accountEmail.textContent = user.email || "Unknown email";
+        accountEmail.classList.remove("loading");
+        accountFirstNameInput.value = window.GroveProfiles.getAccountFirstName(user);
+        accountLastNameInput.value = window.GroveProfiles.getAccountLastName(user);
+        accountEmailInput.value = window.GroveProfiles.getAccountEmail(user);
+        accountPhoneInput.value = window.GroveProfiles.getAccountPhone(user);
       }
 
       function formatProfileStatus(profile) {
@@ -834,6 +969,67 @@
           console.error(error);
           window.location.href = "./login.html";
           return null;
+        }
+      }
+
+      async function saveAccountContact(event) {
+        event.preventDefault();
+
+        if (!currentUser) {
+          window.location.href = "./login.html";
+          return;
+        }
+
+        const nextFirstName = accountFirstNameInput.value.trim();
+        const nextLastName = accountLastNameInput.value.trim();
+        const nextEmail = accountEmailInput.value.trim();
+        const nextPhone = window.GroveProfiles.formatPhoneNumber(accountPhoneInput.value.trim());
+        const currentFirstName = window.GroveProfiles.getAccountFirstName(currentUser);
+        const currentLastName = window.GroveProfiles.getAccountLastName(currentUser);
+        const currentEmail = window.GroveProfiles.getAccountEmail(currentUser);
+        const currentPhone = window.GroveProfiles.getAccountPhone(currentUser);
+
+        setAccountContactMessage("");
+        accountPhoneInput.value = nextPhone;
+
+        if (saveAccountContactBtn) {
+          saveAccountContactBtn.disabled = true;
+          saveAccountContactBtn.textContent = "Saving...";
+        }
+
+        try {
+          if (nextEmail && nextEmail !== currentEmail) {
+            const { data, error } = await window.db.auth.updateUser({ email: nextEmail });
+            if (error) throw error;
+            currentUser = data?.user || currentUser;
+          }
+
+          if (nextFirstName !== currentFirstName || nextLastName !== currentLastName || nextPhone !== currentPhone) {
+            const updatedUser = await window.GroveProfiles.updateAccountProfile({
+              firstName: nextFirstName,
+              lastName: nextLastName,
+              phone: nextPhone
+            });
+            currentUser = updatedUser || currentUser;
+          }
+
+          fillAccountContactFields(currentUser);
+
+          const emailChanged = !!nextEmail && nextEmail !== currentEmail;
+          setAccountContactMessage(
+            emailChanged
+              ? "Contact info saved. Supabase may send a confirmation email before the new address becomes active."
+              : "Contact info saved.",
+            "success"
+          );
+        } catch (error) {
+          console.error(error);
+          setAccountContactMessage(error.message || "Unable to save contact info.", "error");
+        } finally {
+          if (saveAccountContactBtn) {
+            saveAccountContactBtn.disabled = false;
+            saveAccountContactBtn.textContent = "Save Contact Info";
+          }
         }
       }
 
@@ -1308,18 +1504,22 @@
         const session = await requireSession();
         if (!session) return;
 
-        const user = session.user;
-        currentUserId = user.id;
-        accountEmail.textContent = user.email || "Unknown email";
+        currentUser = session.user;
+        currentUserId = currentUser.id;
+        fillAccountContactFields(currentUser);
+        accountPhoneInput?.addEventListener("input", (event) => {
+          event.target.value = window.GroveProfiles.formatPhoneNumber(event.target.value);
+        });
+        accountContactForm?.addEventListener("submit", saveAccountContact);
 
         await Promise.all([
-          loadCaregiverProfile(user.id),
-          loadFamilyProfile(user.id),
-          loadMessageSummary(user.id),
-          loadMyJobs(user.id)
+          loadCaregiverProfile(currentUser.id),
+          loadFamilyProfile(currentUser.id),
+          loadMessageSummary(currentUser.id),
+          loadMyJobs(currentUser.id)
         ]);
 
-        availableRoles = await window.getAvailableActingRoles(user.id);
+        availableRoles = await window.getAvailableActingRoles(currentUser.id);
         actingRole = window.resolveActingRole(availableRoles);
         if (actingRole) {
           window.setStoredActingRole(actingRole);
