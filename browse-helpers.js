@@ -124,9 +124,35 @@ function getDisplayReviews(profileType, profile, reviews) {
 }
 
 function getProfilePhotoArray(profile) {
+  let photoUrls = profile.photo_urls;
+
+  if (typeof photoUrls === "string") {
+    const trimmed = photoUrls.trim();
+
+    if (trimmed) {
+      try {
+        const parsed = JSON.parse(trimmed);
+        photoUrls = Array.isArray(parsed) ? parsed : [trimmed];
+      } catch {
+        if (trimmed.startsWith("{") && trimmed.endsWith("}")) {
+          const inner = trimmed.slice(1, -1).trim();
+          photoUrls = inner
+            ? inner
+                .split(/,(?=(?:[^"]*"[^"]*")*[^"]*$)/)
+                .map((value) => value.trim().replace(/^"(.*)"$/, "$1"))
+            : [];
+        } else {
+          photoUrls = trimmed.includes(",")
+            ? trimmed.split(",").map((value) => value.trim())
+            : [trimmed];
+        }
+      }
+    }
+  }
+
   const photos =
-    Array.isArray(profile.photo_urls) && profile.photo_urls.length
-      ? profile.photo_urls.filter(Boolean)
+    Array.isArray(photoUrls) && photoUrls.length
+      ? photoUrls.filter(Boolean)
       : (profile.photo_url ? [profile.photo_url] : []);
 
   return photos;

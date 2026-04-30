@@ -54,6 +54,10 @@
 
         <form id="careForm">
           <div class="row">
+            <input id="job_title" type="text" placeholder="Job Title" required />
+          </div>
+
+          <div class="row">
             <select id="care_type" required>
               <option value="">Type of Care Needed</option>
               <option value="Childcare">Childcare</option>
@@ -114,6 +118,7 @@
       const heroPrimaryButton = document.getElementById("heroPrimaryButton");
       const whatHappensNextText = document.getElementById("whatHappensNextText");
 
+      const jobTitleEl = document.getElementById("job_title");
       const careTypeEl = document.getElementById("care_type");
       const scheduleEl = document.getElementById("schedule");
       const payRangeEl = document.getElementById("pay_range");
@@ -229,13 +234,14 @@
 
         const { data: version, error: versionError } = await window.db
           .from("job_post_versions")
-          .select("care_type, schedule, pay_range, description")
+          .select("title, care_type, schedule, pay_range, description")
           .eq("id", versionId)
           .maybeSingle();
 
         if (versionError) throw new Error(versionError.message);
         if (!version) throw new Error("Job post version not found.");
 
+        if (jobTitleEl) jobTitleEl.value = version.title || "";
         if (careTypeEl) careTypeEl.value = version.care_type || "";
         if (scheduleEl) scheduleEl.value = version.schedule || "";
         if (payRangeEl) payRangeEl.value = version.pay_range || "";
@@ -244,6 +250,7 @@
 
       function buildPayload() {
         const payload = {
+          title: jobTitleEl ? jobTitleEl.value.trim() : "",
           care_type: careTypeEl ? careTypeEl.value.trim() : "",
           schedule: scheduleEl ? scheduleEl.value.trim() : "",
           pay_range: payRangeEl ? payRangeEl.value.trim() : "",
@@ -258,6 +265,7 @@
       }
 
       function validatePayload(payload) {
+        if (!payload.title) throw new Error("Please enter a job title.");
         if (!payload.care_type) throw new Error("Please select the type of care needed.");
         if (!payload.schedule) throw new Error("Please enter the schedule needed.");
         if (!payload.pay_range) throw new Error("Please enter the pay information.");

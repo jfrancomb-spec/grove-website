@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Grove | Account</title>
+  <title>Grove | Dashboard</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
   <link rel="stylesheet" href="./styles.css" />
@@ -17,7 +17,7 @@
     }
 
     .page {
-      max-width: 900px;
+      max-width: 1160px;
       margin: 40px auto;
       padding: 0 20px 40px;
     }
@@ -43,7 +43,6 @@
       padding: 24px;
       box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
       margin-bottom: 24px;
-      display: none;
     }
 
     .welcome-card h2 {
@@ -65,6 +64,141 @@
       margin-top: 14px;
     }
 
+    .dashboard-todo-card {
+      background: white;
+      border-radius: 16px;
+      padding: 24px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
+      margin-bottom: 24px;
+    }
+
+    .dashboard-todo-card h2 {
+      margin: 0 0 8px;
+      font-size: 24px;
+    }
+
+    .dashboard-todo-card p {
+      margin: 0 0 16px;
+      color: #6b7280;
+      line-height: 1.6;
+    }
+
+    .todo-list {
+      display: grid;
+      gap: 14px;
+    }
+
+    .todo-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 16px;
+      padding: 16px 18px;
+      border: 1px solid #e5e7eb;
+      border-radius: 14px;
+      background: #f8fafc;
+    }
+
+    .todo-item-copy {
+      display: grid;
+      gap: 6px;
+      min-width: 0;
+    }
+
+    .todo-item-label {
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: #6b7280;
+    }
+
+    .todo-item-title {
+      font-size: 18px;
+      font-weight: 700;
+      color: #102a43;
+    }
+
+    .todo-item-detail {
+      color: #52606d;
+      line-height: 1.5;
+    }
+
+    .todo-item .button {
+      width: auto;
+      margin: 0;
+      white-space: nowrap;
+      flex: 0 0 auto;
+    }
+
+    .todo-item-empty {
+      padding: 16px 18px;
+      border-radius: 14px;
+      background: #ecfdf5;
+      border: 1px solid #bbf7d0;
+      color: #166534;
+      line-height: 1.6;
+    }
+
+    .todo-item-empty strong {
+      display: block;
+      margin-bottom: 4px;
+      color: #14532d;
+    }
+
+    .welcome-card {
+      display: none;
+    }
+
+    .caregiver-top-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.35fr) minmax(280px, 1fr);
+      gap: 18px;
+      margin-bottom: 24px;
+    }
+
+    .dashboard-panel {
+      background: white;
+      border-radius: 16px;
+      padding: 24px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
+      min-width: 0;
+    }
+
+    .dashboard-panel h2 {
+      margin: 0 0 10px;
+      font-size: 22px;
+    }
+
+    .dashboard-panel p {
+      margin: 0;
+      color: #6b7280;
+      line-height: 1.5;
+    }
+
+    .dashboard-panel-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 16px;
+    }
+
+    .message-summary-value {
+      margin: 14px 0 8px;
+      font-size: 32px;
+      font-weight: 700;
+      color: #102a43;
+      line-height: 1;
+    }
+
+    .message-summary-label {
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: #6b7280;
+    }
+
     .status-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
@@ -79,52 +213,47 @@
       box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
     }
 
-    .role-card {
-      background: white;
-      border-radius: 16px;
-      padding: 24px;
-      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
-      margin-bottom: 24px;
-      text-align: center;
+    .role-notice {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      padding: 0 0 8px;
+      margin-bottom: 14px;
+      border-bottom: 1px solid #d1d5db;
+      color: #6b7280;
+      background: transparent;
+    }
+
+    .role-notice-copy {
+      display: grid;
+      gap: 2px;
+    }
+
+    .role-notice-label {
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: #6b7280;
+    }
+
+    .role-notice-value {
+      font-size: 15px;
+      font-weight: 700;
+      color: #4b5563;
+      line-height: 1.2;
     }
 
     .role-toggle {
       display: flex;
-      flex-wrap: wrap;
-      gap: 12px;
-      margin-top: 14px;
       align-items: center;
-      justify-content: center;
+      justify-content: flex-end;
     }
 
     .role-toggle .button {
       width: auto;
       flex: 0 0 auto;
-    }
-
-    .role-note {
-      color: #6b7280;
-      line-height: 1.5;
-      margin-top: 10px;
-    }
-
-    .role-guidance {
-      margin: 12px auto 0;
-      max-width: 680px;
-      color: #6b7280;
-      line-height: 1.6;
-      text-align: left;
-      padding-left: 20px;
-    }
-
-    .role-guidance li + li {
-      margin-top: 6px;
-    }
-
-    .role-note:first-of-type {
-      margin-top: 0;
-      margin-bottom: 12px;
-      text-align: left;
     }
 
     .status-label {
@@ -157,7 +286,6 @@
     }
 
     .links-card,
-    .contact-card,
     .jobs-card {
       background: white;
       border-radius: 16px;
@@ -167,73 +295,10 @@
     }
 
     .links-card h2,
-    .contact-card h2,
     .jobs-card h2 {
       margin-top: 0;
       margin-bottom: 16px;
       font-size: 22px;
-    }
-
-    .contact-card p {
-      margin-top: 0;
-      color: #6b7280;
-      line-height: 1.5;
-    }
-
-    .contact-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-      gap: 14px;
-      margin-bottom: 14px;
-    }
-
-    .contact-field label {
-      display: block;
-      margin-bottom: 6px;
-      font-size: 14px;
-      color: #374151;
-      font-weight: bold;
-    }
-
-    .contact-field input {
-      width: 100%;
-      box-sizing: border-box;
-      border: 1px solid #d1d5db;
-      border-radius: 10px;
-      padding: 12px 14px;
-      font-family: Calibri, Candara, "Segoe UI", Arial, sans-serif;
-      font-size: 14px;
-      color: #111827;
-      background: #fff;
-    }
-
-    .contact-actions {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      align-items: center;
-    }
-
-    .contact-message {
-      display: none;
-      margin-top: 12px;
-      padding: 12px 14px;
-      border-radius: 10px;
-      font-size: 14px;
-    }
-
-    .contact-message.success {
-      display: block;
-      background: #ecfdf5;
-      border: 1px solid #bbf7d0;
-      color: #166534;
-    }
-
-    .contact-message.error {
-      display: block;
-      background: #fef2f2;
-      border: 1px solid #fecaca;
-      color: #991b1b;
     }
 
     .quick-links {
@@ -496,21 +561,123 @@
       margin-bottom: 14px;
     }
 
+    .application-list {
+      display: grid;
+      gap: 14px;
+    }
+
+    .application-card {
+      border: 1px solid #e5e7eb;
+      border-radius: 14px;
+      padding: 18px;
+      background: #fff;
+    }
+
+    .application-card-top {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      align-items: flex-start;
+      margin-bottom: 12px;
+    }
+
+    .application-card h4 {
+      margin: 0 0 6px;
+      font-size: 18px;
+      color: #111827;
+    }
+
+    .application-meta-line {
+      color: #6b7280;
+      font-size: 14px;
+      line-height: 1.4;
+    }
+
+    .application-details p {
+      margin: 0 0 8px;
+      font-size: 14px;
+      line-height: 1.5;
+      color: #374151;
+    }
+
+    .application-actions {
+      margin-top: 14px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .message-list {
+      display: grid;
+      gap: 14px;
+      margin-top: 16px;
+    }
+
+    .message-card {
+      border: 1px solid #e5e7eb;
+      border-radius: 14px;
+      padding: 18px;
+      background: #fff;
+    }
+
+    .message-card-top {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      align-items: flex-start;
+      margin-bottom: 10px;
+    }
+
+    .message-card h4 {
+      margin: 0 0 6px;
+      font-size: 18px;
+      color: #111827;
+    }
+
+    .message-card-preview {
+      color: #374151;
+      line-height: 1.5;
+      margin: 0 0 8px;
+    }
+
+    .message-card-meta {
+      color: #6b7280;
+      font-size: 14px;
+      line-height: 1.4;
+    }
+
+    .message-card-actions {
+      margin-top: 14px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
     @media (max-width: 640px) {
       .page {
         margin-top: 24px;
       }
 
       .welcome-card,
+      .dashboard-panel,
       .status-card,
+      .dashboard-todo-card,
       .links-card,
       .jobs-card {
         padding: 18px;
       }
 
+      .welcome-actions,
+      .dashboard-panel-actions,
+      .todo-item,
       .job-card-top,
-      .jobs-card-header {
+      .jobs-card-header,
+      .role-notice {
         flex-direction: column;
+      }
+
+      .caregiver-top-grid {
+        grid-template-columns: 1fr;
       }
     }
   </style>
@@ -521,60 +688,17 @@
   <main class="page">
     <div id="errorBox" class="error-box"></div>
 
-    <section class="page-heading">
-      <h1>My Account</h1>
-      <p>
-        Signed in as <strong id="accountEmail" class="loading">Loading...</strong>
-      </p>
-    </section>
-
-    <section class="role-card" id="actingRoleCard" style="display:none;">
-      <div class="status-label">Viewing As</div>
-      <div class="status-value" id="actingRoleValue">Loading...</div>
-      <ul class="role-guidance" id="actingRoleDetail">
-        <li>Buttons and shortcuts through-out Grove will update based on the profile you are using.</li>
-        <li>Click the My Account menu to switch profiles at any time.</li>
-        <li>Messages, jobs, and reviews are associated to the profile you are using when you create them.</li>
-      </ul>
+    <section class="role-notice" id="actingRoleCard" style="display:none;">
+      <div class="role-notice-copy">
+        <div class="role-notice-label">Viewing as</div>
+        <div class="role-notice-value" id="actingRoleValue">Loading...</div>
+      </div>
       <div class="role-toggle" id="actingRoleToggle"></div>
-      <div class="role-note" id="actingRoleNote"></div>
     </section>
 
-    <section class="contact-card">
-      <h2>Account Info</h2>
-      <p>
-        Your name, email address, and phone number belong to your Grove account, not to an individual family or caregiver profile.
-      </p>
-
-      <form id="accountContactForm">
-        <div class="contact-grid">
-          <div class="contact-field">
-            <label for="accountFirstNameInput">First Name</label>
-            <input id="accountFirstNameInput" type="text" placeholder="First Name" required />
-          </div>
-
-          <div class="contact-field">
-            <label for="accountLastNameInput">Last Name</label>
-            <input id="accountLastNameInput" type="text" placeholder="Last Name" required />
-          </div>
-
-          <div class="contact-field">
-            <label for="accountEmailInput">Email Address</label>
-            <input id="accountEmailInput" type="email" placeholder="Email Address" required />
-          </div>
-
-          <div class="contact-field">
-            <label for="accountPhoneInput">Phone Number</label>
-            <input id="accountPhoneInput" type="text" placeholder="Phone Number" inputmode="numeric" />
-          </div>
-        </div>
-
-        <div class="contact-actions">
-          <button class="button button-secondary" type="submit" id="saveAccountContactBtn">Save Contact Info</button>
-        </div>
-      </form>
-
-      <div id="accountContactMessage" class="contact-message"></div>
+    <section class="page-heading">
+      <h1>Dashboard</h1>
+      <p>Start with the items that need attention today.</p>
     </section>
 
     <section class="welcome-card" id="welcomeCard">
@@ -590,14 +714,38 @@
       </div>
     </section>
 
-    <section class="status-grid">
-      <div class="status-card" id="caregiverProfileCard">
-        <div class="status-label">Caregiver Profile</div>
-        <div class="status-value" id="caregiverStatus">Loading...</div>
-        <div class="status-detail" id="caregiverDetail">Checking your caregiver profile.</div>
-        <div class="status-action" id="caregiverActionWrap"></div>
-      </div>
+    <section class="caregiver-top-grid" id="caregiverTopGrid" style="display:none;">
+      <article class="dashboard-panel">
+        <h2>Jobs I Applied To</h2>
+        <p>See where you have already reached out and jump back into those opportunities quickly.</p>
 
+        <div id="appliedJobsLoading" class="my-jobs-loading" style="display:none; margin-top:16px;">
+          Loading your applications...
+        </div>
+
+        <div id="appliedJobsMessage" class="my-jobs-message" style="display:none; margin-top:16px;"></div>
+
+        <div id="appliedJobsList" class="application-list" style="margin-top:16px;"></div>
+      </article>
+
+      <article class="dashboard-panel" id="caregiverMessagesCard">
+        <h2>Messages</h2>
+        <p>Keep an eye on replies from families and stay ready to respond.</p>
+        <div class="message-summary-value" id="caregiverMessageCount">Loading...</div>
+        <div class="message-summary-label" id="caregiverMessageDetail">Checking your conversations.</div>
+        <div id="caregiverMessagesLoading" class="my-jobs-loading" style="display:none; margin-top:16px;">
+          Loading your messages...
+        </div>
+        <div id="caregiverMessagesMessage" class="my-jobs-message" style="display:none; margin-top:16px;"></div>
+        <div id="caregiverMessagesList" class="message-list"></div>
+        <div class="dashboard-panel-actions">
+          <a class="button button-secondary" id="caregiverMessagesLink" href="./messages.html">Open Messages</a>
+        </div>
+      </article>
+
+    </section>
+
+    <section class="status-grid">
       <div class="status-card" id="familyProfileCard">
         <div class="status-label">Family Profile</div>
         <div class="status-value" id="familyStatus">Loading...</div>
@@ -605,7 +753,7 @@
         <div class="status-action" id="familyActionWrap"></div>
       </div>
 
-      <div class="status-card">
+      <div class="status-card" id="messageStatusCard">
         <div class="status-label">Messages</div>
         <div class="status-value" id="messageCount">Loading...</div>
         <div class="status-detail" id="messageDetail">Checking your conversations.</div>
@@ -641,7 +789,7 @@
 
       <div class="quick-links">
         <a class="quick-link" id="caregiverQuickLink" href="./edit-caregiver.html">
-          Caregiver profile
+          <span id="caregiverQuickLinkLabel">Preview/Edit profile</span>
           <small id="caregiverQuickLinkText">Loading caregiver profile actions.</small>
         </a>
 
@@ -655,11 +803,6 @@
           <small id="messagesQuickLinkText">Open your conversations and check for new replies.</small>
         </a>
 
-        <a class="quick-link" id="jobsQuickLink" href="./jobs.html">
-          Browse jobs
-          <small id="jobsQuickLinkText">See available family job posts and explore opportunities.</small>
-        </a>
-
         <a class="quick-link" id="caregiversQuickLink" href="./caregivers.html">
           Browse caregivers
           <small>View public caregiver listings across Grove.</small>
@@ -669,8 +812,14 @@
           Browse opportunities
           <small>View family job posts and public opportunities across Grove.</small>
         </a>
+
+        <a class="quick-link" href="./account-settings.html">
+          Account settings
+          <small>Update your Grove name, email, phone, and other account-level details.</small>
+        </a>
       </div>
     </section>
+
   </main>
 
   <div id="footer-placeholder"></div>
@@ -682,20 +831,9 @@
   <script>
     (function () {
       const errorBox = document.getElementById("errorBox");
-      const accountEmail = document.getElementById("accountEmail");
-      const accountContactForm = document.getElementById("accountContactForm");
-      const accountFirstNameInput = document.getElementById("accountFirstNameInput");
-      const accountLastNameInput = document.getElementById("accountLastNameInput");
-      const accountEmailInput = document.getElementById("accountEmailInput");
-      const accountPhoneInput = document.getElementById("accountPhoneInput");
-      const accountContactMessage = document.getElementById("accountContactMessage");
-      const saveAccountContactBtn = document.getElementById("saveAccountContactBtn");
+      const dashboardTodoList = document.getElementById("dashboardTodoList");
       const welcomeCard = document.getElementById("welcomeCard");
-
-      const caregiverStatus = document.getElementById("caregiverStatus");
-      const caregiverDetail = document.getElementById("caregiverDetail");
-      const caregiverActionWrap = document.getElementById("caregiverActionWrap");
-      const caregiverProfileCard = document.getElementById("caregiverProfileCard");
+      const caregiverTopGrid = document.getElementById("caregiverTopGrid");
 
       const familyStatus = document.getElementById("familyStatus");
       const familyDetail = document.getElementById("familyDetail");
@@ -705,27 +843,34 @@
       const messageCount = document.getElementById("messageCount");
       const messageDetail = document.getElementById("messageDetail");
       const messagesLink = document.getElementById("messagesLink");
+      const caregiverMessageCount = document.getElementById("caregiverMessageCount");
+      const caregiverMessageDetail = document.getElementById("caregiverMessageDetail");
+      const caregiverMessagesLoading = document.getElementById("caregiverMessagesLoading");
+      const caregiverMessagesMessage = document.getElementById("caregiverMessagesMessage");
+      const caregiverMessagesList = document.getElementById("caregiverMessagesList");
+      const caregiverMessagesLink = document.getElementById("caregiverMessagesLink");
+      const messageStatusCard = document.getElementById("messageStatusCard");
       const jobsCard = document.getElementById("jobsCard");
       const actingRoleCard = document.getElementById("actingRoleCard");
       const actingRoleValue = document.getElementById("actingRoleValue");
-      const actingRoleDetail = document.getElementById("actingRoleDetail");
       const actingRoleToggle = document.getElementById("actingRoleToggle");
-      const actingRoleNote = document.getElementById("actingRoleNote");
 
       const caregiverQuickLinkText = document.getElementById("caregiverQuickLinkText");
       const familyQuickLinkText = document.getElementById("familyQuickLinkText");
       const messagesQuickLink = document.getElementById("messagesQuickLink");
       const messagesQuickLinkText = document.getElementById("messagesQuickLinkText");
-      const jobsQuickLink = document.getElementById("jobsQuickLink");
-      const jobsQuickLinkText = document.getElementById("jobsQuickLinkText");
       const caregiversQuickLink = document.getElementById("caregiversQuickLink");
       const familiesQuickLink = document.getElementById("familiesQuickLink");
       const caregiverQuickLink = document.getElementById("caregiverQuickLink");
+      const caregiverQuickLinkLabel = document.getElementById("caregiverQuickLinkLabel");
       const familyQuickLink = document.getElementById("familyQuickLink");
 
       const myJobsLoading = document.getElementById("myJobsLoading");
       const myJobsMessage = document.getElementById("myJobsMessage");
       const myJobsGroups = document.getElementById("myJobsGroups");
+      const appliedJobsLoading = document.getElementById("appliedJobsLoading");
+      const appliedJobsMessage = document.getElementById("appliedJobsMessage");
+      const appliedJobsList = document.getElementById("appliedJobsList");
 
       let hasFamilyProfile = false;
       let hasCaregiverProfile = false;
@@ -734,6 +879,22 @@
       let jobActionInProgress = false;
       let actingRole = null;
       let availableRoles = [];
+      let caregiverProfileState = null;
+      let familyProfileState = null;
+      let caregiverProfileId = null;
+      let unreadConversationTotal = 0;
+      let conversationTotal = 0;
+      let jobSummary = {
+        total: 0,
+        live: 0,
+        pending: 0,
+        attention: 0,
+        inactive: 0
+      };
+      let caregiverApplicationSummary = {
+        total: 0
+      };
+      let caregiverMessageThreads = [];
 
       function showError(message) {
         errorBox.style.display = "block";
@@ -745,29 +906,8 @@
         errorBox.textContent = "";
       }
 
-      function setAccountContactMessage(message, type = "") {
-        if (!accountContactMessage) return;
-
-        accountContactMessage.className = "contact-message";
-        accountContactMessage.textContent = message || "";
-
-        if (!message) {
-          accountContactMessage.style.display = "none";
-          return;
-        }
-
-        accountContactMessage.classList.add(type || "success");
-      }
-
       function fillAccountContactFields(user) {
         if (!user) return;
-
-        accountEmail.textContent = user.email || "Unknown email";
-        accountEmail.classList.remove("loading");
-        accountFirstNameInput.value = window.GroveProfiles.getAccountFirstName(user);
-        accountLastNameInput.value = window.GroveProfiles.getAccountLastName(user);
-        accountEmailInput.value = window.GroveProfiles.getAccountEmail(user);
-        accountPhoneInput.value = window.GroveProfiles.getAccountPhone(user);
       }
 
       function formatProfileStatus(profile) {
@@ -815,7 +955,7 @@
       function updateProfileActionUI(type, exists) {
         const isFamily = type === "family";
 
-        const actionWrap = isFamily ? familyActionWrap : caregiverActionWrap;
+        const actionWrap = isFamily ? familyActionWrap : null;
         const quickLinkText = isFamily ? familyQuickLinkText : caregiverQuickLinkText;
         const href = isFamily ? "./edit-family.html" : "./edit-caregiver.html";
         const buttonClass = isFamily ? "button-family" : "button-caregiver";
@@ -856,6 +996,159 @@
         welcomeCard.style.display = showWelcome ? "block" : "none";
       }
 
+      function buildTodoItem(item) {
+        return `
+          <div class="todo-item">
+            <div class="todo-item-copy">
+              <div class="todo-item-label">${escapeHtml(item.label)}</div>
+              <div class="todo-item-title">${escapeHtml(item.title)}</div>
+              <div class="todo-item-detail">${escapeHtml(item.detail)}</div>
+            </div>
+            ${item.href && item.buttonText
+              ? `<a class="button ${item.buttonClass || "button-secondary"}" href="${item.href}">${escapeHtml(item.buttonText)}</a>`
+              : ""}
+          </div>
+        `;
+      }
+
+      function renderDashboardTodoList() {
+        if (!dashboardTodoList) return;
+
+        const items = [];
+
+        if (!hasFamilyProfile && !hasCaregiverProfile) {
+          items.push({
+            label: "Set Up",
+            title: "Choose your first role",
+            detail: "Create a family or caregiver profile so Grove can personalize your shortcuts and next steps.",
+            href: "./chooser.html",
+            buttonText: "Choose Role",
+            buttonClass: "button-secondary"
+          });
+        }
+
+        if (actingRole === "caregiver") {
+          if (!hasCaregiverProfile) {
+            items.push({
+              label: "Profile",
+              title: "Create your caregiver profile",
+              detail: "Add your care types, experience, photos, and availability so families can trust what they see.",
+              href: "./edit-caregiver.html",
+              buttonText: "Create Profile",
+              buttonClass: "button-caregiver"
+            });
+          } else if (caregiverProfileState?.value === "Draft" || caregiverProfileState?.value === "Hidden") {
+            items.push({
+              label: "Profile",
+              title: "Finish your caregiver profile",
+              detail: caregiverProfileState.detail || "Review the details families will see and submit updates when it feels strong.",
+              href: "./edit-caregiver.html",
+              buttonText: "Complete Profile",
+              buttonClass: "button-caregiver"
+            });
+          } else {
+            items.push({
+              label: "Opportunities",
+              title: "Look at current jobs",
+              detail: "Browse family opportunities tied to your caregiver role and see what feels like a fit.",
+              href: "./jobs.html",
+              buttonText: "Browse Jobs",
+              buttonClass: "button-caregiver"
+            });
+          }
+
+          if (caregiverApplicationSummary.total > 0) {
+            items.push({
+              label: "Applications",
+              title: caregiverApplicationSummary.total === 1
+                ? "Check 1 applied job"
+                : `Check ${caregiverApplicationSummary.total} applied jobs`,
+              detail: "Review the jobs you have already applied for and open the related message thread quickly.",
+              href: "#caregiverTopGrid",
+              buttonText: "View Applications",
+              buttonClass: "button-caregiver"
+            });
+          }
+        }
+
+        if (actingRole === "family") {
+          if (!hasFamilyProfile) {
+            items.push({
+              label: "Profile",
+              title: "Create your family profile",
+              detail: "Add your household details and care needs so caregivers understand who you are right away.",
+              href: "./edit-family.html",
+              buttonText: "Create Profile",
+              buttonClass: "button-family"
+            });
+          } else if (familyProfileState?.value === "Draft" || familyProfileState?.value === "Hidden") {
+            items.push({
+              label: "Profile",
+              title: "Finish your family profile",
+              detail: familyProfileState.detail || "Complete your family details so your next steps feel more credible and complete.",
+              href: "./edit-family.html",
+              buttonText: "Complete Profile",
+              buttonClass: "button-family"
+            });
+          }
+
+          if (!jobSummary.total) {
+            items.push({
+              label: "Jobs",
+              title: "Post your first job",
+              detail: "Create a care request so caregivers have something clear to respond to.",
+              href: "./findcare.html",
+              buttonText: "Post a Job",
+              buttonClass: "button-family"
+            });
+          } else if (jobSummary.pending > 0 || jobSummary.attention > 0) {
+            const count = jobSummary.pending + jobSummary.attention;
+            items.push({
+              label: "Jobs",
+              title: count === 1 ? "Check 1 job post" : `Check ${count} job posts`,
+              detail: "One or more of your job posts is pending or needs attention before it can fully work for you.",
+              href: "./findcare.html",
+              buttonText: "Review Jobs",
+              buttonClass: "button-family"
+            });
+          }
+        }
+
+        if (unreadConversationTotal > 0) {
+          items.push({
+            label: "Messages",
+            title: unreadConversationTotal === 1 ? "Reply to 1 unread conversation" : `Reply to ${unreadConversationTotal} unread conversations`,
+            detail: "Fast, thoughtful replies build trust and keep your Grove conversations moving.",
+            href: getRoleMessagesHref(),
+            buttonText: "Open Messages",
+            buttonClass: "button-secondary"
+          });
+        } else {
+          items.push({
+            label: "Messages",
+            title: conversationTotal ? "Check your inbox" : "Open messages",
+            detail: conversationTotal
+              ? "You are caught up right now, but messages are still a good first stop when you log in."
+              : "Your messages will start to fill up once you begin conversations in Grove.",
+            href: getRoleMessagesHref(),
+            buttonText: "Open Messages",
+            buttonClass: "button-secondary"
+          });
+        }
+
+        if (!items.length) {
+          dashboardTodoList.innerHTML = `
+            <div class="todo-item-empty">
+              <strong>You’re caught up for now.</strong>
+              Check messages, review your live profile, or make a small improvement when you want to strengthen first impression.
+            </div>
+          `;
+          return;
+        }
+
+        dashboardTodoList.innerHTML = items.map(buildTodoItem).join("");
+      }
+
       function getRoleLabel(role) {
         return role === "family" ? "Family" : "Caregiver";
       }
@@ -871,6 +1164,159 @@
         element.style.display = visible ? "" : "none";
       }
 
+      function setAppliedJobsLoading(isLoading) {
+        if (!appliedJobsLoading) return;
+        appliedJobsLoading.style.display = isLoading ? "block" : "none";
+      }
+
+      function setCaregiverMessagesLoading(isLoading) {
+        if (!caregiverMessagesLoading) return;
+        caregiverMessagesLoading.style.display = isLoading ? "block" : "none";
+      }
+
+      function showAppliedJobsMessage(message, isError = false) {
+        if (!appliedJobsMessage) return;
+        if (!message) {
+          appliedJobsMessage.textContent = "";
+          appliedJobsMessage.className = "my-jobs-message";
+          appliedJobsMessage.style.display = "none";
+          return;
+        }
+        appliedJobsMessage.textContent = message;
+        appliedJobsMessage.className = isError ? "my-jobs-message error" : "my-jobs-message";
+        appliedJobsMessage.style.display = "block";
+      }
+
+      function showCaregiverMessagesMessage(message, isError = false) {
+        if (!caregiverMessagesMessage) return;
+        if (!message) {
+          caregiverMessagesMessage.textContent = "";
+          caregiverMessagesMessage.className = "my-jobs-message";
+          caregiverMessagesMessage.style.display = "none";
+          return;
+        }
+        caregiverMessagesMessage.textContent = message;
+        caregiverMessagesMessage.className = isError ? "my-jobs-message error" : "my-jobs-message";
+        caregiverMessagesMessage.style.display = "block";
+      }
+
+      function getConversationHrefForApplication(application) {
+        if (application.conversationId) {
+          return `./messages.html?conversation=${encodeURIComponent(application.conversationId)}`;
+        }
+
+        const params = new URLSearchParams();
+        if (application.targetUserId) {
+          params.set("targetUser", application.targetUserId);
+        }
+        if (application.familyProfileId) {
+          params.set("familyProfileId", application.familyProfileId);
+        }
+        if (caregiverProfileId) {
+          params.set("caregiverProfileId", caregiverProfileId);
+        }
+        if (application.jobId) {
+          params.set("jobId", application.jobId);
+        }
+
+        const query = params.toString();
+        return query ? `./messages.html?${query}` : "./messages.html";
+      }
+
+      function renderAppliedJobs(applications) {
+        if (!appliedJobsList) return;
+
+        if (!applications.length) {
+          appliedJobsList.innerHTML =
+            '<div class="my-jobs-empty">' +
+              '<p>You have not applied to any jobs yet.</p>' +
+              '<a class="button button-caregiver" href="./jobs.html">Browse Jobs</a>' +
+            '</div>';
+          return;
+        }
+
+        appliedJobsList.innerHTML = applications.map((application) => {
+          const unreadMarkup = application.hasUnreadMessages
+            ? '<span class="status-badge status-queued">New unread message</span>'
+            : '';
+
+          return (
+            '<article class="application-card">' +
+              '<div class="application-card-top">' +
+                '<div>' +
+                  '<h4>' + escapeHtml(application.title) + '</h4>' +
+                  '<div class="application-meta-line">' +
+                    escapeHtml(application.careType || "Care opportunity") +
+                    (application.location ? ' • ' + escapeHtml(application.location) : '') +
+                  '</div>' +
+                '</div>' +
+                unreadMarkup +
+              '</div>' +
+              '<div class="application-details">' +
+                '<p><strong>Applied:</strong> ' + escapeHtml(application.appliedOn) + '</p>' +
+              '</div>' +
+              '<div class="application-actions">' +
+                '<a class="button button-secondary" href="' + getJobDetailsHref(application.jobId) + '">View Job</a>' +
+                '<a class="button button-caregiver" href="' + getConversationHrefForApplication(application) + '">View Messages</a>' +
+              '</div>' +
+            '</article>'
+          );
+        }).join("");
+      }
+
+      function getConversationHref(conversationId) {
+        const baseHref = getRoleMessagesHref();
+        const separator = baseHref.includes("?") ? "&" : "?";
+        return `${baseHref}${separator}conversation=${encodeURIComponent(conversationId)}`;
+      }
+
+      function getJobDetailsHref(jobId, returnTo = "account") {
+        const params = new URLSearchParams({
+          job_id: jobId,
+          returnTo
+        });
+        return `./job-details.html?${params.toString()}`;
+      }
+
+      function renderCaregiverMessages(threads) {
+        if (!caregiverMessagesList) return;
+
+        if (!threads.length) {
+          caregiverMessagesList.innerHTML =
+            '<div class="my-jobs-empty">' +
+              '<p>No messages yet.</p>' +
+            '</div>';
+          return;
+        }
+
+        caregiverMessagesList.innerHTML = threads.map((thread) => {
+          const unreadMarkup = thread.hasUnread
+            ? '<span class="status-badge status-queued">New unread message</span>'
+            : '';
+
+          return (
+            '<article class="message-card">' +
+              '<div class="message-card-top">' +
+                '<div>' +
+                  '<h4>' + escapeHtml(thread.title) + '</h4>' +
+                  (thread.jobTitle
+                    ? '<div class="message-card-meta">' + escapeHtml(thread.jobTitle) + '</div>'
+                    : '') +
+                '</div>' +
+                unreadMarkup +
+              '</div>' +
+              '<p class="message-card-preview">' + escapeHtml(thread.preview || "Open this conversation to read the latest message.") + '</p>' +
+              '<div class="message-card-meta">' +
+                (thread.lastTimeLabel ? 'Last message: ' + escapeHtml(thread.lastTimeLabel) : 'Conversation ready') +
+              '</div>' +
+              '<div class="message-card-actions">' +
+                '<a class="button button-secondary" href="' + getConversationHref(thread.conversationId) + '">View Messages</a>' +
+              '</div>' +
+            '</article>'
+          );
+        }).join("");
+      }
+
       function renderActingRoleUI() {
         if (!actingRoleCard || !actingRoleToggle) return;
 
@@ -882,50 +1328,46 @@
         actingRoleCard.style.display = "";
         actingRoleToggle.innerHTML = "";
         actingRoleValue.textContent = actingRole ? getRoleLabel(actingRole) : "Choose a Role";
-        actingRoleDetail.innerHTML = `
-          <li>Buttons and shortcuts through-out Grove will update based on the profile you are using.</li>
-          <li>Click the My Account menu to switch profiles at any time.</li>
-          <li>Messages, jobs, and reviews are associated to the profile you are using when you create them.</li>
-        `;
-
-        availableRoles.forEach((role) => {
+        const alternateRole = availableRoles.find((role) => role.type !== actingRole);
+        if (alternateRole) {
           const button = document.createElement("button");
           button.type = "button";
-          button.className = role.type === actingRole
-            ? "button button-secondary"
-            : role.type === "family"
-              ? "button button-family"
-              : "button button-caregiver";
-          button.textContent = `Switch to ${getRoleLabel(role.type)}`;
+          button.className = alternateRole.type === "family"
+            ? "button button-family"
+            : "button button-caregiver";
+          button.textContent = `Switch to ${getRoleLabel(alternateRole.type)}`;
           button.addEventListener("click", () => {
-            actingRole = role.type;
+            actingRole = alternateRole.type;
             window.setStoredActingRole(actingRole);
             renderActingRoleUI();
             applyActingRoleVisibility();
             window.updateHeaderAuth?.();
           });
           actingRoleToggle.appendChild(button);
-        });
-
-        actingRoleNote.textContent = "";
+        }
       }
 
       function applyActingRoleVisibility() {
         const isFamily = actingRole === "family";
         const isCaregiver = actingRole === "caregiver";
 
+        setVisible(caregiverTopGrid, isCaregiver);
         setVisible(familyProfileCard, isFamily || !actingRole);
-        setVisible(caregiverProfileCard, isCaregiver || !actingRole);
+        setVisible(messageStatusCard, isFamily || !actingRole);
         setVisible(jobsCard, isFamily);
         setVisible(familyQuickLink, isFamily || !actingRole);
         setVisible(caregiverQuickLink, isCaregiver || !actingRole);
         setVisible(caregiversQuickLink, isFamily || !actingRole);
         setVisible(familiesQuickLink, isCaregiver || !actingRole);
-        setVisible(jobsQuickLink, isCaregiver || !actingRole);
 
         if (messagesLink) {
           messagesLink.href = getRoleMessagesHref();
           messagesLink.textContent = "Open Messages";
+        }
+
+        if (caregiverMessagesLink) {
+          caregiverMessagesLink.href = getRoleMessagesHref();
+          caregiverMessagesLink.textContent = "Open Messages";
         }
 
         if (messagesQuickLink) {
@@ -940,11 +1382,23 @@
               : "Open your conversations and check for new replies.";
         }
 
-        if (jobsQuickLinkText) {
-          jobsQuickLinkText.textContent = isCaregiver
-            ? "See family job posts that match your availability."
-            : "See available family job posts and explore opportunities.";
+        if (caregiverQuickLink) {
+          caregiverQuickLink.href = isCaregiver ? "./caregiver.html" : "./edit-caregiver.html";
         }
+
+        if (caregiverQuickLinkLabel) {
+          caregiverQuickLinkLabel.textContent = isCaregiver ? "Preview/Edit profile" : "Caregiver profile";
+        }
+
+        if (caregiverQuickLinkText) {
+          caregiverQuickLinkText.textContent = isCaregiver
+            ? "Preview the profile families currently see."
+            : hasCaregiverProfile
+              ? "Review and update your caregiver details, experience, photos, and care types."
+              : "Set up your caregiver profile so families can learn about your experience and services.";
+        }
+
+        renderDashboardTodoList();
       }
 
       async function requireSession() {
@@ -1041,20 +1495,179 @@
           .maybeSingle();
 
         if (error) {
-          caregiverStatus.textContent = "Error";
-          caregiverDetail.textContent = error.message;
           hasCaregiverProfile = false;
-          updateProfileActionUI("caregiver", false);
           updateWelcomeState();
           return;
         }
 
         const result = formatProfileStatus(data);
+        caregiverProfileId = data?.id || null;
+        caregiverProfileState = result;
         hasCaregiverProfile = result.exists;
-        caregiverStatus.textContent = result.value;
-        caregiverDetail.textContent = result.detail;
-        updateProfileActionUI("caregiver", result.exists);
         updateWelcomeState();
+        renderDashboardTodoList();
+      }
+
+      async function loadCaregiverApplications() {
+        if (!currentUser?.email) {
+          caregiverApplicationSummary = { total: 0 };
+          renderAppliedJobs([]);
+          return;
+        }
+
+        setAppliedJobsLoading(true);
+        showAppliedJobsMessage("");
+        if (appliedJobsList) {
+          appliedJobsList.innerHTML = "";
+        }
+
+        try {
+          const { data: applications, error: applicationError } = await window.db
+            .from("job_applications")
+            .select("id, job_id, applicant_email, created_at")
+            .eq("applicant_email", currentUser.email);
+
+          if (applicationError) {
+            throw applicationError;
+          }
+
+          const applicationRows = applications || [];
+          if (!applicationRows.length) {
+            caregiverApplicationSummary = { total: 0 };
+            renderAppliedJobs([]);
+            renderDashboardTodoList();
+            return;
+          }
+
+          const jobIds = Array.from(new Set(applicationRows.map((row) => row.job_id).filter(Boolean)));
+          const { data: jobs, error: jobsError } = await window.db
+            .from("job_posts")
+            .select("id, title, care_type, location, schedule, user_id")
+            .in("id", jobIds);
+
+          if (jobsError) {
+            throw jobsError;
+          }
+
+          const jobMap = {};
+          (jobs || []).forEach((job) => {
+            jobMap[job.id] = job;
+          });
+
+          const familyUserIds = Array.from(new Set((jobs || []).map((job) => job.user_id).filter(Boolean)));
+          const familyProfilesByUserId = {};
+
+          if (familyUserIds.length) {
+            const { data: familyProfiles, error: familyProfilesError } = await window.db
+              .from("family_profiles")
+              .select("id, user_id")
+              .in("user_id", familyUserIds);
+
+            if (familyProfilesError) {
+              throw familyProfilesError;
+            }
+
+            (familyProfiles || []).forEach((profile) => {
+              if (profile.user_id && !familyProfilesByUserId[profile.user_id]) {
+                familyProfilesByUserId[profile.user_id] = profile.id;
+              }
+            });
+          }
+
+          let conversationMetaByJobId = {};
+          let conversationMetaByFamilyId = {};
+          if (caregiverProfileId) {
+            const { data: participantRows, error: participantsError } = await window.db
+              .from("conversation_participants")
+              .select("conversation_id, has_unread_visible_messages")
+              .eq("user_id", currentUserId)
+              .eq("is_archived", false);
+
+            if (participantsError) {
+              throw participantsError;
+            }
+
+            const participantMetaByConversationId = {};
+            (participantRows || []).forEach((row) => {
+              if (!row?.conversation_id) return;
+              participantMetaByConversationId[row.conversation_id] = {
+                hasUnreadVisibleMessages: row.has_unread_visible_messages === true
+              };
+            });
+
+            const conversationIds = Object.keys(participantMetaByConversationId);
+            const { data: conversations, error: conversationsError } = conversationIds.length
+              ? await window.db
+                  .from("conversations")
+                  .select("id, family_profile_id, caregiver_profile_id, job_post_id, status")
+                  .in("id", conversationIds)
+                  .eq("caregiver_profile_id", caregiverProfileId)
+                  .eq("status", "active")
+              : { data: [], error: null };
+
+            if (conversationsError) {
+              throw conversationsError;
+            }
+
+            (conversations || []).forEach((conversation) => {
+              const meta = {
+                conversationId: conversation.id,
+                hasUnreadMessages: participantMetaByConversationId[conversation.id]?.hasUnreadVisibleMessages === true
+              };
+
+              if (conversation.job_post_id && !conversationMetaByJobId[conversation.job_post_id]) {
+                conversationMetaByJobId[conversation.job_post_id] = meta;
+              }
+
+              if (conversation.family_profile_id && !conversationMetaByFamilyId[conversation.family_profile_id]) {
+                conversationMetaByFamilyId[conversation.family_profile_id] = meta;
+              }
+            });
+          }
+
+          const normalized = applicationRows
+            .map((application) => {
+              const job = jobMap[application.job_id];
+              if (!job) return null;
+
+              const familyProfileId = job.user_id
+                ? familyProfilesByUserId[job.user_id] || null
+                : null;
+
+              const conversationMeta = conversationMetaByJobId[job.id]
+                || (familyProfileId ? conversationMetaByFamilyId[familyProfileId] || null : null);
+              const conversationId = conversationMeta?.conversationId || null;
+
+              return {
+                id: application.id,
+                jobId: job.id,
+                title: job.title || "Applied job",
+                careType: job.care_type || "",
+                location: job.location || "",
+                familyProfileId,
+                targetUserId: job.user_id || null,
+                conversationId,
+                hasConversation: !!conversationId,
+                hasUnreadMessages: conversationMeta?.hasUnreadMessages === true,
+                appliedOn: formatDate(application.created_at),
+              };
+            })
+            .filter(Boolean);
+
+          caregiverApplicationSummary = {
+            total: normalized.length
+          };
+          renderAppliedJobs(normalized);
+          renderDashboardTodoList();
+        } catch (error) {
+          console.error("Failed loading caregiver applications:", error);
+          caregiverApplicationSummary = { total: 0 };
+          showAppliedJobsMessage(error.message || "Unable to load your applications right now.", true);
+          renderAppliedJobs([]);
+          renderDashboardTodoList();
+        } finally {
+          setAppliedJobsLoading(false);
+        }
       }
 
       async function loadFamilyProfile(userId) {
@@ -1074,18 +1687,26 @@
         }
 
         const result = formatProfileStatus(data);
+        familyProfileState = result;
         hasFamilyProfile = result.exists;
         familyStatus.textContent = result.value;
         familyDetail.textContent = result.detail;
         updateProfileActionUI("family", result.exists);
         updateWelcomeState();
+        renderDashboardTodoList();
       }
 
       async function loadMessageSummary(userId) {
+        setCaregiverMessagesLoading(true);
+        showCaregiverMessagesMessage("");
+        if (caregiverMessagesList) {
+          caregiverMessagesList.innerHTML = "";
+        }
+
         try {
           const { data: participants, error } = await window.db
             .from("conversation_participants")
-            .select("conversation_id, has_unread_visible_messages")
+            .select("id, conversation_id, user_id, profile_id, has_unread_visible_messages, last_read_at, is_archived")
             .eq("user_id", userId)
             .eq("is_archived", false);
 
@@ -1094,29 +1715,261 @@
           }
 
           const rows = participants || [];
-          const conversationTotal = rows.length;
-          const unreadTotal = rows.filter((row) => row.has_unread_visible_messages === true).length;
+          conversationTotal = rows.length;
+          unreadConversationTotal = rows.filter((row) => row.has_unread_visible_messages === true).length;
+          caregiverMessageThreads = [];
 
-          messageCount.textContent = unreadTotal;
+          if (messageCount) {
+            messageCount.textContent = unreadConversationTotal;
+          }
+
+          if (caregiverMessageCount) {
+            caregiverMessageCount.textContent = unreadConversationTotal;
+          }
 
           if (!conversationTotal) {
-            messageDetail.textContent = "No conversations yet.";
+            if (messageDetail) {
+              messageDetail.textContent = "No conversations yet.";
+            }
+
+            if (caregiverMessageDetail) {
+              caregiverMessageDetail.textContent = "No conversations yet.";
+            }
+            renderCaregiverMessages([]);
+            renderDashboardTodoList();
             return;
           }
 
-          if (unreadTotal === 0) {
-            messageDetail.textContent = "You have " + conversationTotal + " conversation" + (conversationTotal === 1 ? "" : "s") + " and no unread messages.";
+          const conversationIds = Array.from(new Set(rows.map((row) => row.conversation_id).filter(Boolean)));
+          if (conversationIds.length) {
+            const { data: conversationRows, error: conversationError } = await window.db
+              .from("conversations")
+              .select("id, family_profile_id, caregiver_profile_id, job_post_id, last_visible_message_at, last_visible_message_preview, status")
+              .in("id", conversationIds)
+              .eq("status", "active");
+
+            if (conversationError) {
+              throw conversationError;
+            }
+
+            const relevantConversations = (conversationRows || []).filter((conversation) => {
+              if (caregiverProfileId && conversation.caregiver_profile_id === caregiverProfileId) {
+                return true;
+              }
+              return rows.some((row) => row.conversation_id === conversation.id);
+            });
+
+            const relevantConversationIds = relevantConversations.map((conversation) => conversation.id);
+            let jobsById = {};
+            let allParticipantRows = [];
+            let messagesByConversationId = {};
+            let userInfoByUserId = {};
+
+            if (relevantConversationIds.length) {
+              const jobIds = Array.from(new Set(relevantConversations.map((conversation) => conversation.job_post_id).filter(Boolean)));
+              if (jobIds.length) {
+                const { data: jobs, error: jobsError } = await window.db
+                  .from("job_posts")
+                  .select("id, title")
+                  .in("id", jobIds);
+
+                if (jobsError) {
+                  throw jobsError;
+                }
+
+                (jobs || []).forEach((job) => {
+                  jobsById[job.id] = job;
+                });
+              }
+
+              const { data: participantRows, error: participantError } = await window.db
+                .from("conversation_participants")
+                .select("conversation_id, user_id, profile_id")
+                .in("conversation_id", relevantConversationIds);
+
+              if (participantError) {
+                throw participantError;
+              }
+
+              allParticipantRows = participantRows || [];
+
+              const { data: messageRows, error: messageError } = await window.db
+                .from("messages")
+                .select("conversation_id, sender_user_id, message_text, created_at, sent_at, received_at, visible_to_sender, visible_to_recipient")
+                .in("conversation_id", relevantConversationIds)
+                .order("created_at", { ascending: true });
+
+              if (messageError) {
+                throw messageError;
+              }
+
+              (messageRows || []).forEach((message) => {
+                if (!messagesByConversationId[message.conversation_id]) {
+                  messagesByConversationId[message.conversation_id] = [];
+                }
+                messagesByConversationId[message.conversation_id].push(message);
+              });
+
+              const otherUserIds = Array.from(new Set(
+                allParticipantRows
+                  .filter((participant) => participant.user_id && participant.user_id !== userId)
+                  .map((participant) => participant.user_id)
+              ));
+
+              if (otherUserIds.length) {
+                const { data: familyProfiles, error: familyProfilesError } = await window.db
+                  .from("family_profiles")
+                  .select("user_id, current_visible_version_id")
+                  .in("user_id", otherUserIds)
+                  .not("current_visible_version_id", "is", null);
+
+                if (familyProfilesError) {
+                  throw familyProfilesError;
+                }
+
+                const familyVersionIds = Array.from(new Set((familyProfiles || []).map((profile) => profile.current_visible_version_id).filter(Boolean)));
+                if (familyVersionIds.length) {
+                  const { data: familyVersions, error: familyVersionsError } = await window.db
+                    .from("family_profile_versions")
+                    .select("id, name_display")
+                    .in("id", familyVersionIds);
+
+                  if (familyVersionsError) {
+                    throw familyVersionsError;
+                  }
+
+                  const familyVersionMap = {};
+                  (familyVersions || []).forEach((version) => {
+                    familyVersionMap[version.id] = version;
+                  });
+
+                  (familyProfiles || []).forEach((profile) => {
+                    const version = familyVersionMap[profile.current_visible_version_id];
+                    if (!version) return;
+                    userInfoByUserId[profile.user_id] = version.name_display || "Family";
+                  });
+                }
+
+                const unresolvedUserIds = otherUserIds.filter((id) => !userInfoByUserId[id]);
+                if (unresolvedUserIds.length) {
+                  const { data: caregiverProfiles, error: caregiverProfilesError } = await window.db
+                    .from("caregiver_profiles")
+                    .select("user_id, current_visible_version_id")
+                    .in("user_id", unresolvedUserIds)
+                    .not("current_visible_version_id", "is", null);
+
+                  if (caregiverProfilesError) {
+                    throw caregiverProfilesError;
+                  }
+
+                  const caregiverVersionIds = Array.from(new Set((caregiverProfiles || []).map((profile) => profile.current_visible_version_id).filter(Boolean)));
+                  if (caregiverVersionIds.length) {
+                    const { data: caregiverVersions, error: caregiverVersionsError } = await window.db
+                      .from("caregiver_profile_versions")
+                      .select("id, name_display")
+                      .in("id", caregiverVersionIds);
+
+                    if (caregiverVersionsError) {
+                      throw caregiverVersionsError;
+                    }
+
+                    const caregiverVersionMap = {};
+                    (caregiverVersions || []).forEach((version) => {
+                      caregiverVersionMap[version.id] = version;
+                    });
+
+                    (caregiverProfiles || []).forEach((profile) => {
+                      const version = caregiverVersionMap[profile.current_visible_version_id];
+                      if (!version) return;
+                      userInfoByUserId[profile.user_id] = version.name_display || "Caregiver";
+                    });
+                  }
+                }
+              }
+
+              caregiverMessageThreads = relevantConversations
+                .map((conversation) => {
+                  const threadMessages = messagesByConversationId[conversation.id] || [];
+                  const lastMessage = threadMessages.length ? threadMessages[threadMessages.length - 1] : null;
+                  const otherParticipant = allParticipantRows.find((participant) =>
+                    participant.conversation_id === conversation.id && participant.user_id !== userId
+                  );
+                  const participantRow = rows.find((row) => row.conversation_id === conversation.id);
+                  const timestamp = lastMessage?.received_at || lastMessage?.sent_at || lastMessage?.created_at || conversation.last_visible_message_at || null;
+
+                  return {
+                    conversationId: conversation.id,
+                    title: userInfoByUserId[otherParticipant?.user_id] || "Conversation",
+                    preview: lastMessage?.message_text || conversation.last_visible_message_preview || "",
+                    lastTime: timestamp ? new Date(timestamp).getTime() : 0,
+                    lastTimeLabel: timestamp ? formatDate(timestamp) : "",
+                    hasUnread: participantRow?.has_unread_visible_messages === true,
+                    jobTitle: conversation.job_post_id ? (jobsById[conversation.job_post_id]?.title || "") : ""
+                  };
+                })
+                .sort((a, b) => {
+                  if (a.hasUnread !== b.hasUnread) {
+                    return a.hasUnread ? -1 : 1;
+                  }
+                  return b.lastTime - a.lastTime;
+                })
+                .slice(0, 5);
+            }
+          }
+
+          if (unreadConversationTotal === 0) {
+            const noUnreadText = "You have " + conversationTotal + " conversation" + (conversationTotal === 1 ? "" : "s") + " and no unread messages.";
+            if (messageDetail) {
+              messageDetail.textContent = noUnreadText;
+            }
+
+            if (caregiverMessageDetail) {
+              caregiverMessageDetail.textContent = noUnreadText;
+            }
+            renderCaregiverMessages(caregiverMessageThreads);
+            renderDashboardTodoList();
             return;
           }
 
-          messageDetail.textContent =
-            unreadTotal === 1
+          const unreadText =
+            unreadConversationTotal === 1
               ? "You have 1 conversation with unread messages."
-              : "You have " + unreadTotal + " conversations with unread messages.";
+              : "You have " + unreadConversationTotal + " conversations with unread messages.";
+
+          if (messageDetail) {
+            messageDetail.textContent = unreadText;
+          }
+
+          if (caregiverMessageDetail) {
+            caregiverMessageDetail.textContent = unreadText;
+          }
+          renderCaregiverMessages(caregiverMessageThreads);
+          renderDashboardTodoList();
         } catch (error) {
           console.error(error);
-          messageCount.textContent = "—";
-          messageDetail.textContent = "Message summary not available yet.";
+          if (messageCount) {
+            messageCount.textContent = "—";
+          }
+
+          if (caregiverMessageCount) {
+            caregiverMessageCount.textContent = "—";
+          }
+
+          if (messageDetail) {
+            messageDetail.textContent = "Message summary not available yet.";
+          }
+
+          if (caregiverMessageDetail) {
+            caregiverMessageDetail.textContent = "Message summary not available yet.";
+          }
+          caregiverMessageThreads = [];
+          showCaregiverMessagesMessage(error.message || "Unable to load your messages right now.", true);
+          renderCaregiverMessages([]);
+          unreadConversationTotal = 0;
+          conversationTotal = 0;
+          renderDashboardTodoList();
+        } finally {
+          setCaregiverMessagesLoading(false);
         }
       }
 
@@ -1169,10 +2022,26 @@
           }
 
           const normalized = rows.map((job) => normalizeJob(job, versionsById));
+          jobSummary = {
+            total: normalized.length,
+            live: normalized.filter((job) => job.group === "live").length,
+            pending: normalized.filter((job) => job.group === "pending").length,
+            attention: normalized.filter((job) => job.group === "attention").length,
+            inactive: normalized.filter((job) => job.group === "inactive").length
+          };
           renderJobGroups(normalized);
+          renderDashboardTodoList();
         } catch (error) {
           console.error("Failed loading jobs:", error);
           showMyJobsMessage(error.message || "Unable to load your job posts.", true, false);
+          jobSummary = {
+            total: 0,
+            live: 0,
+            pending: 0,
+            attention: 0,
+            inactive: 0
+          };
+          renderDashboardTodoList();
         } finally {
           setMyJobsLoading(false);
         }
@@ -1374,11 +2243,19 @@
       }
 
       function renderEmptyJobs() {
+        jobSummary = {
+          total: 0,
+          live: 0,
+          pending: 0,
+          attention: 0,
+          inactive: 0
+        };
         myJobsGroups.innerHTML =
           '<div class="my-jobs-empty">' +
             '<p>You have not posted any care requests yet.</p>' +
             '<a class="button button-family" href="./findcare.html">Post Your First Job</a>' +
           '</div>';
+        renderDashboardTodoList();
       }
 
       function setMyJobsLoading(isLoading) {
@@ -1507,10 +2384,6 @@
         currentUser = session.user;
         currentUserId = currentUser.id;
         fillAccountContactFields(currentUser);
-        accountPhoneInput?.addEventListener("input", (event) => {
-          event.target.value = window.GroveProfiles.formatPhoneNumber(event.target.value);
-        });
-        accountContactForm?.addEventListener("submit", saveAccountContact);
 
         await Promise.all([
           loadCaregiverProfile(currentUser.id),
@@ -1519,6 +2392,8 @@
           loadMyJobs(currentUser.id)
         ]);
 
+        await loadCaregiverApplications();
+
         availableRoles = await window.getAvailableActingRoles(currentUser.id);
         actingRole = window.resolveActingRole(availableRoles);
         if (actingRole) {
@@ -1526,6 +2401,7 @@
         }
         renderActingRoleUI();
         applyActingRoleVisibility();
+        renderDashboardTodoList();
         window.updateHeaderAuth?.();
       }
 

@@ -118,6 +118,12 @@
       gap: 10px;
     }
 
+    .save-bar-actions .button {
+      width: auto;
+      margin: 0;
+      white-space: nowrap;
+    }
+
     .preview-chip,
     .preview-signal {
       display: inline-flex;
@@ -202,7 +208,6 @@
     .edit-section-header p,
     .section-hint,
     .inline-helper,
-    .photo-grid-note,
     .save-bar-copy {
       color: #52606d;
       line-height: 1.55;
@@ -239,41 +244,75 @@
 
     .photo-library-list {
       display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(112px, 1fr));
       gap: 12px;
       margin-top: 14px;
     }
 
     .photo-library-item {
-      display: grid;
-      grid-template-columns: 72px 1fr auto;
-      gap: 14px;
-      align-items: center;
-      padding: 12px;
+      position: relative;
+      overflow: hidden;
+      aspect-ratio: 1;
       border: 1px solid #dce9e5;
       border-radius: 16px;
       background: #fff;
     }
 
     .photo-library-thumb {
-      width: 72px;
-      height: 72px;
-      border-radius: 14px;
+      width: 100%;
+      height: 100%;
       object-fit: cover;
       display: block;
-      border: 1px solid var(--card-border);
       background: #eef6f4;
     }
 
-    .photo-library-copy {
-      color: #38506b;
-      font-size: 14px;
-      line-height: 1.5;
+    .photo-remove-button {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      width: 32px;
+      height: 32px;
+      min-width: 0;
+      padding: 0;
+      border-radius: 999px;
+      background: rgba(16, 42, 67, 0.84);
+      color: #fff;
+      border: 1px solid rgba(255, 255, 255, 0.8);
+      font-size: 18px;
+      line-height: 1;
+      box-shadow: 0 6px 16px rgba(15, 23, 42, 0.24);
     }
 
-    .photo-library-copy strong {
-      display: block;
+    .photo-primary-button,
+    .photo-primary-badge {
+      position: absolute;
+      left: 8px;
+      bottom: 8px;
+      border-radius: 999px;
+      padding: 6px 10px;
+      font-size: 12px;
+      font-weight: 700;
+      line-height: 1;
+    }
+
+    .photo-primary-button {
+      background: rgba(255, 255, 255, 0.92);
       color: #102a43;
-      margin-bottom: 4px;
+      border: 1px solid rgba(16, 42, 67, 0.16);
+    }
+
+    .photo-primary-badge {
+      background: rgba(31, 122, 77, 0.92);
+      color: #fff;
+      border: 1px solid rgba(255, 255, 255, 0.7);
+    }
+
+    .photo-error {
+      display: none;
+      margin-top: 10px;
+      color: #8a1f11;
+      font-weight: 700;
+      line-height: 1.45;
     }
 
     .save-bar {
@@ -504,17 +543,10 @@
                   <input id="cg_photos" type="file" accept="image/*" multiple />
                   <div class="photo-upload-meta">
                     <span id="photoCountLabel">No photos selected yet</span>
-                    <span>Add more photos without losing the ones you keep. Remove any current photo before saving if you do not want it on your profile.</span>
                   </div>
+                  <div class="photo-error" id="photoError" role="alert"></div>
                   <div class="photo-file-list" id="photoFileList"></div>
                   <div class="photo-library-list" id="photoLibraryList" style="display:none;"></div>
-                </div>
-                <div class="row mt-16" id="photoPreviewWrap" style="display:none;">
-                  <p class="photo-grid-note">Preview how families will see your photos.</p>
-                  <div class="family-photo-gallery">
-                    <img id="caregiver-main-photo" class="family-main-photo" src="" alt="Caregiver photo" />
-                    <div id="photoPreviewList" class="family-thumbnails"></div>
-                  </div>
                 </div>
               </div>
 
@@ -535,7 +567,7 @@
               <div class="save-bar">
                 <div class="save-bar-copy" id="saveBarText">Your changes are saved profile-by-profile, so take a moment to make this feel like you.</div>
                 <div class="save-bar-actions">
-                  <a class="button button-secondary" href="./caregiver.html">View Profile</a>
+                  <a class="button button-secondary" id="previewProfileBtn" href="./caregiver.html">Preview Profile</a>
                   <button class="button button-caregiver" type="submit" id="saveProfileBtn">Save Profile</button>
                 </div>
               </div>
@@ -585,25 +617,63 @@
         return retainedPhotoUrls.slice();
       }
 
-      function getPhotoUrlsForPreview() {
-        const selectedFiles = Array.from(document.getElementById("cg_photos")?.files || []);
-        const existingPhotos = getExistingPhotoUrls();
-        const remainingSlots = Math.max(0, 5 - existingPhotos.length);
-        const newPreviewUrls = selectedFiles
-          .slice(0, remainingSlots)
-          .map((file) => URL.createObjectURL(file));
+      function getSelectedPhotoFiles() {
+        return Array.from(document.getElementById("cg_photos")?.files || []);
+      }
 
+      function clearSelectedPhotoPreviews() {
         previewPhotoUrls.forEach((url) => URL.revokeObjectURL(url));
-        previewPhotoUrls = newPreviewUrls;
+        previewPhotoUrls = [];
+      }
 
-        return existingPhotos.concat(newPreviewUrls);
+      function getPhotoUrlsForPreview() {
+        return getExistingPhotoUrls().concat(previewPhotoUrls).slice(0, 5);
+      }
+
+      function setPhotoError(message = "") {
+        const errorEl = document.getElementById("photoError");
+        if (!errorEl) return;
+
+        errorEl.textContent = message;
+        errorEl.style.display = message ? "block" : "none";
+      }
+
+      function validateSelectedPhotos() {
+        const input = document.getElementById("cg_photos");
+        const selectedFiles = getSelectedPhotoFiles();
+        const existingCount = getExistingPhotoUrls().length;
+
+        clearSelectedPhotoPreviews();
+
+        if (existingCount + selectedFiles.length > 5) {
+          setPhotoError(`You can have up to 5 profile photos. You already have ${existingCount}, so you can add ${Math.max(0, 5 - existingCount)} more.`);
+          if (input) input.value = "";
+          return false;
+        }
+
+        setPhotoError("");
+        previewPhotoUrls = selectedFiles.map((file) => URL.createObjectURL(file));
+        return true;
       }
 
       function removeExistingPhoto(index) {
         if (index < 0 || index >= retainedPhotoUrls.length) return;
         retainedPhotoUrls = retainedPhotoUrls.filter((_, photoIndex) => photoIndex !== index);
+        setPhotoError("");
         updatePhotoSelectionMeta();
-        renderPhotoPreview(getPhotoUrlsForPreview());
+        markDirty();
+        updatePreviewSummary();
+      }
+
+      function makeExistingPhotoPrimary(index) {
+        if (index <= 0 || index >= retainedPhotoUrls.length) return;
+
+        const selected = retainedPhotoUrls[index];
+        retainedPhotoUrls = [selected].concat(
+          retainedPhotoUrls.filter((_, photoIndex) => photoIndex !== index)
+        );
+
+        updatePhotoSelectionMeta();
         markDirty();
         updatePreviewSummary();
       }
@@ -622,13 +692,18 @@
         list.innerHTML = existingPhotos.map((url, index) => `
           <div class="photo-library-item">
             <img class="photo-library-thumb" src="${url}" alt="Current profile photo ${index + 1}" />
-            <div class="photo-library-copy">
-              <strong>${index === 0 ? "Primary photo" : `Photo ${index + 1}`}</strong>
-              ${index === 0 ? "This photo appears first in your profile preview." : "Keep it, or remove it before saving."}
-            </div>
-            <button type="button" class="button button-secondary photo-remove-button" data-photo-index="${index}">Remove</button>
+            ${index === 0
+              ? '<span class="photo-primary-badge">Primary</span>'
+              : `<button type="button" class="photo-primary-button" data-primary-index="${index}">Make Primary</button>`}
+            <button type="button" class="photo-remove-button" data-photo-index="${index}" aria-label="Remove photo ${index + 1}">X</button>
           </div>
         `).join("");
+
+        list.querySelectorAll(".photo-primary-button").forEach((button) => {
+          button.addEventListener("click", () => {
+            makeExistingPhotoPrimary(Number(button.dataset.primaryIndex));
+          });
+        });
 
         list.querySelectorAll(".photo-remove-button").forEach((button) => {
           button.addEventListener("click", () => {
@@ -640,26 +715,21 @@
       }
 
       function updatePhotoSelectionMeta() {
-        const selectedFiles = Array.from(document.getElementById("cg_photos")?.files || []);
+        const selectedFiles = getSelectedPhotoFiles();
         const existingPhotos = getExistingPhotoUrls();
         const countLabel = document.getElementById("photoCountLabel");
         const fileList = document.getElementById("photoFileList");
 
-        const remainingSlots = Math.max(0, 5 - existingPhotos.length);
-        const usedFiles = selectedFiles.slice(0, remainingSlots);
-
         if (selectedFiles.length) {
-          countLabel.textContent = `${existingPhotos.length} kept, ${usedFiles.length} new photo${usedFiles.length === 1 ? "" : "s"} ready`;
-          fileList.textContent = usedFiles.length
-            ? `${usedFiles.map((file) => file.name).join(", ")}${selectedFiles.length > usedFiles.length ? ` (${selectedFiles.length - usedFiles.length} skipped because profiles can only have 5 photos)` : ""}`
-            : "Your profile already has 5 photos. Remove one to add a new one.";
+          countLabel.textContent = `${existingPhotos.length} current, ${selectedFiles.length} new photo${selectedFiles.length === 1 ? "" : "s"} selected`;
+          fileList.textContent = selectedFiles.map((file) => file.name).join(", ");
           renderExistingPhotoManager();
           return;
         }
 
         if (existingPhotos.length) {
           countLabel.textContent = `${existingPhotos.length} current photo${existingPhotos.length === 1 ? "" : "s"} on your profile`;
-          fileList.textContent = "Use Remove to delete a current photo, or add more photos without replacing these.";
+          fileList.textContent = "";
           renderExistingPhotoManager();
           return;
         }
@@ -698,41 +768,6 @@
           !!profile.comfortable_with_cats || !!profile.comfortable_with_dogs
         ];
         return Math.round((checks.filter(Boolean).length / checks.length) * 100);
-      }
-
-      function renderPhotoPreview(urls) {
-        const wrap = document.getElementById("photoPreviewWrap");
-        const list = document.getElementById("photoPreviewList");
-        const mainImage = document.getElementById("caregiver-main-photo");
-        if (!wrap || !list || !mainImage) return;
-
-        const photos = Array.isArray(urls) ? urls.filter(Boolean) : [];
-        if (!photos.length) {
-          wrap.style.display = "none";
-          list.innerHTML = "";
-          mainImage.removeAttribute("src");
-          return;
-        }
-
-        let activeIndex = 0;
-        function drawGallery() {
-          mainImage.src = photos[activeIndex];
-          mainImage.alt = `Caregiver photo ${activeIndex + 1}`;
-          list.innerHTML = photos.map((url, index) => {
-            const activeClass = index === activeIndex ? " active" : "";
-            return `<button type="button" class="gallery-thumb${activeClass}" data-index="${index}" aria-label="View photo ${index + 1}"><img src="${url}" alt="Caregiver photo ${index + 1}" /></button>`;
-          }).join("");
-
-          list.querySelectorAll(".gallery-thumb").forEach((button) => {
-            button.addEventListener("click", () => {
-              activeIndex = Number(button.dataset.index);
-              drawGallery();
-            });
-          });
-        }
-
-        wrap.style.display = "block";
-        drawGallery();
       }
 
       function updatePreviewSummary() {
@@ -830,12 +865,11 @@
 
         window.GroveProfiles.setCheckedValues('input[name="cg_care_types"]', profile.care_types || []);
         retainedPhotoUrls = window.GroveProfiles.getExistingPhotoUrls(profile);
-        previewPhotoUrls.forEach((url) => URL.revokeObjectURL(url));
-        previewPhotoUrls = [];
+        clearSelectedPhotoPreviews();
+        setPhotoError("");
         document.getElementById("cg_photos").value = "";
 
         updatePhotoSelectionMeta();
-        renderPhotoPreview(getExistingPhotoUrls());
         updatePreviewSummary();
         clearDirty();
       }
@@ -852,20 +886,29 @@
         updatePreviewSummary();
       }
 
-      async function saveProfile(e) {
-        e.preventDefault();
+      async function persistProfile({
+        triggerButton = document.getElementById("saveProfileBtn"),
+        savingText = "Saving...",
+        successMessage = "Profile saved. Families will see your strongest updated details.",
+        redirectTo = null
+      } = {}) {
         if (!currentUser) {
           window.location.href = "./login.html";
-          return;
+          return false;
         }
 
-        const saveButton = document.getElementById("saveProfileBtn");
+        const saveButton = triggerButton;
         const originalButtonText = saveButton?.textContent || "Save Profile";
 
         try {
+          if (getExistingPhotoUrls().length + getSelectedPhotoFiles().length > 5) {
+            setPhotoError("You can have up to 5 profile photos. Remove a photo before adding more.");
+            return false;
+          }
+
           if (saveButton) {
             saveButton.disabled = true;
-            saveButton.textContent = "Saving...";
+            saveButton.textContent = savingText;
           }
 
           const photoUrls = await window.GroveProfiles.resolvePhotoUrls({
@@ -896,19 +939,44 @@
           });
 
           document.getElementById("cg_photos").value = "";
-          previewPhotoUrls.forEach((url) => URL.revokeObjectURL(url));
-          previewPhotoUrls = [];
+          clearSelectedPhotoPreviews();
           await refreshBundle();
-          showSaveToast("Profile saved. Families will see your strongest updated details.");
+          if (redirectTo) {
+            window.location.href = redirectTo;
+            return true;
+          }
+          showSaveToast(successMessage);
+          return true;
         } catch (error) {
           console.error(error);
           handleError(error, "Profile save failed");
+          return false;
         } finally {
           if (saveButton) {
             saveButton.disabled = false;
             saveButton.textContent = originalButtonText;
           }
         }
+      }
+
+      async function saveProfile(e) {
+        e.preventDefault();
+        await persistProfile();
+      }
+
+      async function previewProfile(e) {
+        e.preventDefault();
+        const previewUrl = e.currentTarget?.getAttribute("href") || "./caregiver.html";
+        if (!isDirty) {
+          window.location.href = previewUrl;
+          return;
+        }
+
+        await persistProfile({
+          triggerButton: e.currentTarget,
+          savingText: "Saving...",
+          redirectTo: previewUrl
+        });
       }
 
       async function requireSession() {
@@ -936,8 +1004,8 @@
         });
 
         photoInput?.addEventListener("change", () => {
+          validateSelectedPhotos();
           updatePhotoSelectionMeta();
-          renderPhotoPreview(getPhotoUrlsForPreview());
           markDirty();
           updatePreviewSummary();
         });
@@ -959,6 +1027,7 @@
 
       window.addEventListener("DOMContentLoaded", () => {
         document.getElementById("caregiverProfileForm")?.addEventListener("submit", saveProfile);
+        document.getElementById("previewProfileBtn")?.addEventListener("click", previewProfile);
         checkSessionAndSetup();
       });
     })();

@@ -1,10 +1,12 @@
 function buildSupabaseStubScript({
   sessionUser = null,
   familyProfile = null,
+  familyProfiles = [],
   caregiverProfile = null,
   familyProfileVersions = [],
   caregiverProfileVersions = [],
   jobPosts = [],
+  jobApplications = [],
   jobPostVersions = [],
   familyReviews = [],
   caregiverReviews = [],
@@ -32,10 +34,12 @@ function buildSupabaseStubScript({
     (function () {
       const fixtures = {
         familyProfile: ${JSON.stringify(normalizedFamilyProfile)},
+        familyProfiles: ${JSON.stringify(familyProfiles)},
         caregiverProfile: ${JSON.stringify(normalizedCaregiverProfile)},
         familyProfileVersions: ${JSON.stringify(familyProfileVersions)},
         caregiverProfileVersions: ${JSON.stringify(caregiverProfileVersions)},
         jobPosts: ${JSON.stringify(jobPosts)},
+        jobApplications: ${JSON.stringify(jobApplications)},
         jobPostVersions: ${JSON.stringify(jobPostVersions)},
         familyReviews: ${JSON.stringify(familyReviews)},
         caregiverReviews: ${JSON.stringify(caregiverReviews)},
@@ -69,7 +73,10 @@ function buildSupabaseStubScript({
       function getRowsForTable(table) {
         switch (table) {
           case "family_profiles":
-            return fixtures.familyProfile ? [fixtures.familyProfile] : [];
+            return [
+              ...(fixtures.familyProfile ? [fixtures.familyProfile] : []),
+              ...((fixtures.familyProfiles || []).filter(Boolean))
+            ];
           case "caregiver_profiles":
             return fixtures.caregiverProfile ? [fixtures.caregiverProfile] : [];
           case "family_profile_versions":
@@ -78,6 +85,8 @@ function buildSupabaseStubScript({
             return fixtures.caregiverProfileVersions || [];
           case "job_posts":
             return fixtures.jobPosts || [];
+          case "job_applications":
+            return fixtures.jobApplications || [];
           case "job_post_versions":
             return fixtures.jobPostVersions || [];
           case "family_reviews":

@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Grove | Account Settings</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="./styles.css" />
+  <link rel="icon" type="image/png" href="./MainIcon.png" />
+  <style>
+    body {
+      margin: 0;
+      font-family: Calibri, Candara, "Segoe UI", Arial, sans-serif;
+      background: #f5f7fa;
+      color: #1f2937;
+    }
+
+    .page {
+      max-width: 900px;
+      margin: 40px auto;
+      padding: 0 20px 40px;
+    }
+
+    .page-heading {
+      margin-bottom: 24px;
+    }
+
+    .page-heading h1 {
+      margin: 0 0 6px;
+      font-size: 32px;
+    }
+
+    .page-heading p {
+      margin: 0;
+      color: #6b7280;
+      line-height: 1.5;
+    }
+
+    .settings-card,
+    .account-overview {
+      background: white;
+      border-radius: 16px;
+      padding: 24px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
+      margin-bottom: 24px;
+    }
+
+    .account-overview {
+      background: linear-gradient(135deg, #f7fbfa 0%, #ffffff 58%, #eef7f4 100%);
+      border: 1px solid #dbe7e3;
+    }
+
+    .account-overview h2,
+    .settings-card h2 {
+      margin: 0 0 10px;
+      font-size: 24px;
+    }
+
+    .account-overview p,
+    .settings-card p {
+      margin: 0 0 16px;
+      color: #4b5563;
+      line-height: 1.6;
+    }
+
+    .settings-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 14px;
+    }
+
+    .contact-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 14px;
+      margin-bottom: 14px;
+    }
+
+    .contact-field label {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 14px;
+      color: #374151;
+      font-weight: bold;
+    }
+
+    .contact-field input {
+      width: 100%;
+      box-sizing: border-box;
+      border: 1px solid #d1d5db;
+      border-radius: 10px;
+      padding: 12px 14px;
+      font-family: Calibri, Candara, "Segoe UI", Arial, sans-serif;
+      font-size: 14px;
+      color: #111827;
+      background: #fff;
+    }
+
+    .contact-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .contact-message {
+      display: none;
+      margin-top: 12px;
+      padding: 12px 14px;
+      border-radius: 10px;
+      font-size: 14px;
+    }
+
+    .contact-message.success {
+      display: block;
+      background: #ecfdf5;
+      border: 1px solid #bbf7d0;
+      color: #166534;
+    }
+
+    .contact-message.error {
+      display: block;
+      background: #fef2f2;
+      border: 1px solid #fecaca;
+      color: #991b1b;
+    }
+
+    .loading {
+      color: #6b7280;
+    }
+
+    .error-box {
+      background: #fef2f2;
+      color: #991b1b;
+      border: 1px solid #fecaca;
+      padding: 12px 14px;
+      border-radius: 10px;
+      margin-bottom: 18px;
+      display: none;
+    }
+
+    @media (max-width: 640px) {
+      .page {
+        margin-top: 24px;
+      }
+
+      .settings-card,
+      .account-overview {
+        padding: 18px;
+      }
+
+      .settings-actions,
+      .contact-actions {
+        flex-direction: column;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="header-placeholder"></div>
+
+  <main class="page">
+    <div id="errorBox" class="error-box"></div>
+
+    <section class="page-heading">
+      <h1>Account Settings</h1>
+      <p>
+        Signed in as <strong id="accountEmail" class="loading">Loading...</strong>
+      </p>
+    </section>
+
+    <section class="account-overview">
+      <h2>Account details live here</h2>
+      <p>
+        Your name, email address, and phone number belong to your Grove account, not to an individual family or caregiver profile.
+      </p>
+      <div class="settings-actions">
+        <a class="button button-secondary" href="./account.html">Back to Dashboard</a>
+      </div>
+    </section>
+
+    <section class="settings-card">
+      <h2>Contact Info</h2>
+      <p>
+        Keep this information current so Grove emails, sign-in links, and account-level communication reach the right place.
+      </p>
+
+      <form id="accountContactForm">
+        <div class="contact-grid">
+          <div class="contact-field">
+            <label for="accountFirstNameInput">First Name</label>
+            <input id="accountFirstNameInput" type="text" placeholder="First Name" required />
+          </div>
+
+          <div class="contact-field">
+            <label for="accountLastNameInput">Last Name</label>
+            <input id="accountLastNameInput" type="text" placeholder="Last Name" required />
+          </div>
+
+          <div class="contact-field">
+            <label for="accountEmailInput">Email Address</label>
+            <input id="accountEmailInput" type="email" placeholder="Email Address" required />
+          </div>
+
+          <div class="contact-field">
+            <label for="accountPhoneInput">Phone Number</label>
+            <input id="accountPhoneInput" type="text" placeholder="Phone Number" inputmode="numeric" />
+          </div>
+        </div>
+
+        <div class="contact-actions">
+          <button class="button button-secondary" type="submit" id="saveAccountContactBtn">Save Contact Info</button>
+        </div>
+      </form>
+
+      <div id="accountContactMessage" class="contact-message"></div>
+    </section>
+  </main>
+
+  <div id="footer-placeholder"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script src="./app.js"></script>
+  <script src="./grove-profiles.js"></script>
+  <script>
+    (function () {
+      const errorBox = document.getElementById("errorBox");
+      const accountEmail = document.getElementById("accountEmail");
+      const accountContactForm = document.getElementById("accountContactForm");
+      const accountFirstNameInput = document.getElementById("accountFirstNameInput");
+      const accountLastNameInput = document.getElementById("accountLastNameInput");
+      const accountEmailInput = document.getElementById("accountEmailInput");
+      const accountPhoneInput = document.getElementById("accountPhoneInput");
+      const accountContactMessage = document.getElementById("accountContactMessage");
+      const saveAccountContactBtn = document.getElementById("saveAccountContactBtn");
+
+      let currentUser = null;
+
+      function showError(message) {
+        errorBox.style.display = "block";
+        errorBox.textContent = message;
+      }
+
+      function hideError() {
+        errorBox.style.display = "none";
+        errorBox.textContent = "";
+      }
+
+      function setAccountContactMessage(message, type = "") {
+        accountContactMessage.className = "contact-message";
+        accountContactMessage.textContent = message || "";
+
+        if (!message) {
+          accountContactMessage.style.display = "none";
+          return;
+        }
+
+        accountContactMessage.classList.add(type || "success");
+      }
+
+      function fillAccountContactFields(user) {
+        if (!user) return;
+        accountEmail.textContent = user.email || "Unknown email";
+        accountEmail.classList.remove("loading");
+        accountFirstNameInput.value = window.GroveProfiles.getAccountFirstName(user);
+        accountLastNameInput.value = window.GroveProfiles.getAccountLastName(user);
+        accountEmailInput.value = window.GroveProfiles.getAccountEmail(user);
+        accountPhoneInput.value = window.GroveProfiles.getAccountPhone(user);
+      }
+
+      async function requireSession() {
+        try {
+          const { data, error } = await window.db.auth.getSession();
+          if (error) throw error;
+          if (!data?.session?.user) {
+            window.location.href = "./login.html";
+            return null;
+          }
+          return data.session;
+        } catch (error) {
+          console.error(error);
+          showError("Unable to verify your session.");
+          window.location.href = "./login.html";
+          return null;
+        }
+      }
+
+      async function saveAccountContact(event) {
+        event.preventDefault();
+
+        if (!currentUser) {
+          window.location.href = "./login.html";
+          return;
+        }
+
+        const nextFirstName = accountFirstNameInput.value.trim();
+        const nextLastName = accountLastNameInput.value.trim();
+        const nextEmail = accountEmailInput.value.trim();
+        const nextPhone = window.GroveProfiles.formatPhoneNumber(accountPhoneInput.value.trim());
+        const currentFirstName = window.GroveProfiles.getAccountFirstName(currentUser);
+        const currentLastName = window.GroveProfiles.getAccountLastName(currentUser);
+        const currentEmail = window.GroveProfiles.getAccountEmail(currentUser);
+        const currentPhone = window.GroveProfiles.getAccountPhone(currentUser);
+
+        setAccountContactMessage("");
+        accountPhoneInput.value = nextPhone;
+
+        if (saveAccountContactBtn) {
+          saveAccountContactBtn.disabled = true;
+          saveAccountContactBtn.textContent = "Saving...";
+        }
+
+        try {
+          if (nextEmail && nextEmail !== currentEmail) {
+            const { error: emailError } = await window.db.auth.updateUser({ email: nextEmail });
+            if (emailError) throw emailError;
+          }
+
+          if (nextFirstName !== currentFirstName || nextLastName !== currentLastName || nextPhone !== currentPhone) {
+            const updatedUser = await window.GroveProfiles.updateAccountProfile({
+              firstName: nextFirstName,
+              lastName: nextLastName,
+              phone: nextPhone
+            });
+            currentUser = updatedUser || currentUser;
+          }
+
+          fillAccountContactFields(currentUser);
+
+          const emailChanged = !!nextEmail && nextEmail !== currentEmail;
+          setAccountContactMessage(
+            emailChanged
+              ? "Contact info saved. Supabase may send a confirmation email before the new address becomes active."
+              : "Contact info saved.",
+            "success"
+          );
+        } catch (error) {
+          console.error(error);
+          setAccountContactMessage(error.message || "Unable to save contact info.", "error");
+        } finally {
+          if (saveAccountContactBtn) {
+            saveAccountContactBtn.disabled = false;
+            saveAccountContactBtn.textContent = "Save Contact Info";
+          }
+        }
+      }
+
+      async function initPage() {
+        hideError();
+        const session = await requireSession();
+        if (!session) return;
+
+        currentUser = session.user;
+        fillAccountContactFields(currentUser);
+        accountPhoneInput?.addEventListener("input", (event) => {
+          event.target.value = window.GroveProfiles.formatPhoneNumber(event.target.value);
+        });
+        accountContactForm?.addEventListener("submit", saveAccountContact);
+        window.updateHeaderAuth?.();
+      }
+
+      window.addEventListener("DOMContentLoaded", initPage);
+    })();
+  </script>
+</body>
+</html>

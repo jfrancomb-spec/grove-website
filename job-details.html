@@ -25,14 +25,14 @@
         <div class="button-row mt-22" id="jobActions">
           <a class="button button-secondary" id="viewFamilyBtn" href="#" style="display:none;">View Family</a>
           <a class="button button-family" id="applyBtn" href="./login.html">Login to Apply</a>
-          <a class="button button-secondary" href="./jobs.html">Back to Jobs</a>
+          <a class="button button-secondary" id="backToSourceBtn" href="./jobs.html">Back to Jobs</a>
         </div>
       </div>
 
       <div id="jobError" style="display:none;">
         <p>Unable to load this job.</p>
         <p class="mt-16">
-          <a href="./jobs.html">Back to Jobs</a>
+          <a id="errorBackLink" href="./jobs.html">Back to Jobs</a>
         </p>
       </div>
     </section>
@@ -45,6 +45,9 @@
 
   <script>
     (function () {
+      let currentUser = null;
+      let caregiverProfileId = null;
+
       function escapeHtml(value) {
         if (value === null || value === undefined) return "";
         return String(value)
@@ -70,7 +73,40 @@
         return ["published", "approved", "visible"].includes(status);
       }
 
-      function renderJob(parentRow, versionRow, familyProfileId, isSignedIn) {
+      function getBackConfig() {
+        const params = new URLSearchParams(window.location.search);
+        const returnTo = (params.get("returnTo") || "").toLowerCase();
+
+        if (returnTo === "messages") {
+          const messageParams = new URLSearchParams();
+          const profileType = params.get("profileType");
+          const profileId = params.get("profileId");
+          const conversationId = params.get("conversation");
+
+          if (profileType) messageParams.set("profileType", profileType);
+          if (profileId) messageParams.set("profileId", profileId);
+          if (conversationId) messageParams.set("conversation", conversationId);
+
+          return {
+            href: `./messages.html${messageParams.toString() ? `?${messageParams.toString()}` : ""}`,
+            label: "Back to Messages"
+          };
+        }
+
+        if (returnTo === "account") {
+          return {
+            href: "./account.html",
+            label: "Back to Dashboard"
+          };
+        }
+
+        return {
+          href: "./jobs.html",
+          label: "Back to Jobs"
+        };
+      }
+
+      function renderJob(parentRow, versionRow, familyProfileId, isSignedIn, applicationByJobId, conversationMetaByJobId) {
         const job = {
           ...parentRow,
           ...versionRow
@@ -99,15 +135,61 @@
         `;
 
         const applyBtn = document.getElementById("applyBtn");
-        applyBtn.textContent = isSignedIn ? "Apply for this job" : "Login to Apply";
-        applyBtn.href = isSignedIn
-          ? `./apply.html?job_id=${encodeURIComponent(parentRow.id)}`
-          : "./login.html";
+        const backConfig = getBackConfig();
+        const backBtn = document.getElementById("backToSourceBtn");
+        const existingApplication = applicationByJobId?.[parentRow.id] || null;
+        const conversationMeta = conversationMetaByJobId?.[parentRow.id] || null;
+        const isOwnJob = !!(currentUser?.id && parentRow.user_id && currentUser.id === parentRow.user_id);
+        const applyHref = !isSignedIn
+          ? "./login.html"
+          : existingApplication
+            ? window.buildJobApplicationMessagesHref({
+                jobId: parentRow.id,
+                targetUserId: parentRow.user_id,
+                familyProfileId,
+                caregiverProfileId,
+                conversationId: conversationMeta?.conversationId || null
+              })
+            : `./apply.html?job_id=${encodeURIComponent(parentRow.id)}`;
+        const applyLabel = !isSignedIn
+          ? "Login to Apply"
+          : existingApplication
+            ? "View Application"
+            : "Apply for this job";
+        applyBtn.textContent = applyLabel;
+        applyBtn.href = applyHref;
+        applyBtn.className = "button button-family";
+        applyBtn.removeAttribute("aria-disabled");
+        applyBtn.removeAttribute("tabindex");
+        applyBtn.removeAttribute("title");
+        applyBtn.style.pointerEvents = "";
+        applyBtn.style.opacity = "";
+        applyBtn.style.cursor = "";
+        applyBtn.onclick = null;
+
+        if (isOwnJob) {
+          applyBtn.textContent = "Apply for this job";
+          applyBtn.removeAttribute("href");
+          applyBtn.className = "button button-secondary button-disabled";
+          applyBtn.setAttribute("aria-disabled", "true");
+          applyBtn.setAttribute("tabindex", "-1");
+          applyBtn.setAttribute("title", "You cannot apply to your own listing.");
+          applyBtn.style.cursor = "not-allowed";
+          applyBtn.onclick = function (event) {
+            event.preventDefault();
+            return false;
+          };
+        }
 
         const viewFamilyBtn = document.getElementById("viewFamilyBtn");
         if (familyProfileId) {
           viewFamilyBtn.style.display = "";
           viewFamilyBtn.href = `./family-profile.html?id=${encodeURIComponent(familyProfileId)}`;
+        }
+
+        if (backBtn) {
+          backBtn.href = backConfig.href;
+          backBtn.textContent = backConfig.label;
         }
 
         document.getElementById("jobCard").style.display = "block";
@@ -133,7 +215,11 @@
           return;
         }
 
-        const isSignedIn = !!(await window.getCurrentSessionUser().catch(() => null));
+        currentUser = await window.getCurrentSessionUser().catch(() => null);
+        const isSignedIn = !!currentUser;
+        caregiverProfileId = currentUser?.id
+          ? await window.getCaregiverProfileParentIdForUser(currentUser.id).catch(() => null)
+          : null;
 
         const { data: parentRow, error: parentError } = await window.db
           .from("job_posts")
@@ -143,6 +229,12 @@
 
         if (parentError || !parentRow) {
           console.error(parentError);
+          const errorBackLink = document.getElementById("errorBackLink");
+          const backConfig = getBackConfig();
+          if (errorBackLink) {
+            errorBackLink.href = backConfig.href;
+            errorBackLink.textContent = backConfig.label;
+          }
           document.getElementById("jobError").style.display = "block";
           return;
         }
@@ -175,7 +267,24 @@
           }
         }
 
-        renderJob(parentRow, versionRow, familyProfileId, isSignedIn);
+        let applicationByJobId = {};
+        let conversationMetaByJobId = {};
+
+        if (isSignedIn && currentUser?.email) {
+          try {
+            const uiState = await window.getJobApplicationUiState({
+              currentUser,
+              caregiverProfileId,
+              jobIds: [parentRow.id]
+            });
+            applicationByJobId = uiState.applicationByJobId || {};
+            conversationMetaByJobId = uiState.conversationMetaByJobId || {};
+          } catch (error) {
+            console.error(error);
+          }
+        }
+
+        renderJob(parentRow, versionRow, familyProfileId, isSignedIn, applicationByJobId, conversationMetaByJobId);
       }
 
       window.addEventListener("DOMContentLoaded", loadJobDetails);

@@ -152,6 +152,27 @@
       if (Array.isArray(profileVersion.photo_urls) && profileVersion.photo_urls.length) {
         return profileVersion.photo_urls.filter(Boolean);
       }
+      if (typeof profileVersion.photo_urls === "string" && profileVersion.photo_urls.trim()) {
+        const trimmed = profileVersion.photo_urls.trim();
+        try {
+          const parsed = JSON.parse(trimmed);
+          if (Array.isArray(parsed)) {
+            return parsed.filter(Boolean);
+          }
+        } catch {
+          if (trimmed.startsWith("{") && trimmed.endsWith("}")) {
+            return trimmed
+              .slice(1, -1)
+              .split(/,(?=(?:[^"]*"[^"]*")*[^"]*$)/)
+              .map((value) => value.trim().replace(/^"(.*)"$/, "$1"))
+              .filter(Boolean);
+          }
+          return trimmed
+            .split(",")
+            .map((value) => value.trim())
+            .filter(Boolean);
+        }
+      }
       if (profileVersion.photo_url) {
         return [profileVersion.photo_url];
       }

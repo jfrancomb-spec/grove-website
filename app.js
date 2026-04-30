@@ -28,6 +28,12 @@ const GROVE_ACTING_ROLE_KEY = "groveActingRole";
 const BUTTON_THEME_FAMILY_CLASS = "button-theme-family";
 const BUTTON_THEME_CAREGIVER_CLASS = "button-theme-caregiver";
 
+function getRoleLabel(role) {
+  if (role === "family") return "Family";
+  if (role === "caregiver") return "Caregiver";
+  return "Role";
+}
+
 // ======================================================
 // Header auth state (NEW)
 // ======================================================
@@ -44,6 +50,7 @@ async function updateHeaderAuth() {
   const roleSwitchLink = document.getElementById("navRoleSwitchLink");
   const accountLink = document.getElementById("navAccountLink");
   const profileLink = document.getElementById("navProfileLink");
+  const settingsLink = document.getElementById("navSettingsLink");
   const signOutBtn = document.getElementById("navSignOutBtn");
 
   try {
@@ -53,13 +60,14 @@ async function updateHeaderAuth() {
     const isSignedIn = !!user;
     let actingRole = null;
     let actingRoleMessageHref = "./messages.html";
+    let availableRoles = [];
     let isAdmin = false;
     if (user && typeof window.getAdminRecord === "function") {
       const adminRecord = await window.getAdminRecord(user.id);
       isAdmin = !!adminRecord;
     }
     if (user && typeof window.getAvailableActingRoles === "function") {
-      const availableRoles = await window.getAvailableActingRoles(user.id);
+      availableRoles = await window.getAvailableActingRoles(user.id);
       actingRole = window.resolveActingRole(availableRoles);
       const activeProfile = availableRoles.find((role) => role.type === actingRole);
       if (activeProfile) {
@@ -95,9 +103,6 @@ async function updateHeaderAuth() {
       accountMenu.style.display = isSignedIn ? "" : "none";
     }
     if (roleSwitchLink) {
-      const availableRoles = user && typeof window.getAvailableActingRoles === "function"
-        ? await window.getAvailableActingRoles(user.id)
-        : [];
       roleSwitchLink.style.display = isSignedIn && availableRoles.length > 1 ? "" : "none";
       roleSwitchLink.href = "./account.html";
       roleSwitchLink.onclick = null;
@@ -109,9 +114,9 @@ async function updateHeaderAuth() {
             : null;
         const targetRole = targetRoleKey === "caregiver"
           ? "Caregiver"
-          : targetRoleKey === "family"
-            ? "Family"
-            : "Role";
+            : targetRoleKey === "family"
+              ? "Family"
+              : "Role";
         roleSwitchLink.textContent = `Switch to ${targetRole}`;
         if (targetRoleKey) {
           roleSwitchLink.onclick = (event) => {
@@ -128,6 +133,7 @@ async function updateHeaderAuth() {
     if (accountLink) {
       accountLink.style.display = isSignedIn ? "" : "none";
       accountLink.textContent = "Dashboard";
+      accountLink.href = "./account.html";
     }
     if (profileLink) {
       let profileHref = "./account.html";
@@ -145,6 +151,11 @@ async function updateHeaderAuth() {
       profileLink.textContent = "Profile";
       profileLink.href = profileHref;
     }
+    if (settingsLink) {
+      settingsLink.style.display = isSignedIn ? "" : "none";
+      settingsLink.textContent = "My Account";
+      settingsLink.href = "./account-settings.html";
+    }
     if (signOutBtn) {
       signOutBtn.style.display = isSignedIn ? "" : "none";
       signOutBtn.onclick = async () => {
@@ -156,6 +167,11 @@ async function updateHeaderAuth() {
         window.location.href = "./login.html";
       };
     }
+    renderGlobalActingRoleNotice({
+      isSignedIn,
+      actingRole,
+      availableRoles
+    });
   } catch (err) {
     console.error("Header auth error:", err);
   }
@@ -402,6 +418,106 @@ async function getCurrentSessionUser() {
   return data?.session?.user || null;
 }
 
+async function getCaregiverProfileParentIdForUser(userId) {
+  if (!userId) return null;
+
+  const { data, error } = await window.db
+    .from("caregiver_profiles")
+    .select("id, current_visible_version_id, current_pending_version_id")
+    .eq("user_id", userId)
+    .maybeSingle();
+
+  if (error) {
+    throw error;
+  }
+
+  if (!data) return null;
+  if (!data.current_visible_version_id && !data.current_pending_version_id) {
+    return null;
+  }
+
+  return data.id || null;
+}
+
+async function getJobApplicationUiState({ currentUser = null, caregiverProfileId = null, jobIds = [] } = {}) {
+  const uniqueJobIds = Array.from(new Set((jobIds || []).filter(Boolean)));
+  const applicationByJobId = {};
+  const conversationMetaByJobId = {};
+
+  if (!currentUser?.email || !uniqueJobIds.length) {
+    return { applicationByJobId, conversationMetaByJobId };
+  }
+
+  const { data: applications, error: applicationsError } = await window.db
+    .from("job_applications")
+    .select("id, job_id, applicant_email, created_at")
+    .eq("applicant_email", currentUser.email)
+    .in("job_id", uniqueJobIds);
+
+  if (applicationsError) {
+    throw applicationsError;
+  }
+
+  (applications || []).forEach((application) => {
+    if (application.job_id && !applicationByJobId[application.job_id]) {
+      applicationByJobId[application.job_id] = application;
+    }
+  });
+
+  if (!caregiverProfileId) {
+    return { applicationByJobId, conversationMetaByJobId };
+  }
+
+  const { data: conversations, error: conversationsError } = await window.db
+    .from("conversations")
+    .select("id, caregiver_profile_id, job_post_id, status")
+    .eq("caregiver_profile_id", caregiverProfileId)
+    .eq("status", "active")
+    .in("job_post_id", uniqueJobIds);
+
+  if (conversationsError) {
+    throw conversationsError;
+  }
+
+  (conversations || []).forEach((conversation) => {
+    if (conversation.job_post_id && !conversationMetaByJobId[conversation.job_post_id]) {
+      conversationMetaByJobId[conversation.job_post_id] = {
+        conversationId: conversation.id
+      };
+    }
+  });
+
+  return { applicationByJobId, conversationMetaByJobId };
+}
+
+function buildJobApplicationMessagesHref({
+  jobId,
+  targetUserId = null,
+  familyProfileId = null,
+  caregiverProfileId = null,
+  conversationId = null
+} = {}) {
+  if (conversationId) {
+    return `./messages.html?conversation=${encodeURIComponent(conversationId)}`;
+  }
+
+  const params = new URLSearchParams();
+  if (targetUserId) {
+    params.set("targetUser", targetUserId);
+  }
+  if (familyProfileId) {
+    params.set("familyProfileId", familyProfileId);
+  }
+  if (caregiverProfileId) {
+    params.set("caregiverProfileId", caregiverProfileId);
+  }
+  if (jobId) {
+    params.set("jobId", jobId);
+  }
+
+  return "./messages.html?" + params.toString();
+}
+
 async function getAdminRecord(userId) {
   if (!userId) return null;
   const { data, error } = await window.db
@@ -473,6 +589,7 @@ function highlightCurrentNav() {
 
   const accountLink = document.getElementById("navAccountLink");
   const profileLink = document.getElementById("navProfileLink");
+  const settingsLink = document.getElementById("navSettingsLink");
   const roleSwitchLink = document.getElementById("navRoleSwitchLink");
 
   if (accountLink) {
@@ -483,9 +600,91 @@ function highlightCurrentNav() {
     profileLink.classList.toggle("active", file === "family.html" || file === "caregiver.html");
   }
 
+  if (settingsLink) {
+    settingsLink.classList.toggle("active", file === "account-settings.html");
+  }
+
   if (roleSwitchLink) {
     roleSwitchLink.classList.toggle("active", file === "chooser.html");
   }
+}
+
+function pageHandlesOwnActingRoleNotice() {
+  return !!document.getElementById("actingRoleCard") || !!document.getElementById("profileScopeCard");
+}
+
+function ensureGlobalActingRoleNotice() {
+  if (pageHandlesOwnActingRoleNotice()) return null;
+
+  const main = document.querySelector("main");
+  if (!main) return null;
+
+  let notice = document.getElementById("globalActingRoleNotice");
+  if (!notice) {
+    notice = document.createElement("section");
+    notice.id = "globalActingRoleNotice";
+    notice.className = "role-notice global-role-notice";
+    notice.style.display = "none";
+    notice.innerHTML =
+      '<div class="role-notice-copy">' +
+        '<div class="role-notice-label">Viewing as</div>' +
+        '<div class="role-notice-value" id="globalActingRoleValue">Loading...</div>' +
+      '</div>' +
+      '<div class="role-toggle" id="globalActingRoleToggle"></div>';
+    main.insertBefore(notice, main.firstChild);
+  }
+
+  return notice;
+}
+
+function getRoleSwitchDestination(targetRole, availableRoles = []) {
+  const currentFile = getCurrentFileName();
+  const currentUrl = new URL(window.location.href);
+
+  if (currentFile === "messages.html") {
+    const targetProfile = availableRoles.find((role) => role.type === targetRole);
+    if (targetProfile) {
+      return `./messages.html?profileType=${encodeURIComponent(targetProfile.type)}&profileId=${encodeURIComponent(targetProfile.id)}`;
+    }
+  }
+
+  const path = currentUrl.pathname.split("/").pop() || currentFile;
+  return `./${path}${currentUrl.search}${currentUrl.hash}`;
+}
+
+function renderGlobalActingRoleNotice({ isSignedIn, actingRole, availableRoles = [] }) {
+  const notice = ensureGlobalActingRoleNotice();
+  if (!notice) return;
+
+  const value = document.getElementById("globalActingRoleValue");
+  const toggle = document.getElementById("globalActingRoleToggle");
+  if (!value || !toggle) return;
+
+  const activeRole = availableRoles.find((role) => role.type === actingRole);
+  if (!isSignedIn || !activeRole) {
+    notice.style.display = "none";
+    toggle.innerHTML = "";
+    return;
+  }
+
+  notice.style.display = "";
+  value.textContent = getRoleLabel(activeRole.type);
+  toggle.innerHTML = "";
+
+  const alternateRole = availableRoles.find((role) => role.type !== activeRole.type);
+  if (!alternateRole) return;
+
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = alternateRole.type === "family"
+    ? "button button-family"
+    : "button button-caregiver";
+  button.textContent = `Switch to ${getRoleLabel(alternateRole.type)}`;
+  button.addEventListener("click", () => {
+    setStoredActingRole(alternateRole.type);
+    window.location.href = getRoleSwitchDestination(alternateRole.type, availableRoles);
+  });
+  toggle.appendChild(button);
 }
 
 function wireRoleAwareBrowseLinks(root = document) {
@@ -493,15 +692,7 @@ function wireRoleAwareBrowseLinks(root = document) {
 
   links.forEach((link) => {
     if (link.dataset.roleAwareBrowseWired === "1") return;
-
-    const label = (link.textContent || "").replace(/\s+/g, " ").trim().toLowerCase();
-
-    let targetRole = null;
-    if (label === "browse caregivers") {
-      targetRole = "family";
-    } else if (label === "browse families" || label === "browse opportunities") {
-      targetRole = "caregiver";
-    }
+    const targetRole = link.dataset.actingRole || null;
 
     if (!targetRole) return;
 
@@ -917,6 +1108,9 @@ async function resolveQueueItem(queueId, resolutionAction, options = {}) {
 window.getCurrentSessionUser = getCurrentSessionUser;
 window.getAdminRecord = getAdminRecord;
 window.requireAdminUser = requireAdminUser;
+window.getCaregiverProfileParentIdForUser = getCaregiverProfileParentIdForUser;
+window.getJobApplicationUiState = getJobApplicationUiState;
+window.buildJobApplicationMessagesHref = buildJobApplicationMessagesHref;
 window.getStoredActingRole = getStoredActingRole;
 window.setStoredActingRole = setStoredActingRole;
 window.getAvailableActingRoles = getAvailableActingRoles;

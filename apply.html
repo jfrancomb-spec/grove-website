@@ -7,151 +7,844 @@
 
   <link rel="stylesheet" href="./styles.css" />
   <link rel="icon" type="image/png" href="./MainIcon.png" />
+
+  <style>
+    .apply-page {
+      max-width: 1080px;
+      margin: 0 auto;
+      padding: 0 20px 48px;
+    }
+
+    .apply-shell {
+      display: grid;
+      grid-template-columns: minmax(0, 1.35fr) minmax(280px, 0.9fr);
+      gap: 24px;
+      align-items: start;
+    }
+
+    .apply-card,
+    .apply-guide-card {
+      background: #fff;
+      border-radius: 18px;
+      box-shadow: 0 10px 28px rgba(0, 0, 0, 0.08);
+    }
+
+    .apply-card {
+      padding: 28px;
+    }
+
+    .apply-guide-stack {
+      display: grid;
+      gap: 18px;
+    }
+
+    .apply-guide-card {
+      padding: 22px;
+      border: 1px solid #e5e7eb;
+    }
+
+    .apply-guide-card h3 {
+      margin: 0 0 10px;
+      font-size: 20px;
+      color: #102a43;
+    }
+
+    .apply-guide-card p {
+      margin: 0;
+      color: #4b5563;
+      line-height: 1.6;
+    }
+
+    .apply-guide-list {
+      margin: 14px 0 0;
+      padding-left: 18px;
+      color: #374151;
+      line-height: 1.7;
+    }
+
+    .apply-guide-list li + li {
+      margin-top: 8px;
+    }
+
+    .apply-section-label {
+      margin: 0 0 6px;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: #6b7280;
+    }
+
+    .apply-title {
+      margin: 0 0 12px;
+      font-size: 28px;
+      color: #102a43;
+    }
+
+    .apply-copy {
+      margin: 0 0 18px;
+      color: #4b5563;
+      line-height: 1.6;
+    }
+
+    .profile-summary {
+      display: grid;
+      gap: 10px;
+      padding: 18px;
+      border-radius: 16px;
+      background: linear-gradient(135deg, #f7fbfa 0%, #ffffff 58%, #eef7f4 100%);
+      border: 1px solid #dbe7e3;
+      margin-bottom: 22px;
+    }
+
+    .job-summary {
+      display: grid;
+      gap: 10px;
+      padding: 18px;
+      border-radius: 16px;
+      background: #f8fafc;
+      border: 1px solid #e5e7eb;
+      margin-bottom: 22px;
+    }
+
+    .job-summary-title {
+      margin: 0;
+      font-size: 22px;
+      font-weight: 700;
+      color: #102a43;
+    }
+
+    .job-summary-subtitle {
+      margin: 0;
+      color: #52606d;
+      line-height: 1.5;
+    }
+
+    .job-summary-details {
+      display: grid;
+      gap: 8px;
+      color: #374151;
+      line-height: 1.5;
+    }
+
+    .job-summary-description {
+      margin: 4px 0 0;
+      color: #4b5563;
+      line-height: 1.6;
+      white-space: pre-wrap;
+    }
+
+    .profile-summary-heading {
+      margin: 0;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: #4f6f74;
+    }
+
+    .profile-summary-name {
+      margin: 0;
+      font-size: 24px;
+      font-weight: 700;
+      color: #102a43;
+    }
+
+    .profile-summary-subtitle {
+      margin: 0;
+      color: #52606d;
+      line-height: 1.5;
+    }
+
+    .profile-chip-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .profile-chip {
+      display: inline-flex;
+      align-items: center;
+      border-radius: 999px;
+      padding: 8px 12px;
+      border: 1px solid #d6e0ea;
+      background: #fff;
+      font-size: 14px;
+      font-weight: 700;
+      color: #264653;
+    }
+
+    .message-section {
+      margin-top: 22px;
+    }
+
+    .message-label {
+      display: block;
+      margin-bottom: 8px;
+      font-size: 16px;
+      font-weight: 700;
+      color: #102a43;
+    }
+
+    .message-helper {
+      margin: 0 0 12px;
+      color: #6b7280;
+      line-height: 1.5;
+    }
+
+    .apply-message {
+      min-height: 220px;
+      resize: vertical;
+    }
+
+    .apply-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 16px;
+    }
+
+    .apply-status-note {
+      margin-top: 14px;
+      color: #6b7280;
+      line-height: 1.5;
+    }
+
+    .apply-success {
+      display: none;
+      margin-top: 18px;
+      padding: 14px 16px;
+      border-radius: 12px;
+      background: #ecfdf5;
+      border: 1px solid #bbf7d0;
+      color: #166534;
+      line-height: 1.6;
+    }
+
+    .apply-blocked {
+      margin-top: 18px;
+      padding: 16px 18px;
+      border-radius: 14px;
+      background: #fff7ed;
+      border: 1px solid #fed7aa;
+      color: #9a3412;
+      line-height: 1.6;
+    }
+
+    .apply-back-link {
+      margin-top: 18px;
+    }
+
+    .apply-back-link a {
+      color: #2f6f67;
+      font-weight: 700;
+      text-decoration: none;
+    }
+
+    .apply-back-link a:hover {
+      text-decoration: underline;
+    }
+
+    @media (max-width: 860px) {
+      .apply-shell {
+        grid-template-columns: 1fr;
+      }
+
+      .apply-card,
+      .apply-guide-card {
+        padding: 22px;
+      }
+    }
+  </style>
 </head>
 
 <body>
-  <!-- Shared header -->
   <div id="header-placeholder"></div>
 
-  <main>
-    <!-- HERO -->
+  <main class="apply-page">
     <div class="hero">
       <h1>Apply for This Job</h1>
       <div class="subtitle" id="jobSubtitle">Loading job details...</div>
     </div>
 
-    <!-- APPLY FORM -->
-    <section>
-      <div class="form-card">
-<h2 class="mt-0">Your Info</h2>
-
-        <p class="mt-0">
-          Send a quick message to the family. They’ll review applications and respond if they’d like to connect.
+    <div class="apply-shell">
+      <section class="apply-card">
+        <p class="apply-section-label">Message First</p>
+        <h2 class="apply-title">Apply with your Grove profile</h2>
+        <p class="apply-copy">
+          Families will see your caregiver profile details with this application, so you only need to send a thoughtful message here.
         </p>
 
-        <form id="applyForm">
-          <div class="row">
-            <input id="app_name" type="text" placeholder="Your Name" required />
-          </div>
+        <div class="job-summary" id="jobSummaryCard" style="display:none;">
+          <p class="apply-section-label">Job Details</p>
+          <p class="job-summary-title" id="jobSummaryTitle">Loading job...</p>
+          <p class="job-summary-subtitle" id="jobSummarySubtitle">Loading details...</p>
+          <div class="job-summary-details" id="jobSummaryDetails"></div>
+          <p class="job-summary-description" id="jobSummaryDescription" style="display:none;"></p>
+        </div>
 
-          <div class="row">
-            <input id="app_email" type="email" placeholder="Email Address" required />
-          </div>
+        <div class="profile-summary" id="applyProfileSummary" style="display:none;">
+          <p class="profile-summary-heading">Applying As</p>
+          <p class="profile-summary-name" id="applyProfileName">Your caregiver profile</p>
+          <p class="profile-summary-subtitle" id="applyProfileSubtitle">Loading your profile details...</p>
+          <div class="profile-chip-row" id="applyProfileChips"></div>
+        </div>
 
-          <div class="row">
-            <input id="app_phone" type="text" placeholder="Phone Number" required />
-          </div>
+        <div class="apply-blocked" id="applyBlockedMessage" style="display:none;"></div>
 
-          <div class="row">
-            <input id="app_location" type="text" placeholder="City or Neighborhood" required />
-          </div>
-
-          <div class="row">
+        <form id="applyForm" style="display:none;">
+          <div class="message-section">
+            <label class="message-label" for="app_message">Message to the family</label>
+            <p class="message-helper">
+              Keep it warm, specific, and easy to reply to. Mention your fit, availability, and one or two details that help the family picture working with you.
+            </p>
             <textarea
               id="app_message"
-              placeholder="Message to the family (experience, availability, questions)"
+              class="apply-message"
+              placeholder="Hi! I’d love to help with your after-school care needs. I have experience with elementary-age kids, I’m available weekday afternoons, and I’m based nearby in Belle Plaine. I’d be happy to learn more about your routine and what support would help most."
               required
             ></textarea>
           </div>
 
-          <button class="button button-caregiver" type="submit">Submit Application</button>
+          <div class="apply-actions">
+            <button class="button button-caregiver" type="submit">Send Application</button>
+            <a class="button button-secondary" id="previewProfileBtn" href="./caregiver.html">Preview Profile</a>
+          </div>
+
+          <p class="apply-status-note">
+            Your email and profile context travel with the application automatically.
+          </p>
         </form>
 
-        <!-- Shown after successful submit -->
-        <p id="applySuccess" class="success">
-          ✅ Application sent! If the family is interested, they can reach out.
-        </p>
-
-<div class="mt-22">
-  <h3 class="mb-6">What Happens Next</h3>
-          <p class="mt-0">
-            After you submit your application, the family can review your information and decide whether they’d like to connect.
-            If they’re interested, they can reach out directly.
-          </p>
+        <div id="applySuccess" class="apply-success">
+          Application sent. If the family is interested, they can reply in Grove messages.
         </div>
 
-        <p class="mt-16">
-          <a href="./jobs.html">← Back to Jobs</a>
+        <p class="apply-back-link">
+          <a href="./jobs.html">Back to Jobs</a>
         </p>
-      </div>
-    </section>
+      </section>
+
+      <aside class="apply-guide-stack">
+        <section class="apply-guide-card">
+          <h3>What families care about most</h3>
+          <p>
+            A short message that feels real and relevant usually works better than a long, generic introduction.
+          </p>
+          <ul class="apply-guide-list">
+            <li>Say why this particular job fits your experience or style.</li>
+            <li>Mention the availability that makes you a realistic match.</li>
+            <li>Give one reassuring detail that helps build trust quickly.</li>
+          </ul>
+        </section>
+
+        <section class="apply-guide-card">
+          <h3>A simple message outline</h3>
+          <p>
+            If you are not sure what to write, this structure is usually enough:
+          </p>
+          <ul class="apply-guide-list">
+            <li>Open warmly and mention the type of care you noticed.</li>
+            <li>Share the most relevant part of your experience.</li>
+            <li>Mention availability, timing, or location fit.</li>
+            <li>End with a question or invitation to connect.</li>
+          </ul>
+        </section>
+      </aside>
+    </div>
   </main>
 
-  <!-- Shared footer -->
   <div id="footer-placeholder"></div>
 
-  <!-- Scripts -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
   <script src="./app.js"></script>
 
-  <!-- Page script -->
   <script>
-    async function loadJobAndWireApply() {
+    (function () {
       const subtitle = document.getElementById("jobSubtitle");
       const form = document.getElementById("applyForm");
+      const jobSummaryCard = document.getElementById("jobSummaryCard");
+      const jobSummaryTitle = document.getElementById("jobSummaryTitle");
+      const jobSummarySubtitle = document.getElementById("jobSummarySubtitle");
+      const jobSummaryDetails = document.getElementById("jobSummaryDetails");
+      const jobSummaryDescription = document.getElementById("jobSummaryDescription");
+      const profileSummary = document.getElementById("applyProfileSummary");
+      const profileName = document.getElementById("applyProfileName");
+      const profileSubtitle = document.getElementById("applyProfileSubtitle");
+      const profileChips = document.getElementById("applyProfileChips");
+      const blockedMessage = document.getElementById("applyBlockedMessage");
+      const successBox = document.getElementById("applySuccess");
+      const previewProfileBtn = document.getElementById("previewProfileBtn");
+      const messageInput = document.getElementById("app_message");
 
-      const params = new URLSearchParams(window.location.search);
-      const jobId = params.get("job_id");
+      let currentUser = null;
+      let job = null;
+      let caregiverProfile = null;
+      let familyProfile = null;
+      let existingApplication = null;
+      let draftStorageKey = null;
 
-      if (!jobId) {
-        subtitle.textContent = "Missing job id.";
-        return;
+      function formatJobSubtitle(jobRow) {
+        return [jobRow.title, jobRow.care_type, jobRow.location, jobRow.schedule].filter(Boolean).join(" • ");
       }
 
-      // Wait until window.db exists (guards load order)
-      let tries = 0;
-      while (!window.db && tries < 40) {
-        await new Promise((r) => setTimeout(r, 50));
-        tries++;
+      function escapeHtml(value) {
+        return String(value || "")
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;")
+          .replace(/'/g, "&#39;");
       }
 
-      if (!window.db) {
-        subtitle.textContent = "Database connection not ready. Please refresh.";
-        return;
+      function showBlocked(message, ctaHref, ctaLabel) {
+        blockedMessage.innerHTML =
+          '<div>' + escapeHtml(message) + '</div>' +
+          (ctaHref && ctaLabel
+            ? '<div class="apply-actions"><a class="button button-caregiver" href="' + ctaHref + '">' + escapeHtml(ctaLabel) + '</a></div>'
+            : "");
+        blockedMessage.style.display = "block";
+        form.style.display = "none";
       }
 
-      // Load job details for display
-      const { data: job, error } = await window.db
-        .from("job_posts")
-        .select("id, title, care_type, location, schedule")
-        .eq("id", jobId)
-        .single();
+      function renderProfileSummary(profile) {
+        const chips = [];
+        if (Array.isArray(profile.care_types) && profile.care_types.length) {
+          profile.care_types.forEach((item) => chips.push(item));
+        }
+        if (profile.years_experience) {
+          chips.push(/year/i.test(profile.years_experience) || /^none$/i.test(profile.years_experience)
+            ? profile.years_experience
+            : profile.years_experience + " years");
+        }
 
-      if (error || !job) {
-        subtitle.textContent = "Unable to load job details.";
-        console.error(error);
-        return;
+        profileName.textContent = profile.name_display || "Your caregiver profile";
+        profileSubtitle.textContent = [
+          profile.location || "",
+          currentUser?.email || ""
+        ].filter(Boolean).join(" • ") || "Your profile details will be shared with this family.";
+        profileChips.innerHTML = chips.map((chip) => '<span class="profile-chip">' + escapeHtml(chip) + '</span>').join("");
+        profileSummary.style.display = "grid";
       }
 
-      subtitle.textContent = `${job.title} • ${job.care_type} • ${job.location} • ${job.schedule}`;
+      function saveDraftMessage() {
+        if (!draftStorageKey || !messageInput) return;
+        window.sessionStorage.setItem(draftStorageKey, messageInput.value || "");
+      }
 
-      // Submit application
-      form.addEventListener("submit", async (e) => {
-        e.preventDefault();
+      function restoreDraftMessage() {
+        if (!draftStorageKey || !messageInput) return;
+        const saved = window.sessionStorage.getItem(draftStorageKey);
+        if (saved) {
+          messageInput.value = saved;
+        }
+      }
 
+      function clearDraftMessage() {
+        if (!draftStorageKey) return;
+        window.sessionStorage.removeItem(draftStorageKey);
+      }
+
+      function renderJobSummary(jobRow) {
+        const detailLines = [
+          jobRow.schedule ? "<div><strong>Schedule:</strong> " + escapeHtml(jobRow.schedule) + "</div>" : "",
+          jobRow.pay_range ? "<div><strong>Pay:</strong> " + escapeHtml(jobRow.pay_range) + "</div>" : ""
+        ].filter(Boolean);
+
+        jobSummaryTitle.textContent = jobRow.title || "Care Opportunity";
+        jobSummarySubtitle.textContent = [
+          jobRow.location || "Location not listed",
+          jobRow.care_type || "Care type not listed"
+        ].join(" • ");
+        jobSummaryDetails.innerHTML = detailLines.join("");
+
+        if (jobRow.description) {
+          jobSummaryDescription.textContent = jobRow.description;
+          jobSummaryDescription.style.display = "block";
+        } else {
+          jobSummaryDescription.textContent = "";
+          jobSummaryDescription.style.display = "none";
+        }
+
+        jobSummaryCard.style.display = "grid";
+      }
+
+      async function requireSession() {
+        const { data, error } = await window.db.auth.getSession();
+        if (error) throw error;
+
+        if (!data?.session?.user) {
+          window.location.href = "./login.html";
+          return null;
+        }
+
+        return data.session.user;
+      }
+
+      async function loadJob(jobId) {
+        const { data, error } = await window.db
+          .from("job_posts")
+          .select("id, user_id, title, care_type, location, schedule, description, pay_range")
+          .eq("id", jobId)
+          .single();
+
+        if (error || !data) {
+          throw error || new Error("Unable to load job details.");
+        }
+
+        return data;
+      }
+
+      async function loadFamilyProfileForJob(jobOwnerUserId) {
+        const { data, error } = await window.db
+          .from("family_profiles")
+          .select("id, user_id, current_visible_version_id, current_pending_version_id")
+          .eq("user_id", jobOwnerUserId)
+          .maybeSingle();
+
+        if (error) {
+          throw error;
+        }
+
+        if (!data) {
+          return null;
+        }
+
+        if (!data.current_visible_version_id && !data.current_pending_version_id) {
+          return null;
+        }
+
+        return data;
+      }
+
+      async function loadCaregiverProfile(userId) {
+        const { data: parentRow, error: parentError } = await window.db
+          .from("caregiver_profiles")
+          .select("id, current_visible_version_id, current_pending_version_id")
+          .eq("user_id", userId)
+          .maybeSingle();
+
+        if (parentError) {
+          throw parentError;
+        }
+
+        if (!parentRow) {
+          return null;
+        }
+
+        const versionId = parentRow.current_pending_version_id || parentRow.current_visible_version_id;
+        if (!versionId) {
+          return null;
+        }
+
+        const { data: versionRow, error: versionError } = await window.db
+          .from("caregiver_profile_versions")
+          .select("name_display, location, care_types, years_experience")
+          .eq("id", versionId)
+          .maybeSingle();
+
+        if (versionError) {
+          throw versionError;
+        }
+
+        if (!versionRow) {
+          return null;
+        }
+
+        return {
+          id: parentRow.id,
+          ...versionRow
+        };
+      }
+
+      async function submitApplication() {
         const payload = {
           job_id: job.id,
-          applicant_name: document.getElementById("app_name")?.value || "",
-          applicant_email: document.getElementById("app_email")?.value || "",
-          applicant_phone: document.getElementById("app_phone")?.value || "",
-          applicant_location: document.getElementById("app_location")?.value || "",
-          message: document.getElementById("app_message")?.value || ""
+          applicant_name: caregiverProfile?.name_display || "",
+          applicant_email: currentUser?.email || "",
+          applicant_phone: "",
+          applicant_location: caregiverProfile?.location || "",
+          message: messageInput.value.trim()
         };
 
-        const { error: insErr } = await window.db
+        const { error } = await window.db
           .from("job_applications")
           .insert([payload]);
 
-        if (insErr) {
-          handleError(insErr, "Application failed");
+        if (error) {
+          throw error;
+        }
+      }
+
+      async function loadExistingApplication() {
+        if (!currentUser?.email || !job?.id) {
+          return null;
+        }
+
+        const { data, error } = await window.db
+          .from("job_applications")
+          .select("id, job_id, applicant_email, created_at")
+          .eq("job_id", job.id)
+          .eq("applicant_email", currentUser.email)
+          .maybeSingle();
+
+        if (error) {
+          throw error;
+        }
+
+        return data || null;
+      }
+
+      async function findExistingConversationForApplication() {
+        if (!familyProfile?.id || !caregiverProfile?.id) {
+          return null;
+        }
+
+        const { data, error } = await window.db
+          .from("conversations")
+          .select("id, job_post_id")
+          .eq("family_profile_id", familyProfile.id)
+          .eq("caregiver_profile_id", caregiverProfile.id)
+          .eq("status", "active");
+
+        if (error) {
+          throw error;
+        }
+
+        return (data || []).find((conversation) => conversation.job_post_id === job.id) || null;
+      }
+
+      async function createConversationForApplication() {
+        if (!familyProfile?.id || !familyProfile?.user_id || !caregiverProfile?.id) {
+          throw new Error("Unable to find the family profile for this job.");
+        }
+
+        const { data: conversation, error: conversationError } = await window.db
+          .from("conversations")
+          .insert([{
+            created_by_user_id: currentUser.id,
+            conversation_type: "direct",
+            family_profile_id: familyProfile.id,
+            caregiver_profile_id: caregiverProfile.id,
+            job_post_id: job.id,
+            status: "active",
+            last_message_at: null,
+            last_message_preview: null,
+            last_visible_message_at: null,
+            last_visible_message_preview: null,
+            has_hidden_messages: false,
+            first_hidden_message_at: null
+          }])
+          .select("id")
+          .single();
+
+        if (conversationError) {
+          throw conversationError;
+        }
+
+        const { error: participantError } = await window.db
+          .from("conversation_participants")
+          .insert([
+            {
+              conversation_id: conversation.id,
+              user_id: currentUser.id,
+              participant_role: "caregiver",
+              profile_id: caregiverProfile.id,
+              has_unread_visible_messages: false
+            },
+            {
+              conversation_id: conversation.id,
+              user_id: familyProfile.user_id,
+              participant_role: "family",
+              profile_id: familyProfile.id,
+              has_unread_visible_messages: false
+            }
+          ]);
+
+        if (participantError) {
+          throw participantError;
+        }
+
+        return conversation;
+      }
+
+      function getApplicationMessageSubmissionText(result) {
+        switch (result?.content_status) {
+          case "posted":
+          case "published":
+          case "approved":
+            return null;
+          case "queued":
+            return "Application message saved. It will send once account review is cleared.";
+          case "watched":
+            return "Application message submitted for review.";
+          case "flagged":
+            return "Your application message is under review.";
+          default:
+            return null;
+        }
+      }
+
+      async function ensureApplicationConversationMessage() {
+        const messageText = messageInput.value.trim();
+        if (!messageText) {
+          throw new Error("Please add a message to the family.");
+        }
+
+        let conversation = await findExistingConversationForApplication();
+        if (!conversation) {
+          conversation = await createConversationForApplication();
+        }
+
+        const { data: insertedMessage, error: messageError } = await window.db
+          .from("messages")
+          .insert([{
+            conversation_id: conversation.id,
+            sender_user_id: currentUser.id,
+            message_text: messageText,
+            content_status: "draft",
+            visible_to_sender: true,
+            visible_to_recipient: false
+          }])
+          .select("id")
+          .single();
+
+        if (messageError) {
+          throw messageError;
+        }
+
+        const { data: moderationResult, error: moderationError } = await window.db.rpc("moderation_engine", {
+          p_action: "submit_content",
+          p_payload: {
+            related_table: "messages",
+            related_id: insertedMessage.id,
+            user_id: currentUser.id,
+            is_suspicious: false,
+            reason: null,
+            summary: "Application message submitted",
+            success_status: "published"
+          },
+          p_actor_user_id: currentUser.id
+        });
+
+        if (moderationError) {
+          throw moderationError;
+        }
+
+        if (!moderationResult?.ok) {
+          throw new Error("Application message moderation failed.");
+        }
+
+        const statusMessage = getApplicationMessageSubmissionText(moderationResult);
+        if (statusMessage) {
+          alert(statusMessage);
+        }
+      }
+
+      function getExistingApplicationHref() {
+        const params = new URLSearchParams();
+        if (job?.user_id) {
+          params.set("targetUser", job.user_id);
+        }
+        if (familyProfile?.id) {
+          params.set("familyProfileId", familyProfile.id);
+        }
+        if (caregiverProfile?.id) {
+          params.set("caregiverProfileId", caregiverProfile.id);
+        }
+        if (job?.id) {
+          params.set("jobId", job.id);
+        }
+
+        return "./messages.html?" + params.toString();
+      }
+
+      async function initPage() {
+        const params = new URLSearchParams(window.location.search);
+        const jobId = params.get("job_id");
+
+        if (!jobId) {
+          subtitle.textContent = "Missing job id.";
+          showBlocked("This application link is missing the job information.", "./jobs.html", "Browse Jobs");
           return;
         }
 
-        showSuccess("applySuccess", form);
-      });
-    }
+        try {
+          currentUser = await requireSession();
+          if (!currentUser) return;
 
-    loadJobAndWireApply();
+          job = await loadJob(jobId);
+          draftStorageKey = "groveApplyDraft:" + job.id;
+          subtitle.textContent = formatJobSubtitle(job);
+          renderJobSummary(job);
+          familyProfile = await loadFamilyProfileForJob(job.user_id);
+
+          if (!familyProfile) {
+            showBlocked(
+              "This job is missing an active family profile, so applications are temporarily unavailable.",
+              "./jobs.html",
+              "Back to Jobs"
+            );
+            return;
+          }
+
+          if (currentUser.id && job.user_id && currentUser.id === job.user_id) {
+            showBlocked(
+              "You cannot apply to your own job post.",
+              "./account.html",
+              "Back to Dashboard"
+            );
+            return;
+          }
+
+          caregiverProfile = await loadCaregiverProfile(currentUser.id);
+
+          if (!caregiverProfile) {
+            showBlocked(
+              "Finish your caregiver profile before applying so families can review your experience and details with your message.",
+              "./edit-caregiver.html",
+              "Finish Caregiver Profile"
+            );
+            return;
+          }
+
+          existingApplication = await loadExistingApplication();
+          if (existingApplication) {
+            showBlocked(
+              "You already applied to this job. Open the application message thread to continue the conversation.",
+              getExistingApplicationHref(),
+              "View Application"
+            );
+            return;
+          }
+
+          renderProfileSummary(caregiverProfile);
+          previewProfileBtn.href = "./caregiver.html?returnTo=apply&job_id=" + encodeURIComponent(job.id);
+          restoreDraftMessage();
+          messageInput.addEventListener("input", saveDraftMessage);
+          form.style.display = "block";
+
+          form.addEventListener("submit", async (event) => {
+            event.preventDefault();
+
+            try {
+              await submitApplication();
+              await ensureApplicationConversationMessage();
+              clearDraftMessage();
+              showSuccess("applySuccess", form);
+            } catch (error) {
+              handleError(error, "Application failed");
+            }
+          });
+        } catch (error) {
+          console.error(error);
+          subtitle.textContent = "Unable to load this application page.";
+          showBlocked(error.message || "Please try again in a moment.", "./jobs.html", "Back to Jobs");
+        }
+      }
+
+      initPage();
+    })();
   </script>
 </body>
 </html>

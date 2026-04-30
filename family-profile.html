@@ -102,6 +102,10 @@
       let currentJobs = [];
       let currentPhotoIndex = 0;
       let isSignedIn = false;
+      let currentUser = null;
+      let caregiverProfileId = null;
+      let applicationByJobId = {};
+      let conversationMetaByJobId = {};
 
       function getBackConfig() {
         const params = new URLSearchParams(window.location.search);
@@ -263,10 +267,29 @@
                 const location = job.location || "Location not listed";
                 const schedule = job.schedule || "Schedule not listed";
                 const payRange = job.pay_range || "";
-                const applyHref = isSignedIn
-                  ? `./apply.html?job_id=${encodeURIComponent(job.id)}`
-                  : "./login.html";
-                const applyLabel = isSignedIn ? "Apply for this job" : "Login to Apply";
+                const existingApplication = applicationByJobId[job.id] || null;
+                const conversationMeta = conversationMetaByJobId[job.id] || null;
+                const isOwnJob = !!(currentUser?.id && currentFamilyParent?.user_id && currentUser.id === currentFamilyParent.user_id);
+                const applyHref = !isSignedIn
+                  ? "./login.html"
+                  : isOwnJob
+                    ? `./job-details.html?job_id=${encodeURIComponent(job.id)}`
+                    : existingApplication
+                      ? window.buildJobApplicationMessagesHref({
+                          jobId: job.id,
+                          targetUserId: currentFamilyParent?.user_id || null,
+                          familyProfileId: currentFamilyParent?.id || null,
+                          caregiverProfileId,
+                          conversationId: conversationMeta?.conversationId || null
+                        })
+                      : `./apply.html?job_id=${encodeURIComponent(job.id)}`;
+                const applyLabel = !isSignedIn
+                  ? "Login to Apply"
+                  : isOwnJob
+                    ? "Your Job Post"
+                    : existingApplication
+                      ? "View Application"
+                      : "Apply for this job";
 
                 return `
                   <div class="card">
@@ -459,7 +482,13 @@
           return;
         }
 
-        isSignedIn = !!(await window.getCurrentSessionUser().catch(() => null));
+        currentUser = await window.getCurrentSessionUser().catch(() => null);
+        isSignedIn = !!currentUser;
+        caregiverProfileId = currentUser?.id
+          ? await window.getCaregiverProfileParentIdForUser(currentUser.id).catch(() => null)
+          : null;
+        applicationByJobId = {};
+        conversationMetaByJobId = {};
 
         const { data: familyParent, error: familyParentError } = await window.db
           .from("family_profiles")
@@ -547,6 +576,20 @@
                 return null;
               })
               .filter(Boolean);
+
+            if (isSignedIn && currentUser?.email && jobs.length) {
+              try {
+                const uiState = await window.getJobApplicationUiState({
+                  currentUser,
+                  caregiverProfileId,
+                  jobIds: jobs.map((job) => job.id)
+                });
+                applicationByJobId = uiState.applicationByJobId || {};
+                conversationMetaByJobId = uiState.conversationMetaByJobId || {};
+              } catch (error) {
+                console.error(error);
+              }
+            }
           }
         }
 

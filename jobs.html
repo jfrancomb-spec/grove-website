@@ -112,8 +112,12 @@
     (function () {
       let allJobs = [];
       let isSignedIn = false;
+      let currentUser = null;
+      let caregiverProfileId = null;
       let familyProfileIdsByUserId = {};
       let familyProfilesById = {};
+      let applicationByJobId = {};
+      let conversationMetaByJobId = {};
 
       function truncateText(text, maxLength = 140) {
         const clean = String(text || "").replace(/\s+/g, " ").trim();
@@ -151,6 +155,17 @@
         return ["published", "approved", "visible"].includes(status);
       }
 
+      function buildApplicationMessagesHref(job) {
+        const conversationMeta = conversationMetaByJobId[job.id] || null;
+        return window.buildJobApplicationMessagesHref({
+          jobId: job.id,
+          targetUserId: job.user_id,
+          familyProfileId: job.family_profile_id,
+          caregiverProfileId,
+          conversationId: conversationMeta?.conversationId || null
+        });
+      }
+
       function renderJobs(list) {
         const container = document.getElementById("jobsContainer");
         const countEl = document.getElementById("jobsCount");
@@ -179,14 +194,38 @@
           const schedule = job.schedule || "Schedule not listed";
           const payRange = job.pay_range || "";
           const description = truncateText(job.description || "", 140);
-          const applyHref = isSignedIn ? `./apply.html?job_id=${job.id}` : "./login.html";
-          const applyLabel = isSignedIn ? "Apply for this job" : "Login to Apply";
+          const existingApplication = applicationByJobId[job.id] || null;
+          const isOwnJob = !!(currentUser?.id && job.user_id && currentUser.id === job.user_id);
+          const applyHref = !isSignedIn
+            ? "./login.html"
+            : isOwnJob
+              ? ""
+              : existingApplication
+                ? buildApplicationMessagesHref(job)
+                : `./apply.html?job_id=${job.id}`;
+          const applyLabel = !isSignedIn
+            ? "Login to Apply"
+            : isOwnJob
+              ? "Apply for this job"
+              : existingApplication
+                ? "View Application"
+                : "Apply for this job";
+          const applyClassName = isOwnJob
+            ? "button button-secondary button-disabled"
+            : "button button-family";
+          const applyAttributes = isOwnJob
+            ? 'aria-disabled="true" tabindex="-1" title="You cannot apply to your own listing." onclick="event.preventDefault(); return false;" style="cursor:not-allowed;"'
+            : `href="${applyHref}"`;
           const familyDisplayName = job.family_profile && typeof formatBrowseDisplayName === "function"
             ? formatBrowseDisplayName(job.family_profile)
             : "Family";
           const familyPhoto = job.family_profile && typeof getProfilePhotoArray === "function"
             ? (getProfilePhotoArray(job.family_profile)[0] || "")
             : "";
+          const familyInitial = familyDisplayName ? familyDisplayName.charAt(0).toUpperCase() : "F";
+          const familyThumbnail = familyPhoto
+            ? `<img class="job-family-avatar" src="${familyPhoto}" alt="${familyDisplayName}">`
+            : `<div class="job-family-avatar job-family-avatar-fallback" aria-hidden="true">${familyInitial}</div>`;
           const familyAction = job.family_profile_id
             ? `<a class="button button-secondary" href="./family-profile.html?id=${job.family_profile_id}&returnTo=jobs">View Family</a>`
             : "";
@@ -194,8 +233,11 @@
           card.innerHTML = `
             <div class="browse-card-body">
               <div class="job-card-header">
-                ${familyPhoto ? `<img class="job-family-avatar" src="${familyPhoto}" alt="${familyDisplayName}">` : ""}
-                <h3 class="job-card-title">${job.title || "Care Opportunity"}</h3>
+                ${familyThumbnail}
+                <div>
+                  <h3 class="job-card-title">${job.title || "Care Opportunity"}</h3>
+                  <p class="job-family-name">Family: ${familyDisplayName}</p>
+                </div>
               </div>
               <p class="browse-card-meta">${location} • ${careType}</p>
               <p><strong>Schedule:</strong> ${schedule}</p>
@@ -206,7 +248,7 @@
             <div class="browse-card-actions">
               <a class="button button-secondary" href="./job-details.html?job_id=${job.id}">View Details</a>
               ${familyAction}
-              <a class="button button-family" href="${applyHref}">${applyLabel}</a>
+              <a class="${applyClassName}" ${applyAttributes}>${applyLabel}</a>
             </div>
           `;
 
@@ -267,9 +309,17 @@
           return;
         }
 
-        isSignedIn = !!(await window.getCurrentSessionUser().catch(() => null));
+        currentUser = await window.getCurrentSessionUser().catch(() => null);
+        isSignedIn = !!currentUser;
+        caregiverProfileId = null;
         familyProfileIdsByUserId = {};
         familyProfilesById = {};
+        applicationByJobId = {};
+        conversationMetaByJobId = {};
+
+        if (currentUser?.id) {
+          caregiverProfileId = await window.getCaregiverProfileParentIdForUser(currentUser.id).catch(() => null);
+        }
 
         const { data: parentRows, error: parentError } = await window.db
           .from("job_posts")
@@ -315,10 +365,8 @@
             if (familyVersionIds.length) {
               const { data: familyVersionRows, error: familyVersionError } = await window.db
                 .from("family_profile_versions")
-                .select("id, first_name, last_name, name_display, photo_url, photo_urls, location")
-                .in("id", familyVersionIds)
-                .eq("is_live", true)
-                .eq("content_status", "published");
+                .select("id, name_display, photo_url, photo_urls, location")
+                .in("id", familyVersionIds);
 
               if (familyVersionError) {
                 console.error(familyVersionError);
@@ -380,6 +428,24 @@
             return null;
           })
           .filter(Boolean);
+
+        if (isSignedIn && currentUser?.email) {
+          const jobIds = allJobs.map((job) => job.id).filter(Boolean);
+
+          if (jobIds.length) {
+            try {
+              const uiState = await window.getJobApplicationUiState({
+                currentUser,
+                caregiverProfileId,
+                jobIds
+              });
+              applicationByJobId = uiState.applicationByJobId || {};
+              conversationMetaByJobId = uiState.conversationMetaByJobId || {};
+            } catch (error) {
+              console.error(error);
+            }
+          }
+        }
 
         applyFilters();
       }
