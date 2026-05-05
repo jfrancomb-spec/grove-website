@@ -9,74 +9,58 @@
   <link rel="icon" type="image/png" href="./MainIcon.png" />
 
   <style>
-    .role-notice {
-      display: none;
+    .messages-page .hero {
+      margin-bottom: 4px;
+    }
+
+    .thread-summary-card {
+      display: flex;
       justify-content: space-between;
       align-items: center;
-      gap: 12px;
-      max-width: 1100px;
-      margin: 8px auto 10px;
-      padding: 0 20px 6px;
-      border-bottom: 1px solid #d1d5db;
-      color: #6b7280;
-      background: transparent;
+      gap: 10px;
+      padding: 7px 12px;
+      margin-bottom: 12px;
+      border: 1px solid #d9e6e3;
+      border-radius: 14px;
+      background: #f7fbfa;
     }
 
-    .role-notice-copy {
-      display: flex;
-      align-items: baseline;
-      gap: 8px;
+    .thread-summary-copy {
       min-width: 0;
+      flex: 1 1 auto;
     }
 
-    .role-notice-label {
-      font-size: 11px;
+    .thread-summary-label {
+      margin-bottom: 1px;
+      font-size: 12px;
       font-weight: 700;
       letter-spacing: 0.05em;
       text-transform: uppercase;
       color: #6b7280;
-      white-space: nowrap;
     }
 
-    .role-notice-value {
-      font-size: 14px;
-      font-weight: 700;
-      color: #4b5563;
-      line-height: 1.2;
-    }
-
-    .role-toggle {
-      display: flex;
-      align-items: center;
-      justify-content: flex-end;
-    }
-
-    .role-toggle .button {
-      width: auto;
-      flex: 0 0 auto;
-      padding: 8px 12px;
-      font-size: 14px;
-    }
-
-    .messages-page .hero {
-      max-width: 1100px;
-      margin: 0 auto 12px;
-      padding: 10px 20px 12px;
-      text-align: left;
-      background: transparent;
-      border-bottom: 1px solid #e5e7eb;
-    }
-
-    .messages-page .hero h1 {
-      margin: 0 0 4px;
-      font-size: 26px;
-      line-height: 1.1;
-    }
-
-    .messages-page .hero .subtitle {
+    .thread-summary-title {
       margin: 0;
       font-size: 16px;
-      line-height: 1.35;
+      font-weight: 700;
+      color: #102a43;
+      line-height: 1.25;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    #threadActions {
+      flex-wrap: nowrap;
+      justify-content: flex-end;
+      gap: 10px;
+      margin: 0;
+      flex: 0 0 auto;
+    }
+
+    #messageText {
+      background: #f8fafc;
+      border-color: #c9d8d4;
     }
 
     .messages-shell {
@@ -86,32 +70,23 @@
     }
 
     @media (max-width: 640px) {
-      .role-notice {
-        flex-direction: column;
-        align-items: flex-start;
-        padding-left: 16px;
-        padding-right: 16px;
-      }
-
-      .role-toggle {
-        justify-content: flex-start;
-      }
-
-      .role-notice-copy {
-        flex-wrap: wrap;
-      }
-
       .messages-page .hero {
-        padding: 8px 16px 10px;
-        margin-bottom: 10px;
+        margin-bottom: 4px;
       }
 
-      .messages-page .hero h1 {
-        font-size: 22px;
+      .thread-summary-card {
+        flex-direction: column;
+        align-items: stretch;
+        padding: 8px 10px;
       }
 
-      .messages-page .hero .subtitle {
-        font-size: 15px;
+      .thread-summary-title {
+        white-space: normal;
+      }
+
+      #threadActions {
+        flex-wrap: wrap;
+        justify-content: flex-start;
       }
 
       .messages-shell {
@@ -125,14 +100,6 @@
   <div id="header-placeholder"></div>
 
   <main class="messages-page">
-    <section id="profileScopeCard" class="role-notice">
-      <div class="role-notice-copy">
-        <div class="role-notice-label">Viewing as</div>
-        <div id="profileScopeText" class="role-notice-value">Loading...</div>
-      </div>
-      <div id="profileScopeActions" class="role-toggle"></div>
-    </section>
-
     <div class="hero">
       <h1>Messages</h1>
       <div class="subtitle">
@@ -143,15 +110,14 @@
     <section class="messages-shell">
       <div class="messages-layout">
         <div class="form-card">
-          <h2 class="mt-0">Inbox</h2>
           <div id="conversationList"></div>
         </div>
 
         <div class="form-card">
-          <div class="flex-between">
-            <div>
-              <h2 class="mt-0">Conversation</h2>
-              <div id="threadHeader" class="mb-16 text-muted">Loading...</div>
+          <div class="thread-summary-card">
+            <div class="thread-summary-copy">
+              <div class="thread-summary-label" id="threadSummaryLabel">Conversation</div>
+              <div id="threadHeader" class="thread-summary-title">Loading...</div>
             </div>
             <div id="threadActions" class="button-row" style="display:none;"></div>
           </div>
@@ -209,13 +175,13 @@
       }
 
       function setProfileScopeMessage(message) {
-        const scopeText = document.getElementById("profileScopeText");
+        const scopeText = document.getElementById("globalActingRoleValue");
         if (scopeText) scopeText.textContent = message;
       }
 
       function renderProfileScopeCard() {
-        const card = document.getElementById("profileScopeCard");
-        const actions = document.getElementById("profileScopeActions");
+        const card = document.getElementById("globalActingRoleNotice");
+        const actions = document.getElementById("globalActingRoleToggle");
         if (!card || !actions) return;
 
         if (!availableProfiles.length) {
@@ -223,7 +189,7 @@
           return;
         }
 
-        card.style.display = "block";
+        card.style.display = "";
         actions.innerHTML = "";
 
         if (activeProfileId && activeProfileType) {
@@ -468,38 +434,84 @@
         return lastMessage?.message_text || conversation?.last_visible_message_preview || "No messages yet";
       }
 
+      function getThreadProfileHref(conversation) {
+        if (!conversation) return "";
+
+        if (activeProfileType === "caregiver" && conversation.family_profile_id) {
+          return `./family-profile.html?id=${encodeURIComponent(conversation.family_profile_id)}`;
+        }
+
+        if (activeProfileType === "family" && conversation.caregiver_profile_id) {
+          return `./caregiver-profile.html?id=${encodeURIComponent(conversation.caregiver_profile_id)}`;
+        }
+
+        return "";
+      }
+
+      function setThreadSummary(label, title) {
+        const summaryLabel = document.getElementById("threadSummaryLabel");
+        const threadHeader = document.getElementById("threadHeader");
+
+        if (summaryLabel) {
+          summaryLabel.textContent = label;
+        }
+
+        if (threadHeader) {
+          threadHeader.textContent = title;
+        }
+      }
+
       function renderThreadActions() {
         const actions = document.getElementById("threadActions");
         if (!actions) return;
 
         const conversation = getSelectedConversation();
-        if (!conversation?.job_post_id) {
+        if (!conversation) {
           actions.innerHTML = "";
           actions.style.display = "none";
           return;
         }
 
-        const linkedJob = jobsById[conversation.job_post_id] || null;
-        const label = linkedJob?.title ? `View Job: ${linkedJob.title}` : "View Job";
-        const jobDetailsParams = new URLSearchParams({
-          job_id: conversation.job_post_id,
-          returnTo: "messages"
-        });
+        const threadProfileHref = getThreadProfileHref(conversation);
+        const profileLabel = activeProfileType === "caregiver"
+          ? "View Family"
+          : activeProfileType === "family"
+            ? "View Caregiver"
+            : "View Profile";
 
-        if (activeProfileType) {
-          jobDetailsParams.set("profileType", activeProfileType);
-        }
+        let jobActionHtml = "";
+        if (conversation.job_post_id) {
+          const jobDetailsParams = new URLSearchParams({
+            job_id: conversation.job_post_id,
+            returnTo: "messages"
+          });
 
-        if (activeProfileId) {
-          jobDetailsParams.set("profileId", activeProfileId);
-        }
+          if (activeProfileType) {
+            jobDetailsParams.set("profileType", activeProfileType);
+          }
 
-        if (conversation.id) {
-          jobDetailsParams.set("conversation", conversation.id);
+          if (activeProfileId) {
+            jobDetailsParams.set("profileId", activeProfileId);
+          }
+
+          if (conversation.id) {
+            jobDetailsParams.set("conversation", conversation.id);
+          }
+
+          jobActionHtml = `<a class="button button-secondary" href="./job-details.html?${jobDetailsParams.toString()}">View Job</a>`;
         }
 
         actions.innerHTML =
-          `<a class="button button-secondary" href="./job-details.html?${jobDetailsParams.toString()}">${escapeHtml(label)}</a>`;
+          jobActionHtml +
+          (threadProfileHref
+            ? `<a class="button button-secondary" href="${threadProfileHref}">${profileLabel}</a>`
+            : "");
+
+        if (!actions.innerHTML) {
+          actions.style.display = "none";
+          return;
+        }
+
         actions.style.display = "";
       }
 
@@ -742,8 +754,7 @@
 
           if (!activeProfileId || !activeProfileType) {
             selectedConversationId = null;
-            document.getElementById("threadHeader").textContent =
-              "Choose a profile to view this conversation.";
+            setThreadSummary("Conversation", "Choose a profile to view this conversation.");
             return;
           }
 
@@ -759,10 +770,12 @@
         if (!targetUserId) return;
 
         if (!activeProfileId || !activeProfileType) {
-          document.getElementById("threadHeader").textContent =
+          setThreadSummary(
+            "Conversation",
             availableProfiles.length > 1
               ? "Choose the profile you want to use for messaging."
-              : "Create a profile before starting a conversation.";
+              : "Create a profile before starting a conversation."
+          );
           return;
         }
 
@@ -775,8 +788,7 @@
         }
 
         if (!familyProfileId || !caregiverProfileId) {
-          document.getElementById("threadHeader").textContent =
-            "Unable to start this conversation because the matching profile could not be found.";
+          setThreadSummary("Conversation", "Unable to start this conversation because the matching profile could not be found.");
           return;
         }
 
@@ -794,8 +806,7 @@
           selectedConversationId = created.id;
           updateConversationUrl(selectedConversationId);
         } else {
-          document.getElementById("threadHeader").textContent =
-            "Unable to create the conversation right now.";
+          setThreadSummary("Conversation", "Unable to create the conversation right now.");
         }
       }
 
@@ -1121,29 +1132,32 @@
         if (!selectedConversationId) {
           if (targetUser) {
             if (!activeProfileId || !activeProfileType) {
-              threadHeader.textContent = "Choose a profile to start a conversation.";
+              setThreadSummary("Conversation", "Choose a profile to start a conversation.");
               threadEl.innerHTML = "<p>Select the profile you want to use first.</p>";
               composer.style.display = "none";
               renderThreadActions();
               return;
             }
 
-            threadHeader.textContent = "Start a new conversation";
+            setThreadSummary("Conversation", "Start a new conversation");
             threadEl.innerHTML = "<p>Write your first message below.</p>";
             composer.style.display = "block";
             renderThreadActions();
             return;
           }
 
-          threadHeader.textContent = activeProfileId
-            ? "Select a conversation to view messages."
-            : "Choose a profile to view messages.";
+          setThreadSummary(
+            "Conversation",
+            activeProfileId
+              ? "Select a conversation to view messages."
+              : "Choose a profile to view messages."
+          );
           composer.style.display = "none";
           renderThreadActions();
           return;
         }
 
-        threadHeader.textContent = `Conversation with ${getDisplayNameForConversation(selectedConversationId)}`;
+        setThreadSummary("Conversation with", getDisplayNameForConversation(selectedConversationId));
         composer.style.display = "block";
         renderThreadActions();
 

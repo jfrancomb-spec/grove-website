@@ -383,8 +383,8 @@ function resolveActingRole(availableRoles = []) {
 }
 
 function getRoleHomeHref(role) {
-  if (role === "family") return "./findcare.html";
-  if (role === "caregiver") return "./jobs.html";
+  if (role === "family") return "./account.html";
+  if (role === "caregiver") return "./account.html";
   return "./account.html";
 }
 

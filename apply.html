@@ -263,7 +263,7 @@
 
   <main class="apply-page">
     <div class="hero">
-      <h1>Apply for This Job</h1>
+      <h1>Apply for this Job</h1>
       <div class="subtitle" id="jobSubtitle">Loading job details...</div>
     </div>
 
@@ -301,7 +301,6 @@
             <textarea
               id="app_message"
               class="apply-message"
-              placeholder="Hi! I’d love to help with your after-school care needs. I have experience with elementary-age kids, I’m available weekday afternoons, and I’m based nearby in Belle Plaine. I’d be happy to learn more about your routine and what support would help most."
               required
             ></textarea>
           </div>
@@ -385,7 +384,7 @@
       let draftStorageKey = null;
 
       function formatJobSubtitle(jobRow) {
-        return [jobRow.title, jobRow.care_type, jobRow.location, jobRow.schedule].filter(Boolean).join(" • ");
+        return jobRow.title || "Job";
       }
 
       function escapeHtml(value) {

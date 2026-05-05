@@ -35,7 +35,7 @@ test("apply page uses caregiver profile context and only asks for a message", as
 
   await expect(page.getByRole("heading", { name: "Apply with your Grove profile" })).toBeVisible();
   await expect(page.getByText("Job Details")).toBeVisible();
-  await expect(page.getByText("After-school nanny", { exact: true })).toBeVisible();
+  await expect(page.locator("#jobSubtitle")).toHaveText("After-school nanny");
   await expect(page.getByText("Belle Plaine • Childcare")).toBeVisible();
   await expect(page.getByText("Schedule: Weekdays")).toBeVisible();
   await expect(page.getByText("Pay: $18-$22/hr")).toBeVisible();

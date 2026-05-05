@@ -30,6 +30,14 @@ body {
   line-height: 1.6;
 }
 
+body.button-theme-family {
+  background: var(--family-light) !important;
+}
+
+body.button-theme-caregiver {
+  background: var(--caregiver-light) !important;
+}
+
 body.filters-open {
   overflow: hidden;
 }
@@ -282,7 +290,7 @@ header,
 
 .global-role-notice {
   max-width: 1100px;
-  margin: 24px auto 14px;
+  margin: 8px auto 14px;
   padding-left: 20px;
   padding-right: 20px;
 }
@@ -291,14 +299,28 @@ header,
    Hero
 ===================================================== */
 .hero {
-  padding: 28px 20px;
+  padding: 0 20px 12px;
   text-align: center;
   background: #e9f1ec;
 }
 
+body.button-theme-family .hero:not(.hero-home) {
+  background: #ddeaf6 !important;
+}
+
+body.button-theme-caregiver .hero:not(.hero-home) {
+  background: #dcefe9 !important;
+}
+
+.hero h1 {
+  margin: 0 0 8px;
+  font-size: 34px;
+}
+
 .subtitle {
-  font-size: 20px;
-  margin-bottom: 16px;
+  font-size: 16px;
+  margin-bottom: 8px;
+  line-height: 1.45;
 }
 
 /* =====================================================
@@ -314,7 +336,7 @@ header,
 }
 
 .hero-home {
-  padding: 56px 20px 40px;
+  padding: 34px 20px 24px;
 }
 
 .hero-home-inner {
@@ -323,13 +345,13 @@ header,
 }
 
 .hero-home h1 {
-  max-width: 780px;
-  margin: 0 auto 16px;
+  max-width: 720px;
+  margin: 0 auto 10px;
 }
 
 .hero-subtitle {
   max-width: 760px;
-  margin: 0 auto 28px;
+  margin: 0 auto 18px;
 }
 
 .hero-actions {
@@ -484,6 +506,41 @@ button.button {
   color: #6b7280 !important;
 }
 
+.button-tooltip {
+  position: relative;
+}
+
+.button-tooltip[data-tooltip]:hover::after,
+.button-tooltip[data-tooltip]:focus-visible::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 10px);
+  transform: translateX(-50%);
+  min-width: 220px;
+  max-width: 280px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: rgba(17, 24, 39, 0.96);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.35;
+  text-align: center;
+  white-space: normal;
+  z-index: 50;
+  pointer-events: none;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.18);
+}
+
+body.button-theme-family .button-disabled,
+body.button-theme-family .button-disabled:hover,
+body.button-theme-caregiver .button-disabled,
+body.button-theme-caregiver .button-disabled:hover {
+  background: #d7dce2 !important;
+  color: #6b7280 !important;
+}
+
 .button-admin {
   padding: 0.55rem 0.9rem;
   border: none;
@@ -511,33 +568,33 @@ button.button {
   color: #fff;
 }
 
-body.button-theme-family .button:not(.button-admin),
+body.button-theme-family .button:not(.button-admin):not(.button-disabled),
 body.button-theme-family .button-family,
-body.button-theme-family .button-caregiver,
-body.button-theme-family .button-secondary {
+body.button-theme-family .button-caregiver:not(.button-disabled),
+body.button-theme-family .button-secondary:not(.button-disabled) {
   background: var(--family) !important;
   color: #fff !important;
 }
 
-body.button-theme-family .button:not(.button-admin):hover,
+body.button-theme-family .button:not(.button-admin):not(.button-disabled):hover,
 body.button-theme-family .button-family:hover,
-body.button-theme-family .button-caregiver:hover,
-body.button-theme-family .button-secondary:hover {
+body.button-theme-family .button-caregiver:not(.button-disabled):hover,
+body.button-theme-family .button-secondary:not(.button-disabled):hover {
   background: #3f6d93 !important;
 }
 
-body.button-theme-caregiver .button:not(.button-admin),
+body.button-theme-caregiver .button:not(.button-admin):not(.button-disabled),
 body.button-theme-caregiver .button-family,
-body.button-theme-caregiver .button-caregiver,
-body.button-theme-caregiver .button-secondary {
+body.button-theme-caregiver .button-caregiver:not(.button-disabled),
+body.button-theme-caregiver .button-secondary:not(.button-disabled) {
   background: var(--caregiver) !important;
   color: #fff !important;
 }
 
-body.button-theme-caregiver .button:not(.button-admin):hover,
+body.button-theme-caregiver .button:not(.button-admin):not(.button-disabled):hover,
 body.button-theme-caregiver .button-family:hover,
-body.button-theme-caregiver .button-caregiver:hover,
-body.button-theme-caregiver .button-secondary:hover {
+body.button-theme-caregiver .button-caregiver:not(.button-disabled):hover,
+body.button-theme-caregiver .button-secondary:not(.button-disabled):hover {
   background: #32756e !important;
 }
 
@@ -551,6 +608,24 @@ form {
 
 .row {
   margin-bottom: 12px;
+}
+
+label {
+  display: block;
+  margin-bottom: 4px;
+  font-weight: 700;
+  color: #334155;
+}
+
+.field-hint {
+  margin: 0 0 8px;
+  font-size: 14px;
+  color: #64748b;
+}
+
+.hint-example {
+  font-weight: 600;
+  color: #475569;
 }
 
 input,
@@ -618,6 +693,31 @@ textarea:focus {
 
 .form-card h3 {
   margin-top: 24px;
+}
+
+.guide-card {
+  margin: 0 0 18px;
+  padding: 16px 18px;
+  border: 1px solid #dbe7e3;
+  border-radius: 14px;
+  background: #f6fbf9;
+}
+
+.guide-card h3 {
+  margin: 0 0 6px;
+  font-size: 18px;
+}
+
+.guide-card p {
+  margin: 0;
+  color: #52606d;
+}
+
+.guide-card-soft {
+  margin-top: 0;
+  margin-bottom: 10px;
+  background: #fbfcfd;
+  border-color: #e5e7eb;
 }
 
 /* =====================================================
@@ -1335,8 +1435,8 @@ body.caregiver-browse-page .profile-actions .button {
 
 .message-bubble.sent {
   align-self: flex-end;
-  background: var(--primary);
-  color: #fff;
+  background: #d7ece9;
+  color: #102a43;
   border-top-right-radius: 6px;
 }
 
@@ -1356,7 +1456,7 @@ body.caregiver-browse-page .profile-actions .button {
 }
 
 .message-bubble.sent .message-sender {
-  color: rgba(255, 255, 255, 0.82);
+  color: #4f6f6b;
 }
 
 .message-bubble.received .message-sender {
@@ -1690,19 +1790,19 @@ body.caregiver-browse-page .profile-actions .button {
   }
 
   .hero {
-    padding: 20px 20px;
+    padding: 0 16px 8px;
   }
 
   .hero-home {
-    padding: 34px 20px 24px;
+    padding: 24px 16px 18px;
   }
 
-  h1 {
-    font-size: 34px;
+  .hero h1 {
+    font-size: 28px;
   }
 
   .subtitle {
-    font-size: 18px;
+    font-size: 15px;
   }
 
   .cards {

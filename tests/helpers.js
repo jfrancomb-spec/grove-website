@@ -3,6 +3,7 @@ function buildSupabaseStubScript({
   familyProfile = null,
   familyProfiles = [],
   caregiverProfile = null,
+  caregiverProfiles = [],
   familyProfileVersions = [],
   caregiverProfileVersions = [],
   jobPosts = [],
@@ -36,6 +37,7 @@ function buildSupabaseStubScript({
         familyProfile: ${JSON.stringify(normalizedFamilyProfile)},
         familyProfiles: ${JSON.stringify(familyProfiles)},
         caregiverProfile: ${JSON.stringify(normalizedCaregiverProfile)},
+        caregiverProfiles: ${JSON.stringify(caregiverProfiles)},
         familyProfileVersions: ${JSON.stringify(familyProfileVersions)},
         caregiverProfileVersions: ${JSON.stringify(caregiverProfileVersions)},
         jobPosts: ${JSON.stringify(jobPosts)},
@@ -78,7 +80,10 @@ function buildSupabaseStubScript({
               ...((fixtures.familyProfiles || []).filter(Boolean))
             ];
           case "caregiver_profiles":
-            return fixtures.caregiverProfile ? [fixtures.caregiverProfile] : [];
+            return [
+              ...(fixtures.caregiverProfile ? [fixtures.caregiverProfile] : []),
+              ...((fixtures.caregiverProfiles || []).filter(Boolean))
+            ];
           case "family_profile_versions":
             return fixtures.familyProfileVersions || [];
           case "caregiver_profile_versions":

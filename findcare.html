@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Grove | Post a Care Request</title>
+  <title>Grove | Post a Job</title>
 
   <link rel="stylesheet" href="./styles.css" />
   <link rel="icon" type="image/png" href="./MainIcon.png" />
@@ -13,51 +13,33 @@
   <div id="header-placeholder"></div>
 
   <main>
-    <div class="hero">
-      <h1 id="heroTitle">Post a Care Request</h1>
-      <div class="subtitle" id="heroSubtitle">
-        Share what kind of help you need. Your request can be viewed by caregivers in the Grove network.
-      </div>
-      <a class="button button-family" href="#FindCare" id="heroPrimaryButton">Post Request</a>
-      <a class="button button-caregiver" href="./caregivers.html">Browse Caregivers</a>
-    </div>
-
-    <section>
-      <h2>Why Families Choose Grove</h2>
-
-      <div class="cards">
-        <div class="card">
-          <h3>Verified Identity</h3>
-          <p>Caregivers confirm who they are before joining Grove.</p>
-        </div>
-
-        <div class="card">
-          <h3>Local Accountability</h3>
-          <p>Connections rooted in real community reputation.</p>
-        </div>
-
-        <div class="card">
-          <h3>Community Feedback</h3>
-          <p>Over time, Grove will support two-way reviews so families and caregivers can share experiences.</p>
-        </div>
-      </div>
-    </section>
-
     <section id="FindCare">
-      <h2 id="formHeading">Care Request</h2>
-      <p id="formIntro">
-        The more detail you provide, the easier it is for caregivers to decide if the opportunity fits their availability.
-      </p>
+      <div class="section-heading">
+        <p class="eyebrow" id="pageEyebrow">Create Job Posting</p>
+        <h1 id="formHeading">Post a Job</h1>
+        <p id="formIntro">
+          Give caregivers a clear picture of the role so the right people feel confident reaching out.
+        </p>
+      </div>
 
       <div class="form-card">
         <div id="requestError" class="error" style="display:none; margin-bottom: 16px;"></div>
 
         <form id="careForm">
+          <div class="guide-card">
+            <h3>What caregivers want to understand right away</h3>
+            <p>Be clear about the kind of help you need, when you need it, and what a normal shift will look like.</p>
+          </div>
+
           <div class="row">
+            <label for="job_title">Job Title</label>
+            <p class="field-hint">Use a clear title like <span class="hint-example">After-school childcare for two kids</span> or <span class="hint-example">Weekend dog care in Belle Plaine</span>.</p>
             <input id="job_title" type="text" placeholder="Job Title" required />
           </div>
 
           <div class="row">
+            <label for="care_type">Type of Care Needed</label>
+            <p class="field-hint">Choose the category that best matches the main kind of support you are looking for.</p>
             <select id="care_type" required>
               <option value="">Type of Care Needed</option>
               <option value="Childcare">Childcare</option>
@@ -69,18 +51,27 @@
           </div>
 
           <div class="row">
+            <label for="schedule">Schedule Needed</label>
+            <p class="field-hint">Include days, times, start date, and whether this is recurring or occasional.</p>
             <input id="schedule" type="text" placeholder="Schedule Needed (days/times)" required />
           </div>
 
           <div class="row">
-            <input id="pay_range" type="text" placeholder="Pay (example: $18–$22/hour)" required />
+            <label for="pay_range">Pay</label>
+            <p class="field-hint">Clear pay helps the right caregivers decide quickly whether the role fits.</p>
+            <input id="pay_range" type="text" placeholder="Pay (example: $18-$22/hour)" required />
           </div>
 
           <div class="row">
-            <textarea id="details" placeholder="Tell caregivers about the position, responsibilities, ages, pets, routines, expectations, etc." required></textarea>
+            <label for="details">Job Details</label>
+            <div class="guide-card guide-card-soft">
+              <h3>What families should include here</h3>
+              <p>Helpful details usually include ages, routines, responsibilities, pets, mobility needs, transportation expectations, and anything else that helps someone know if the fit is right.</p>
+            </div>
+            <textarea id="details" placeholder="Tell caregivers about the position, responsibilities, ages, pets, routines, expectations, and anything else they should know." required></textarea>
           </div>
 
-          <button class="button button-family" id="submitButton" type="submit">Submit Request</button>
+          <button class="button button-family" id="submitButton" type="submit">Submit Job</button>
         </form>
 
         <p id="careSuccess" class="success" style="display:none;"></p>
@@ -88,13 +79,12 @@
         <div style="margin-top: 22px;">
           <h3 style="margin-bottom: 6px;">What Happens Next</h3>
           <p style="margin-top: 0;" id="whatHappensNextText">
-            After you submit your request, it may be published right away or temporarily held depending on your account status.
-            Once published, it will be visible to caregivers in the Grove network.
+            After you submit your job, it may publish right away or briefly wait for review depending on your account status. Once it is live, caregivers in Grove can find it and respond.
           </p>
         </div>
 
         <p style="margin-top: 16px;">
-          <a href="./account.html">← Back to My Account</a>
+          <a href="./account.html">← Back to Dashboard</a>
         </p>
       </div>
     </section>
@@ -113,9 +103,7 @@
       const submitButton = document.getElementById("submitButton");
       const formHeading = document.getElementById("formHeading");
       const formIntro = document.getElementById("formIntro");
-      const heroTitle = document.getElementById("heroTitle");
-      const heroSubtitle = document.getElementById("heroSubtitle");
-      const heroPrimaryButton = document.getElementById("heroPrimaryButton");
+      const pageEyebrow = document.getElementById("pageEyebrow");
       const whatHappensNextText = document.getElementById("whatHappensNextText");
 
       const jobTitleEl = document.getElementById("job_title");
@@ -163,30 +151,25 @@
           return;
         }
 
-        submitButton.textContent = existingJobId ? "Save Changes" : "Submit Request";
+        submitButton.textContent = existingJobId ? "Save Changes" : "Submit Job";
       }
 
       function applyEditModeUI() {
         if (!existingJobId) return;
 
-        if (heroTitle) heroTitle.textContent = "Edit a Care Request";
-        if (heroSubtitle) {
-          heroSubtitle.textContent =
-            "Update your care request details. Changes will be saved through Grove's moderation and versioning system.";
-        }
-        if (heroPrimaryButton) heroPrimaryButton.textContent = "Edit Request";
-        if (formHeading) formHeading.textContent = "Edit Care Request";
+        if (pageEyebrow) pageEyebrow.textContent = "Update Job Posting";
+        if (formHeading) formHeading.textContent = "Edit Job Posting";
         if (formIntro) {
           formIntro.textContent =
-            "Update the details below so caregivers can see the most accurate version of your request.";
+            "Update the details below so caregivers see the clearest and most current version of the role.";
         }
         if (submitButton) submitButton.textContent = "Save Changes";
         if (whatHappensNextText) {
           whatHappensNextText.textContent =
-            "After you save changes, Grove will create a new version of your request. Depending on your account status, it may publish right away or wait in queue for review.";
+            "After you save changes, Grove will create a new version of your posting. Depending on your account status, it may publish right away or briefly wait for review.";
         }
 
-        document.title = "Grove | Edit Care Request";
+        document.title = "Grove | Edit Job Posting";
       }
 
       async function requireFreshSession() {
@@ -269,7 +252,7 @@
         if (!payload.care_type) throw new Error("Please select the type of care needed.");
         if (!payload.schedule) throw new Error("Please enter the schedule needed.");
         if (!payload.pay_range) throw new Error("Please enter the pay information.");
-        if (!payload.description) throw new Error("Please enter request details.");
+        if (!payload.description) throw new Error("Please enter job details.");
       }
 
       async function submitJob(values, accessToken) {
@@ -342,14 +325,14 @@
           if (existingJobId) {
             showSuccess(
               status === "queued"
-                ? "✅ Changes saved and placed in queue. Redirecting to your account..."
-                : "✅ Changes saved successfully. Redirecting to your account..."
+                ? "Changes saved and placed in queue. Redirecting to your dashboard..."
+                : "Changes saved successfully. Redirecting to your dashboard..."
             );
           } else {
             showSuccess(
               status === "queued"
-                ? "✅ Request submitted and placed in queue. Redirecting to your account..."
-                : "✅ Request submitted and published. Redirecting to your account..."
+                ? "Job submitted and placed in queue. Redirecting to your dashboard..."
+                : "Job submitted successfully. Redirecting to your dashboard..."
             );
           }
 
@@ -357,7 +340,7 @@
         } catch (error) {
           console.error(error);
           hideSuccess();
-          showError(error?.message || "Unable to submit request right now.");
+          showError(error?.message || "Unable to submit job right now.");
         } finally {
           setSubmitting(false);
         }
@@ -379,7 +362,7 @@
         } catch (error) {
           console.error(error);
           hideSuccess();
-          showError(error?.message || "Unable to load request details.");
+          showError(error?.message || "Unable to load job details.");
         }
       });
     })();

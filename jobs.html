@@ -211,10 +211,10 @@
                 ? "View Application"
                 : "Apply for this job";
           const applyClassName = isOwnJob
-            ? "button button-secondary button-disabled"
+            ? "button button-secondary button-disabled button-tooltip"
             : "button button-family";
           const applyAttributes = isOwnJob
-            ? 'aria-disabled="true" tabindex="-1" title="You cannot apply to your own listing." onclick="event.preventDefault(); return false;" style="cursor:not-allowed;"'
+            ? 'aria-disabled="true" tabindex="-1" title="You cannot apply to your own listing." data-tooltip="You cannot apply to your own listing." onclick="event.preventDefault(); return false;" style="cursor:not-allowed;"'
             : `href="${applyHref}"`;
           const familyDisplayName = job.family_profile && typeof formatBrowseDisplayName === "function"
             ? formatBrowseDisplayName(job.family_profile)

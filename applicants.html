@@ -1,0 +1,829 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Grove | Applicants</title>
+
+  <link rel="stylesheet" href="./styles.css" />
+  <link rel="icon" type="image/png" href="./MainIcon.png" />
+
+  <style>
+    .messages-page .hero {
+      max-width: 1100px;
+      margin: 0 auto 12px;
+      padding: 4px 20px 10px;
+      text-align: left;
+      background: transparent;
+      border-bottom: 1px solid #e5e7eb;
+    }
+
+    .messages-page .hero h1 {
+      margin: 0 0 4px;
+      font-size: 26px;
+      line-height: 1.1;
+    }
+
+    .messages-page .hero .subtitle {
+      margin: 0;
+      font-size: 16px;
+      line-height: 1.35;
+    }
+
+    .messages-shell {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 0 20px 20px;
+    }
+
+    @media (max-width: 640px) {
+      .messages-page .hero {
+        padding: 4px 16px 8px;
+        margin-bottom: 10px;
+      }
+
+      .messages-page .hero h1 {
+        font-size: 22px;
+      }
+
+      .messages-page .hero .subtitle {
+        font-size: 15px;
+      }
+
+      .messages-shell {
+        padding: 0 16px 18px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div id="header-placeholder"></div>
+
+  <main class="messages-page">
+    <div class="hero">
+      <h1>Applicants</h1>
+      <div class="subtitle" id="applicantsSubtitle">
+        Loading applicants for this job.
+      </div>
+    </div>
+
+    <section class="messages-shell">
+      <div class="messages-layout">
+        <div class="form-card">
+          <h2 class="mt-0">Inbox</h2>
+          <div id="conversationList"></div>
+        </div>
+
+        <div class="form-card">
+          <div class="flex-between">
+            <div>
+              <h2 class="mt-0">Conversation</h2>
+              <div id="threadHeader" class="mb-16 text-muted">Loading...</div>
+            </div>
+            <div id="threadActions" class="button-row" style="display:none;"></div>
+          </div>
+          <div id="messageThread" class="message-thread"></div>
+
+          <div id="messageComposer" style="display:none;">
+            <div class="row">
+              <textarea id="messageText" placeholder="Write your message..."></textarea>
+            </div>
+            <button class="button" id="sendMessageBtn" type="button">Send Message</button>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <div id="footer-placeholder"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script src="./app.js"></script>
+
+  <script>
+    (function () {
+      let currentUser = null;
+      let familyProfileId = null;
+      let caregiverProfileId = null;
+      let selectedConversationId = null;
+      let conversations = [];
+      let messagesByConversationId = {};
+      let participantMap = {};
+      let userInfoMap = {};
+      let jobsById = {};
+      let activeJobId = null;
+
+      function escapeHtml(value) {
+        if (value === null || value === undefined) return "";
+        return String(value)
+          .replaceAll("&", "&amp;")
+          .replaceAll("<", "&lt;")
+          .replaceAll(">", "&gt;")
+          .replaceAll('"', "&quot;")
+          .replaceAll("'", "&#39;");
+      }
+
+      function formatMessageTime(ts) {
+        try {
+          return new Date(ts).toLocaleString();
+        } catch {
+          return "";
+        }
+      }
+
+      function setSubtitle(text) {
+        const subtitle = document.getElementById("applicantsSubtitle");
+        if (subtitle) subtitle.textContent = text;
+      }
+
+      function renderProfileScopeCard() {
+        const card = document.getElementById("globalActingRoleNotice");
+        const text = document.getElementById("globalActingRoleValue");
+        const actions = document.getElementById("globalActingRoleToggle");
+        if (!card || !text || !actions) return;
+
+        if (!familyProfileId) {
+          card.style.display = "none";
+          return;
+        }
+
+        card.style.display = "flex";
+        text.textContent = "Family";
+        actions.innerHTML = "";
+
+        if (caregiverProfileId) {
+          const button = document.createElement("button");
+          button.type = "button";
+          button.className = "button button-caregiver";
+          button.textContent = "Switch to Caregiver";
+          button.addEventListener("click", function () {
+            window.setStoredActingRole?.("caregiver");
+            window.location.href = "./account.html";
+          });
+          actions.appendChild(button);
+        }
+      }
+
+      async function requireSession() {
+        const { data, error } = await window.db.auth.getSession();
+
+        if (error) {
+          console.error(error);
+          window.location.href = "./login.html";
+          return false;
+        }
+
+        currentUser = data?.session?.user || null;
+
+        if (!currentUser) {
+          window.location.href = "./login.html";
+          return false;
+        }
+
+        return true;
+      }
+
+      async function loadProfiles() {
+        const [{ data: familyProfile }, { data: caregiverProfile }] = await Promise.all([
+          window.db
+            .from("family_profiles")
+            .select("id, current_visible_version_id, current_pending_version_id")
+            .eq("user_id", currentUser.id)
+            .maybeSingle(),
+          window.db
+            .from("caregiver_profiles")
+            .select("id, current_visible_version_id, current_pending_version_id")
+            .eq("user_id", currentUser.id)
+            .maybeSingle()
+        ]);
+
+        familyProfileId = familyProfile?.id || null;
+        caregiverProfileId = caregiverProfile?.id || null;
+      }
+
+      async function loadJobContext() {
+        const params = new URLSearchParams(window.location.search);
+        activeJobId = params.get("job_id");
+
+        if (!activeJobId) {
+          throw new Error("No job was selected.");
+        }
+
+        const { data: job, error: jobError } = await window.db
+          .from("job_posts")
+          .select("id, user_id, title, current_visible_version_id, current_pending_version_id")
+          .eq("id", activeJobId)
+          .eq("user_id", currentUser.id)
+          .maybeSingle();
+
+        if (jobError) {
+          throw new Error(jobError.message);
+        }
+
+        if (!job) {
+          throw new Error("Job not found.");
+        }
+
+        let title = job.title || "This job";
+        const versionId = job.current_pending_version_id || job.current_visible_version_id;
+
+        if (versionId) {
+          const { data: version, error: versionError } = await window.db
+            .from("job_post_versions")
+            .select("id, title")
+            .eq("id", versionId)
+            .maybeSingle();
+
+          if (versionError) {
+            throw new Error(versionError.message);
+          }
+
+          if (version?.title) {
+            title = version.title;
+          }
+        }
+
+        jobsById[job.id] = { id: job.id, title };
+        setSubtitle("Conversations for " + title + ".");
+      }
+
+      function getOtherParticipant(conversationId) {
+        const participants = participantMap[conversationId] || [];
+        return participants.find((participant) => participant.user_id !== currentUser.id) || null;
+      }
+
+      function getDisplayNameForConversation(conversationId) {
+        const other = getOtherParticipant(conversationId);
+        if (!other) return "Conversation";
+        return userInfoMap[other.user_id]?.name || "Conversation";
+      }
+
+      function getDisplayPhotoForConversation(conversationId) {
+        const other = getOtherParticipant(conversationId);
+        if (!other) return "";
+        return userInfoMap[other.user_id]?.photo_url || "";
+      }
+
+      function getConversationAvatar(conversationId) {
+        const photo = getDisplayPhotoForConversation(conversationId);
+        const name = getDisplayNameForConversation(conversationId);
+        const initial = name ? name.charAt(0).toUpperCase() : "?";
+
+        if (photo) {
+          return `<img class="conversation-avatar" src="${escapeHtml(photo)}" alt="${escapeHtml(name)}">`;
+        }
+
+        return `<div class="conversation-avatar conversation-avatar-fallback">${escapeHtml(initial)}</div>`;
+      }
+
+      function getSelectedConversation() {
+        if (!selectedConversationId) return null;
+        return conversations.find((conversation) => conversation.id === selectedConversationId) || null;
+      }
+
+      function isConversationUnread(conversationId) {
+        const participants = participantMap[conversationId] || [];
+        const myParticipant = participants.find((participant) => participant.user_id === currentUser.id);
+        const thread = messagesByConversationId[conversationId] || [];
+
+        if (!myParticipant || !thread.length) return false;
+        if (myParticipant.has_unread_visible_messages === true) return true;
+
+        const lastMessage = thread[thread.length - 1];
+        if (!lastMessage || lastMessage.sender_user_id === currentUser.id) return false;
+        if (!myParticipant.last_read_at) return true;
+
+        return new Date(lastMessage.created_at) > new Date(myParticipant.last_read_at);
+      }
+
+      async function loadConversationUserInfo() {
+        const participantUserIds = Array.from(
+          new Set(
+            Object.values(participantMap)
+              .flat()
+              .map((participant) => participant.user_id)
+              .filter((userId) => userId && userId !== currentUser.id)
+          )
+        );
+
+        if (!participantUserIds.length) {
+          userInfoMap = {};
+          return;
+        }
+
+        userInfoMap = {};
+
+        const { data: caregiverProfiles, error: caregiverError } = await window.db
+          .from("caregiver_profiles")
+          .select("user_id, current_visible_version_id")
+          .in("user_id", participantUserIds)
+          .not("current_visible_version_id", "is", null);
+
+        if (caregiverError) {
+          console.error(caregiverError);
+        }
+
+        const caregiverVersionIds = (caregiverProfiles || [])
+          .map((profile) => profile.current_visible_version_id)
+          .filter(Boolean);
+
+        if (caregiverVersionIds.length) {
+          const { data: caregiverVersions, error: caregiverVersionsError } = await window.db
+            .from("caregiver_profile_versions")
+            .select("id, name_display, photo_url")
+            .in("id", caregiverVersionIds);
+
+          if (caregiverVersionsError) {
+            console.error(caregiverVersionsError);
+          } else {
+            const caregiverVersionMap = {};
+            (caregiverVersions || []).forEach((version) => {
+              caregiverVersionMap[version.id] = version;
+            });
+
+            (caregiverProfiles || []).forEach((profile) => {
+              const version = caregiverVersionMap[profile.current_visible_version_id];
+              if (version) {
+                userInfoMap[profile.user_id] = {
+                  name: version.name_display || "Caregiver",
+                  photo_url: version.photo_url || ""
+                };
+              }
+            });
+          }
+        }
+
+        const missingUserIds = participantUserIds.filter((userId) => !userInfoMap[userId]);
+        if (!missingUserIds.length) return;
+
+        const { data: familyProfiles, error: familyError } = await window.db
+          .from("family_profiles")
+          .select("user_id, current_visible_version_id")
+          .in("user_id", missingUserIds)
+          .not("current_visible_version_id", "is", null);
+
+        if (familyError) {
+          console.error(familyError);
+        }
+
+        const familyVersionIds = (familyProfiles || [])
+          .map((profile) => profile.current_visible_version_id)
+          .filter(Boolean);
+
+        if (familyVersionIds.length) {
+          const { data: familyVersions, error: familyVersionsError } = await window.db
+            .from("family_profile_versions")
+            .select("id, name_display, photo_url")
+            .in("id", familyVersionIds);
+
+          if (familyVersionsError) {
+            console.error(familyVersionsError);
+          } else {
+            const familyVersionMap = {};
+            (familyVersions || []).forEach((version) => {
+              familyVersionMap[version.id] = version;
+            });
+
+            (familyProfiles || []).forEach((profile) => {
+              if (userInfoMap[profile.user_id]) return;
+              const version = familyVersionMap[profile.current_visible_version_id];
+              if (version) {
+                userInfoMap[profile.user_id] = {
+                  name: version.name_display || "Family",
+                  photo_url: version.photo_url || ""
+                };
+              }
+            });
+          }
+        }
+      }
+
+      function updateConversationUrl(conversationId) {
+        const url = new URL(window.location.href);
+        if (activeJobId) {
+          url.searchParams.set("job_id", activeJobId);
+        }
+
+        if (conversationId) {
+          url.searchParams.set("conversation", conversationId);
+        } else {
+          url.searchParams.delete("conversation");
+        }
+
+        window.history.replaceState({}, "", url);
+      }
+
+      function renderThreadActions() {
+        const actions = document.getElementById("threadActions");
+        if (!actions) return;
+
+        if (!activeJobId) {
+          actions.innerHTML = "";
+          actions.style.display = "none";
+          return;
+        }
+
+        const linkedJob = jobsById[activeJobId] || null;
+        const label = linkedJob?.title ? `View Job: ${linkedJob.title}` : "View Job";
+        actions.innerHTML =
+          `<a class="button button-secondary" href="./job-details.html?job_id=${encodeURIComponent(activeJobId)}&returnTo=account">${escapeHtml(label)}</a>`;
+        actions.style.display = "";
+      }
+
+      function renderConversationList() {
+        const container = document.getElementById("conversationList");
+        container.innerHTML = "";
+
+        if (!conversations.length) {
+          container.innerHTML = "<p>No applicant conversations yet.</p>";
+          return;
+        }
+
+        const sortedConversations = [...conversations].sort((a, b) => {
+          const aUnread = isConversationUnread(a.id) ? 1 : 0;
+          const bUnread = isConversationUnread(b.id) ? 1 : 0;
+
+          if (aUnread !== bUnread) {
+            return bUnread - aUnread;
+          }
+
+          const aThread = messagesByConversationId[a.id] || [];
+          const bThread = messagesByConversationId[b.id] || [];
+
+          const aLast = aThread.length ? aThread[aThread.length - 1] : null;
+          const bLast = bThread.length ? bThread[bThread.length - 1] : null;
+
+          const aTime = aLast
+            ? new Date(aLast.received_at || aLast.sent_at || aLast.created_at).getTime()
+            : (a.last_visible_message_at ? new Date(a.last_visible_message_at).getTime() : 0);
+
+          const bTime = bLast
+            ? new Date(bLast.received_at || bLast.sent_at || bLast.created_at).getTime()
+            : (b.last_visible_message_at ? new Date(b.last_visible_message_at).getTime() : 0);
+
+          return bTime - aTime;
+        });
+
+        sortedConversations.forEach((conversation) => {
+          const thread = messagesByConversationId[conversation.id] || [];
+          const lastMessage = thread.length ? thread[thread.length - 1] : null;
+          const previewTime = lastMessage
+            ? (lastMessage.received_at || lastMessage.sent_at || lastMessage.created_at)
+            : conversation.last_visible_message_at;
+          const previewText = lastMessage?.message_text || conversation.last_visible_message_preview || "No messages yet";
+          const unread = isConversationUnread(conversation.id);
+
+          const button = document.createElement("button");
+          button.type = "button";
+          button.className = "conversation-item";
+
+          if (selectedConversationId === conversation.id) {
+            button.classList.add("active");
+          }
+
+          button.innerHTML = `
+            <div class="conversation-row">
+              ${getConversationAvatar(conversation.id)}
+              <div class="conversation-main">
+                <div class="conversation-top">
+                  <span><strong>${escapeHtml(getDisplayNameForConversation(conversation.id))}</strong></span>
+                  ${unread ? `<span class="unread-pill">New</span>` : ""}
+                </div>
+                <div class="conversation-preview">${escapeHtml(previewText)}</div>
+                <div class="conversation-time">${previewTime ? formatMessageTime(previewTime) : ""}</div>
+              </div>
+            </div>
+          `;
+
+          button.addEventListener("click", async function () {
+            selectedConversationId = conversation.id;
+            updateConversationUrl(conversation.id);
+            await markConversationRead(conversation.id);
+            await loadConversations();
+          });
+
+          container.appendChild(button);
+        });
+      }
+
+      function renderSelectedThread() {
+        const threadHeader = document.getElementById("threadHeader");
+        const threadEl = document.getElementById("messageThread");
+        const composer = document.getElementById("messageComposer");
+
+        threadEl.innerHTML = "";
+
+        if (!selectedConversationId) {
+          threadHeader.textContent = conversations.length
+            ? "Select an applicant to view messages."
+            : "No applicants have started a conversation yet.";
+          composer.style.display = "none";
+          renderThreadActions();
+          return;
+        }
+
+        threadHeader.textContent = `Conversation with ${getDisplayNameForConversation(selectedConversationId)}`;
+        composer.style.display = "block";
+        renderThreadActions();
+
+        const thread = messagesByConversationId[selectedConversationId] || [];
+
+        if (!thread.length) {
+          threadEl.innerHTML = "<p>No messages yet. Start the conversation below.</p>";
+          return;
+        }
+
+        thread.forEach((message) => {
+          const isSentByMe = message.sender_user_id === currentUser.id;
+          const timeLabel = isSentByMe ? "Sent" : "Received";
+          const displayTime = isSentByMe
+            ? (message.sent_at || message.created_at)
+            : (message.received_at || message.created_at);
+          const senderLabel = isSentByMe ? "You" : getDisplayNameForConversation(selectedConversationId);
+
+          const div = document.createElement("div");
+          div.className = isSentByMe ? "message-bubble sent" : "message-bubble received";
+          div.innerHTML = `
+            <div class="message-sender">${escapeHtml(senderLabel)}</div>
+            <div class="message-text">${escapeHtml(message.message_text)}</div>
+            <div class="message-time">${timeLabel} ${formatMessageTime(displayTime)}</div>
+          `;
+
+          threadEl.appendChild(div);
+        });
+
+        threadEl.scrollTop = threadEl.scrollHeight;
+      }
+
+      async function markConversationRead(conversationId) {
+        if (!conversationId || !currentUser?.id) return;
+
+        const participants = participantMap[conversationId] || [];
+        const myParticipant = participants.find((participant) => participant.user_id === currentUser.id);
+        if (!myParticipant) return;
+
+        const now = new Date().toISOString();
+
+        const { error } = await window.db
+          .from("conversation_participants")
+          .update({
+            last_read_at: now,
+            has_unread_visible_messages: false
+          })
+          .eq("id", myParticipant.id);
+
+        if (error) {
+          console.error(error);
+          return;
+        }
+
+        myParticipant.last_read_at = now;
+        myParticipant.has_unread_visible_messages = false;
+      }
+
+      async function loadConversations() {
+        if (!familyProfileId || !activeJobId) {
+          conversations = [];
+          participantMap = {};
+          messagesByConversationId = {};
+          renderConversationList();
+          renderSelectedThread();
+          return;
+        }
+
+        const { data: myParticipants, error: participantError } = await window.db
+          .from("conversation_participants")
+          .select("*")
+          .eq("user_id", currentUser.id)
+          .eq("is_archived", false);
+
+        if (participantError) {
+          console.error(participantError);
+          document.getElementById("conversationList").innerHTML = "<p>Unable to load conversations.</p>";
+          return;
+        }
+
+        const conversationIds = Array.from(new Set((myParticipants || []).map((row) => row.conversation_id).filter(Boolean)));
+        if (!conversationIds.length) {
+          conversations = [];
+          participantMap = {};
+          messagesByConversationId = {};
+          renderConversationList();
+          renderSelectedThread();
+          return;
+        }
+
+        const { data: conversationData, error: conversationError } = await window.db
+          .from("conversations")
+          .select("*")
+          .in("id", conversationIds)
+          .eq("family_profile_id", familyProfileId)
+          .eq("job_post_id", activeJobId)
+          .eq("status", "active")
+          .order("last_visible_message_at", { ascending: false, nullsFirst: false });
+
+        if (conversationError) {
+          console.error(conversationError);
+          document.getElementById("conversationList").innerHTML = "<p>Unable to load conversations.</p>";
+          return;
+        }
+
+        conversations = conversationData || [];
+        const filteredConversationIds = conversations.map((conversation) => conversation.id);
+
+        if (!filteredConversationIds.length) {
+          participantMap = {};
+          messagesByConversationId = {};
+          renderConversationList();
+          renderSelectedThread();
+          return;
+        }
+
+        const { data: allParticipants, error: allParticipantsError } = await window.db
+          .from("conversation_participants")
+          .select("*")
+          .in("conversation_id", filteredConversationIds);
+
+        if (allParticipantsError) {
+          console.error(allParticipantsError);
+          return;
+        }
+
+        participantMap = {};
+        (allParticipants || []).forEach((participant) => {
+          if (!participantMap[participant.conversation_id]) {
+            participantMap[participant.conversation_id] = [];
+          }
+          participantMap[participant.conversation_id].push(participant);
+        });
+
+        const { data: allMessages, error: messageError } = await window.db
+          .from("messages")
+          .select("*")
+          .in("conversation_id", filteredConversationIds)
+          .order("created_at", { ascending: true });
+
+        if (messageError) {
+          console.error(messageError);
+          return;
+        }
+
+        messagesByConversationId = {};
+        (allMessages || []).forEach((message) => {
+          if (!messagesByConversationId[message.conversation_id]) {
+            messagesByConversationId[message.conversation_id] = [];
+          }
+          messagesByConversationId[message.conversation_id].push(message);
+        });
+
+        await loadConversationUserInfo();
+
+        const params = new URLSearchParams(window.location.search);
+        const requestedConversationId = params.get("conversation");
+        if (requestedConversationId && filteredConversationIds.includes(requestedConversationId)) {
+          selectedConversationId = requestedConversationId;
+        } else if (!selectedConversationId || !filteredConversationIds.includes(selectedConversationId)) {
+          selectedConversationId = filteredConversationIds[0] || null;
+        }
+
+        updateConversationUrl(selectedConversationId);
+        renderConversationList();
+        renderSelectedThread();
+      }
+
+      function getMessageSubmissionText(result) {
+        switch (result?.content_status) {
+          case "posted":
+          case "published":
+          case "approved":
+            return null;
+          case "queued":
+            return "Message saved. It will be sent once account review is cleared.";
+          case "watched":
+            return "Message submitted for review.";
+          case "flagged":
+            return "Your message is under review.";
+          default:
+            return null;
+        }
+      }
+
+      async function sendMessage() {
+        const textEl = document.getElementById("messageText");
+        const text = textEl.value.trim();
+        if (!text || !selectedConversationId) return;
+
+        const sendButton = document.getElementById("sendMessageBtn");
+        const originalButtonText = sendButton?.textContent || "Send Message";
+
+        try {
+          if (sendButton) {
+            sendButton.disabled = true;
+            sendButton.textContent = "Sending...";
+          }
+
+          const { data: inserted, error: insertError } = await window.db
+            .from("messages")
+            .insert([{
+              conversation_id: selectedConversationId,
+              sender_user_id: currentUser.id,
+              message_text: text,
+              content_status: "draft",
+              visible_to_sender: true,
+              visible_to_recipient: false
+            }])
+            .select()
+            .single();
+
+          if (insertError) {
+            throw insertError;
+          }
+
+          const { data: modResult, error: modError } = await window.db.rpc("moderation_engine", {
+            p_action: "submit_content",
+            p_payload: {
+              related_table: "messages",
+              related_id: inserted.id,
+              user_id: currentUser.id,
+              is_suspicious: false,
+              reason: null,
+              summary: "Message submitted",
+              success_status: "published"
+            },
+            p_actor_user_id: currentUser.id
+          });
+
+          if (modError) {
+            throw modError;
+          }
+
+          if (!modResult?.ok) {
+            throw new Error("Moderation failed.");
+          }
+
+          const statusMessage = getMessageSubmissionText(modResult);
+          if (statusMessage) {
+            alert(statusMessage);
+          }
+
+          textEl.value = "";
+          const keepConversationId = selectedConversationId;
+          await markConversationRead(selectedConversationId);
+          await loadConversations();
+          selectedConversationId = keepConversationId;
+          renderConversationList();
+          renderSelectedThread();
+          document.getElementById("messageText")?.focus();
+        } catch (error) {
+          console.error("Send message error:", error);
+          alert(error?.message ? `Message send failed: ${error.message}` : "Message send failed.");
+        } finally {
+          if (sendButton) {
+            sendButton.disabled = false;
+            sendButton.textContent = originalButtonText;
+          }
+        }
+      }
+
+      function wireComposerShortcuts() {
+        const textEl = document.getElementById("messageText");
+        if (!textEl) return;
+
+        textEl.addEventListener("keydown", async function (event) {
+          if (event.key === "Enter" && !event.shiftKey) {
+            event.preventDefault();
+            await sendMessage();
+          }
+        });
+      }
+
+      window.addEventListener("DOMContentLoaded", async function () {
+        const ok = await requireSession();
+        if (!ok) return;
+
+        try {
+          await loadProfiles();
+          renderProfileScopeCard();
+          await loadJobContext();
+          await loadConversations();
+          document.getElementById("sendMessageBtn")?.addEventListener("click", sendMessage);
+          wireComposerShortcuts();
+        } catch (error) {
+          console.error(error);
+          setSubtitle(error?.message || "Unable to load applicants for this job.");
+          const list = document.getElementById("conversationList");
+          const threadHeader = document.getElementById("threadHeader");
+          const thread = document.getElementById("messageThread");
+          const composer = document.getElementById("messageComposer");
+          if (list) list.innerHTML = `<p>${escapeHtml(error?.message || "Unable to load applicants.")}</p>`;
+          if (threadHeader) threadHeader.textContent = "Applicants unavailable.";
+          if (thread) thread.innerHTML = "";
+          if (composer) composer.style.display = "none";
+          renderThreadActions();
+        }
+      });
+    })();
+  </script>
+</body>
+</html>

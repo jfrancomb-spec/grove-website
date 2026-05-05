@@ -162,6 +162,7 @@
         applyBtn.removeAttribute("aria-disabled");
         applyBtn.removeAttribute("tabindex");
         applyBtn.removeAttribute("title");
+        applyBtn.removeAttribute("data-tooltip");
         applyBtn.style.pointerEvents = "";
         applyBtn.style.opacity = "";
         applyBtn.style.cursor = "";
@@ -170,10 +171,11 @@
         if (isOwnJob) {
           applyBtn.textContent = "Apply for this job";
           applyBtn.removeAttribute("href");
-          applyBtn.className = "button button-secondary button-disabled";
+          applyBtn.className = "button button-secondary button-disabled button-tooltip";
           applyBtn.setAttribute("aria-disabled", "true");
           applyBtn.setAttribute("tabindex", "-1");
           applyBtn.setAttribute("title", "You cannot apply to your own listing.");
+          applyBtn.setAttribute("data-tooltip", "You cannot apply to your own listing.");
           applyBtn.style.cursor = "not-allowed";
           applyBtn.onclick = function (event) {
             event.preventDefault();

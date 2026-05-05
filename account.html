@@ -11,30 +11,35 @@
   <style>
     body {
       margin: 0;
-      font-family: Calibri, Candara, "Segoe UI", Arial, sans-serif;
+      font-family: system-ui, -apple-system, Arial, sans-serif;
       background: #f5f7fa;
       color: #1f2937;
     }
 
+    body.button-theme-caregiver {
+      background: var(--caregiver-light);
+    }
+
+    body.button-theme-family {
+      background: var(--family-light);
+    }
+
     .page {
       max-width: 1160px;
-      margin: 40px auto;
+      margin: 0 auto 40px;
       padding: 0 20px 40px;
     }
 
-    .page-heading {
+    .dashboard-hero {
       margin-bottom: 24px;
     }
 
-    .page-heading h1 {
-      margin: 0 0 6px;
-      font-size: 32px;
+    body.button-theme-caregiver .dashboard-hero {
+      background: #dcefe9;
     }
 
-    .page-heading p {
-      margin: 0;
-      color: #6b7280;
-      line-height: 1.5;
+    body.button-theme-family .dashboard-hero {
+      background: #ddeaf6;
     }
 
     .welcome-card {
@@ -150,11 +155,41 @@
       display: none;
     }
 
+    body.button-theme-caregiver .welcome-card,
+    body.button-theme-caregiver .dashboard-todo-card,
+    body.button-theme-caregiver .dashboard-panel,
+    body.button-theme-caregiver .status-card,
+    body.button-theme-caregiver .links-card,
+    body.button-theme-caregiver .jobs-card,
+    body.button-theme-caregiver .job-card,
+    body.button-theme-caregiver .application-card,
+    body.button-theme-caregiver .message-card {
+      background: #ffffff;
+      border-color: #d6ebe7;
+    }
+
+    body.button-theme-family .welcome-card,
+    body.button-theme-family .dashboard-todo-card,
+    body.button-theme-family .dashboard-panel,
+    body.button-theme-family .status-card,
+    body.button-theme-family .links-card,
+    body.button-theme-family .jobs-card,
+    body.button-theme-family .job-card,
+    body.button-theme-family .application-card,
+    body.button-theme-family .message-card {
+      background: #ffffff;
+      border-color: #d9e6f1;
+    }
+
     .caregiver-top-grid {
       display: grid;
       grid-template-columns: minmax(0, 1.35fr) minmax(280px, 1fr);
       gap: 18px;
       margin-bottom: 24px;
+    }
+
+    .caregiver-top-grid.single-column {
+      grid-template-columns: minmax(0, 1fr);
     }
 
     .dashboard-panel {
@@ -206,54 +241,15 @@
       margin-bottom: 24px;
     }
 
+    .status-grid.single-column {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
     .status-card {
       background: white;
       border-radius: 16px;
       padding: 22px;
       box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
-    }
-
-    .role-notice {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 16px;
-      padding: 0 0 8px;
-      margin-bottom: 14px;
-      border-bottom: 1px solid #d1d5db;
-      color: #6b7280;
-      background: transparent;
-    }
-
-    .role-notice-copy {
-      display: grid;
-      gap: 2px;
-    }
-
-    .role-notice-label {
-      font-size: 12px;
-      font-weight: 700;
-      letter-spacing: 0.05em;
-      text-transform: uppercase;
-      color: #6b7280;
-    }
-
-    .role-notice-value {
-      font-size: 15px;
-      font-weight: 700;
-      color: #4b5563;
-      line-height: 1.2;
-    }
-
-    .role-toggle {
-      display: flex;
-      align-items: center;
-      justify-content: flex-end;
-    }
-
-    .role-toggle .button {
-      width: auto;
-      flex: 0 0 auto;
     }
 
     .status-label {
@@ -512,6 +508,24 @@
       gap: 10px;
     }
 
+    .job-notice-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .job-application-badge {
+      display: inline-flex;
+      align-items: center;
+      border-radius: 999px;
+      padding: 6px 10px;
+      font-size: 12px;
+      font-weight: 700;
+      background: #fff7ed;
+      color: #9a3412;
+    }
+
     .job-action-button {
       appearance: none;
       border: none;
@@ -556,6 +570,26 @@
       background: #347872;
     }
 
+    .job-action-applicants {
+      background: #4f7fa8;
+      color: white;
+    }
+
+    .job-action-applicants:hover {
+      background: #426d91;
+    }
+
+    .job-action-applicants-disabled {
+      background: #e5e7eb;
+      color: #6b7280;
+      cursor: not-allowed;
+    }
+
+    .job-action-applicants-disabled:hover {
+      background: #e5e7eb;
+      color: #6b7280;
+    }
+
     .my-jobs-empty p {
       margin-top: 0;
       margin-bottom: 14px;
@@ -581,10 +615,49 @@
       margin-bottom: 12px;
     }
 
+    .application-card-header {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      min-width: 0;
+    }
+
+    .application-card-header-copy {
+      min-width: 0;
+    }
+
     .application-card h4 {
       margin: 0 0 6px;
       font-size: 18px;
       color: #111827;
+    }
+
+    .application-card-family {
+      margin: 0 0 4px;
+      color: #4b5563;
+      font-size: 14px;
+      font-weight: 700;
+      line-height: 1.35;
+    }
+
+    .application-card-avatar {
+      width: 56px;
+      height: 56px;
+      border-radius: 999px;
+      object-fit: cover;
+      display: block;
+      flex: 0 0 56px;
+      border: 2px solid #e5e7eb;
+      background: #eef6f4;
+    }
+
+    .application-card-avatar-fallback {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #4b5563;
+      font-size: 20px;
+      font-weight: 700;
     }
 
     .application-meta-line {
@@ -671,8 +744,7 @@
       .dashboard-panel-actions,
       .todo-item,
       .job-card-top,
-      .jobs-card-header,
-      .role-notice {
+      .jobs-card-header {
         flex-direction: column;
       }
 
@@ -685,21 +757,16 @@
 <body>
   <div id="header-placeholder"></div>
 
-  <main class="page">
-    <div id="errorBox" class="error-box"></div>
-
-    <section class="role-notice" id="actingRoleCard" style="display:none;">
-      <div class="role-notice-copy">
-        <div class="role-notice-label">Viewing as</div>
-        <div class="role-notice-value" id="actingRoleValue">Loading...</div>
-      </div>
-      <div class="role-toggle" id="actingRoleToggle"></div>
-    </section>
-
-    <section class="page-heading">
+  <main>
+    <div class="hero dashboard-hero">
       <h1>Dashboard</h1>
-      <p>Start with the items that need attention today.</p>
-    </section>
+      <div class="subtitle">
+        Start with the items that need attention today.
+      </div>
+    </div>
+
+    <div class="page">
+    <div id="errorBox" class="error-box"></div>
 
     <section class="welcome-card" id="welcomeCard">
       <h2>Welcome to Grove</h2>
@@ -714,38 +781,22 @@
       </div>
     </section>
 
-    <section class="caregiver-top-grid" id="caregiverTopGrid" style="display:none;">
-      <article class="dashboard-panel">
-        <h2>Jobs I Applied To</h2>
-        <p>See where you have already reached out and jump back into those opportunities quickly.</p>
+      <section class="caregiver-top-grid" id="caregiverTopGrid" style="display:none;">
+        <article class="dashboard-panel">
+          <h2>Jobs I Applied To</h2>
+          <p>See where you have already reached out and jump back into those opportunities quickly.</p>
 
-        <div id="appliedJobsLoading" class="my-jobs-loading" style="display:none; margin-top:16px;">
-          Loading your applications...
-        </div>
+          <div id="appliedJobsLoading" class="my-jobs-loading" style="display:none; margin-top:16px;">
+            Loading your applications...
+          </div>
 
-        <div id="appliedJobsMessage" class="my-jobs-message" style="display:none; margin-top:16px;"></div>
+          <div id="appliedJobsMessage" class="my-jobs-message" style="display:none; margin-top:16px;"></div>
 
-        <div id="appliedJobsList" class="application-list" style="margin-top:16px;"></div>
-      </article>
+          <div id="appliedJobsList" class="application-list" style="margin-top:16px;"></div>
+        </article>
+      </section>
 
-      <article class="dashboard-panel" id="caregiverMessagesCard">
-        <h2>Messages</h2>
-        <p>Keep an eye on replies from families and stay ready to respond.</p>
-        <div class="message-summary-value" id="caregiverMessageCount">Loading...</div>
-        <div class="message-summary-label" id="caregiverMessageDetail">Checking your conversations.</div>
-        <div id="caregiverMessagesLoading" class="my-jobs-loading" style="display:none; margin-top:16px;">
-          Loading your messages...
-        </div>
-        <div id="caregiverMessagesMessage" class="my-jobs-message" style="display:none; margin-top:16px;"></div>
-        <div id="caregiverMessagesList" class="message-list"></div>
-        <div class="dashboard-panel-actions">
-          <a class="button button-secondary" id="caregiverMessagesLink" href="./messages.html">Open Messages</a>
-        </div>
-      </article>
-
-    </section>
-
-    <section class="status-grid">
+    <section class="status-grid" id="statusGrid">
       <div class="status-card" id="familyProfileCard">
         <div class="status-label">Family Profile</div>
         <div class="status-value" id="familyStatus">Loading...</div>
@@ -819,7 +870,7 @@
         </a>
       </div>
     </section>
-
+    </div>
   </main>
 
   <div id="footer-placeholder"></div>
@@ -850,11 +901,8 @@
       const caregiverMessagesList = document.getElementById("caregiverMessagesList");
       const caregiverMessagesLink = document.getElementById("caregiverMessagesLink");
       const messageStatusCard = document.getElementById("messageStatusCard");
+      const statusGrid = document.getElementById("statusGrid");
       const jobsCard = document.getElementById("jobsCard");
-      const actingRoleCard = document.getElementById("actingRoleCard");
-      const actingRoleValue = document.getElementById("actingRoleValue");
-      const actingRoleToggle = document.getElementById("actingRoleToggle");
-
       const caregiverQuickLinkText = document.getElementById("caregiverQuickLinkText");
       const familyQuickLinkText = document.getElementById("familyQuickLinkText");
       const messagesQuickLink = document.getElementById("messagesQuickLink");
@@ -1223,6 +1271,55 @@
         return query ? `./messages.html?${query}` : "./messages.html";
       }
 
+      function getApplicationFamilyDisplayName(profile) {
+        if (!profile) return "Family";
+        if (profile.name_display) return profile.name_display;
+
+        const first = profile.first_name ? profile.first_name.trim() : "";
+        const last = profile.last_name ? profile.last_name.trim() : "";
+
+        if (first && last) return `${first} ${last.charAt(0).toUpperCase()}.`;
+        if (first) return first;
+        if (last) return last;
+
+        return "Family";
+      }
+
+      function getApplicationPhotoUrls(record) {
+        if (!record) return [];
+
+        let photoUrls = record.photo_urls;
+
+        if (typeof photoUrls === "string") {
+          const trimmed = photoUrls.trim();
+          if (trimmed) {
+            try {
+              const parsed = JSON.parse(trimmed);
+              photoUrls = Array.isArray(parsed) ? parsed : [trimmed];
+            } catch {
+              if (trimmed.startsWith("{") && trimmed.endsWith("}")) {
+                const inner = trimmed.slice(1, -1).trim();
+                photoUrls = inner
+                  ? inner
+                      .split(/,(?=(?:[^"]*"[^"]*")*[^"]*$)/)
+                      .map((value) => value.trim().replace(/^"(.*)"$/, "$1"))
+                  : [];
+              } else {
+                photoUrls = trimmed.includes(",")
+                  ? trimmed.split(",").map((value) => value.trim())
+                  : [trimmed];
+              }
+            }
+          }
+        }
+
+        if (Array.isArray(photoUrls) && photoUrls.length) {
+          return photoUrls.filter(Boolean);
+        }
+
+        return record.photo_url ? [record.photo_url] : [];
+      }
+
       function renderAppliedJobs(applications) {
         if (!appliedJobsList) return;
 
@@ -1239,23 +1336,37 @@
           const unreadMarkup = application.hasUnreadMessages
             ? '<span class="status-badge status-queued">New unread message</span>'
             : '';
+          const familyDisplayName = application.familyDisplayName || "Family";
+          const avatarPhoto = application.photoUrl || "";
+          const avatarInitial = familyDisplayName ? familyDisplayName.charAt(0).toUpperCase() : "F";
+          const avatarMarkup = avatarPhoto
+            ? '<img class="application-card-avatar" src="' + escapeHtml(avatarPhoto) + '" alt="' + escapeHtml(familyDisplayName) + '">'
+            : '<div class="application-card-avatar application-card-avatar-fallback" aria-hidden="true">' + escapeHtml(avatarInitial) + '</div>';
 
           return (
             '<article class="application-card">' +
               '<div class="application-card-top">' +
-                '<div>' +
-                  '<h4>' + escapeHtml(application.title) + '</h4>' +
+                '<div class="application-card-header">' +
+                  avatarMarkup +
+                  '<div class="application-card-header-copy">' +
+                    '<h4>' + escapeHtml(application.title) + '</h4>' +
+                    '<p class="application-card-family">' + escapeHtml(familyDisplayName) + '</p>' +
                   '<div class="application-meta-line">' +
                     escapeHtml(application.careType || "Care opportunity") +
                     (application.location ? ' • ' + escapeHtml(application.location) : '') +
+                  '</div>' +
                   '</div>' +
                 '</div>' +
                 unreadMarkup +
               '</div>' +
               '<div class="application-details">' +
                 '<p><strong>Applied:</strong> ' + escapeHtml(application.appliedOn) + '</p>' +
+                (application.schedule ? '<p><strong>Schedule:</strong> ' + escapeHtml(application.schedule) + '</p>' : '') +
+                (application.payRange ? '<p><strong>Pay:</strong> ' + escapeHtml(application.payRange) + '</p>' : '') +
+                (application.description ? '<p><strong>Details:</strong> ' + escapeHtml(application.description) + '</p>' : '') +
               '</div>' +
               '<div class="application-actions">' +
+                '<a class="button button-secondary" href="' + getFamilyProfileHref(application.familyProfileId) + '">View Family</a>' +
                 '<a class="button button-secondary" href="' + getJobDetailsHref(application.jobId) + '">View Job</a>' +
                 '<a class="button button-caregiver" href="' + getConversationHrefForApplication(application) + '">View Messages</a>' +
               '</div>' +
@@ -1276,6 +1387,15 @@
           returnTo
         });
         return `./job-details.html?${params.toString()}`;
+      }
+
+      function getFamilyProfileHref(familyProfileId) {
+        if (!familyProfileId) return "./families.html";
+        const params = new URLSearchParams({
+          id: familyProfileId,
+          returnTo: "account"
+        });
+        return `./family-profile.html?${params.toString()}`;
       }
 
       function renderCaregiverMessages(threads) {
@@ -1317,17 +1437,26 @@
         }).join("");
       }
 
+      function getActingRoleNoticeElements() {
+        return {
+          card: document.getElementById("globalActingRoleNotice"),
+          value: document.getElementById("globalActingRoleValue"),
+          toggle: document.getElementById("globalActingRoleToggle")
+        };
+      }
+
       function renderActingRoleUI() {
-        if (!actingRoleCard || !actingRoleToggle) return;
+        const { card, value, toggle } = getActingRoleNoticeElements();
+        if (!card || !toggle || !value) return;
 
         if (!hasFamilyProfile && !hasCaregiverProfile) {
-          actingRoleCard.style.display = "none";
+          card.style.display = "none";
           return;
         }
 
-        actingRoleCard.style.display = "";
-        actingRoleToggle.innerHTML = "";
-        actingRoleValue.textContent = actingRole ? getRoleLabel(actingRole) : "Choose a Role";
+        card.style.display = "";
+        toggle.innerHTML = "";
+        value.textContent = actingRole ? getRoleLabel(actingRole) : "Choose a Role";
         const alternateRole = availableRoles.find((role) => role.type !== actingRole);
         if (alternateRole) {
           const button = document.createElement("button");
@@ -1343,22 +1472,35 @@
             applyActingRoleVisibility();
             window.updateHeaderAuth?.();
           });
-          actingRoleToggle.appendChild(button);
+          toggle.appendChild(button);
         }
       }
 
-      function applyActingRoleVisibility() {
-        const isFamily = actingRole === "family";
-        const isCaregiver = actingRole === "caregiver";
+        function applyActingRoleVisibility() {
+          const isFamily = actingRole === "family";
+          const isCaregiver = actingRole === "caregiver";
 
-        setVisible(caregiverTopGrid, isCaregiver);
-        setVisible(familyProfileCard, isFamily || !actingRole);
-        setVisible(messageStatusCard, isFamily || !actingRole);
-        setVisible(jobsCard, isFamily);
-        setVisible(familyQuickLink, isFamily || !actingRole);
-        setVisible(caregiverQuickLink, isCaregiver || !actingRole);
-        setVisible(caregiversQuickLink, isFamily || !actingRole);
-        setVisible(familiesQuickLink, isCaregiver || !actingRole);
+          setVisible(caregiverTopGrid, isCaregiver);
+          setVisible(statusGrid, !isFamily);
+          setVisible(familyProfileCard, !isFamily && !isCaregiver);
+          setVisible(messageStatusCard, !isFamily && (!actingRole || isCaregiver));
+          setVisible(jobsCard, isFamily);
+          setVisible(familyQuickLink, isFamily || !actingRole);
+          setVisible(caregiverQuickLink, isCaregiver || !actingRole);
+          setVisible(caregiversQuickLink, isFamily || !actingRole);
+          setVisible(familiesQuickLink, isCaregiver || !actingRole);
+
+          if (caregiverTopGrid) {
+            caregiverTopGrid.classList.toggle("single-column", isCaregiver);
+          }
+
+          if (statusGrid) {
+            statusGrid.classList.toggle("single-column", isCaregiver);
+          }
+
+          if (familyQuickLink && isCaregiver) {
+            familyQuickLink.style.display = "none";
+          }
 
         if (messagesLink) {
           messagesLink.href = getRoleMessagesHref();
@@ -1542,7 +1684,7 @@
           const jobIds = Array.from(new Set(applicationRows.map((row) => row.job_id).filter(Boolean)));
           const { data: jobs, error: jobsError } = await window.db
             .from("job_posts")
-            .select("id, title, care_type, location, schedule, user_id")
+            .select("id, title, care_type, location, schedule, description, pay_range, user_id, current_visible_version_id")
             .in("id", jobIds);
 
           if (jobsError) {
@@ -1554,13 +1696,37 @@
             jobMap[job.id] = job;
           });
 
+          const jobVersionIds = Array.from(new Set(
+            (jobs || []).map((job) => job.current_visible_version_id).filter(Boolean)
+          ));
+          const jobVersionsById = {};
+
+          if (jobVersionIds.length) {
+            const { data: jobVersions, error: jobVersionsError } = await window.db
+              .from("job_post_versions")
+              .select("*")
+              .in("id", jobVersionIds);
+
+            if (jobVersionsError) {
+              throw jobVersionsError;
+            }
+
+            (jobVersions || []).forEach((version) => {
+              if (version?.id) {
+                jobVersionsById[version.id] = version;
+              }
+            });
+          }
+
           const familyUserIds = Array.from(new Set((jobs || []).map((job) => job.user_id).filter(Boolean)));
           const familyProfilesByUserId = {};
+          const familyProfilesById = {};
+          const familyProfileVersionsById = {};
 
           if (familyUserIds.length) {
             const { data: familyProfiles, error: familyProfilesError } = await window.db
               .from("family_profiles")
-              .select("id, user_id")
+              .select("id, user_id, current_visible_version_id")
               .in("user_id", familyUserIds);
 
             if (familyProfilesError) {
@@ -1571,7 +1737,31 @@
               if (profile.user_id && !familyProfilesByUserId[profile.user_id]) {
                 familyProfilesByUserId[profile.user_id] = profile.id;
               }
+              if (profile.id) {
+                familyProfilesById[profile.id] = profile;
+              }
             });
+
+            const familyVersionIds = Array.from(new Set(
+              (familyProfiles || []).map((profile) => profile.current_visible_version_id).filter(Boolean)
+            ));
+
+            if (familyVersionIds.length) {
+              const { data: familyProfileVersions, error: familyProfileVersionsError } = await window.db
+                .from("family_profile_versions")
+                .select("id, name_display, photo_url, photo_urls")
+                .in("id", familyVersionIds);
+
+              if (familyProfileVersionsError) {
+                throw familyProfileVersionsError;
+              }
+
+              (familyProfileVersions || []).forEach((version) => {
+                if (version?.id) {
+                  familyProfileVersionsById[version.id] = version;
+                }
+              });
+            }
           }
 
           let conversationMetaByJobId = {};
@@ -1633,6 +1823,15 @@
               const familyProfileId = job.user_id
                 ? familyProfilesByUserId[job.user_id] || null
                 : null;
+              const familyProfile = familyProfileId ? familyProfilesById[familyProfileId] || null : null;
+              const familyProfileVersion = familyProfile?.current_visible_version_id
+                ? familyProfileVersionsById[familyProfile.current_visible_version_id] || null
+                : null;
+              const jobVersion = job.current_visible_version_id
+                ? jobVersionsById[job.current_visible_version_id] || null
+                : null;
+              const jobPhotoUrl = getApplicationPhotoUrls(jobVersion)[0] || "";
+              const familyPhotoUrl = getApplicationPhotoUrls(familyProfileVersion)[0] || "";
 
               const conversationMeta = conversationMetaByJobId[job.id]
                 || (familyProfileId ? conversationMetaByFamilyId[familyProfileId] || null : null);
@@ -1641,10 +1840,15 @@
               return {
                 id: application.id,
                 jobId: job.id,
-                title: job.title || "Applied job",
-                careType: job.care_type || "",
-                location: job.location || "",
+                title: jobVersion?.title || job.title || "Applied job",
+                careType: jobVersion?.care_type || job.care_type || "",
+                location: jobVersion?.location || job.location || "",
+                schedule: jobVersion?.schedule || job.schedule || "",
+                description: jobVersion?.description || job.description || "",
+                payRange: jobVersion?.pay_range || job.pay_range || "",
                 familyProfileId,
+                familyDisplayName: getApplicationFamilyDisplayName(familyProfileVersion),
+                photoUrl: jobPhotoUrl || familyPhotoUrl,
                 targetUserId: job.user_id || null,
                 conversationId,
                 hasConversation: !!conversationId,
@@ -1997,6 +2201,95 @@
             return;
           }
 
+          let applicantMetaByJobId = {};
+          const { data: familyProfile } = await window.db
+            .from("family_profiles")
+            .select("id")
+            .eq("user_id", userId)
+            .maybeSingle();
+
+          if (familyProfile?.id) {
+            const { data: participantRows, error: participantError } = await window.db
+              .from("conversation_participants")
+              .select("conversation_id, has_unread_visible_messages, last_read_at")
+              .eq("user_id", userId)
+              .eq("is_archived", false);
+
+            if (participantError) {
+              throw participantError;
+            }
+
+            const participantMetaByConversationId = {};
+            (participantRows || []).forEach((row) => {
+              if (!row?.conversation_id) return;
+              participantMetaByConversationId[row.conversation_id] = row;
+            });
+
+            const conversationIds = Object.keys(participantMetaByConversationId);
+
+            if (conversationIds.length) {
+              const { data: familyConversations, error: familyConversationsError } = await window.db
+                .from("conversations")
+                .select("id, family_profile_id, job_post_id, status, last_visible_message_at")
+                .in("id", conversationIds)
+                .eq("family_profile_id", familyProfile.id)
+                .eq("status", "active");
+
+              if (familyConversationsError) {
+                throw familyConversationsError;
+              }
+
+              const relevantConversations = (familyConversations || []).filter((conversation) => !!conversation.job_post_id);
+              const relevantConversationIds = relevantConversations.map((conversation) => conversation.id);
+              let messagesByConversationId = {};
+
+              if (relevantConversationIds.length) {
+                const { data: messages, error: messagesError } = await window.db
+                  .from("messages")
+                  .select("conversation_id, sender_user_id, created_at, received_at, sent_at")
+                  .in("conversation_id", relevantConversationIds)
+                  .order("created_at", { ascending: true });
+
+                if (messagesError) {
+                  throw messagesError;
+                }
+
+                (messages || []).forEach((message) => {
+                  if (!messagesByConversationId[message.conversation_id]) {
+                    messagesByConversationId[message.conversation_id] = [];
+                  }
+                  messagesByConversationId[message.conversation_id].push(message);
+                });
+              }
+
+              relevantConversations.forEach((conversation) => {
+                if (!conversation.job_post_id) return;
+                const participantMeta = participantMetaByConversationId[conversation.id];
+                const threadMessages = messagesByConversationId[conversation.id] || [];
+                const lastMessage = threadMessages.length ? threadMessages[threadMessages.length - 1] : null;
+                const latestMessageTime = lastMessage?.received_at || lastMessage?.sent_at || lastMessage?.created_at || conversation.last_visible_message_at || null;
+                const hasUnreadFromFlag = participantMeta?.has_unread_visible_messages === true;
+                const hasUnreadFromLatestMessage = !!(
+                  lastMessage &&
+                  lastMessage.sender_user_id &&
+                  lastMessage.sender_user_id !== userId &&
+                  latestMessageTime &&
+                  (!participantMeta?.last_read_at || new Date(latestMessageTime) > new Date(participantMeta.last_read_at))
+                );
+
+                const existingMeta = applicantMetaByJobId[conversation.job_post_id] || {
+                  hasApplicants: false,
+                  hasNewApplication: false
+                };
+
+                applicantMetaByJobId[conversation.job_post_id] = {
+                  hasApplicants: true,
+                  hasNewApplication: existingMeta.hasNewApplication || hasUnreadFromFlag || hasUnreadFromLatestMessage
+                };
+              });
+            }
+          }
+
           const versionIds = [];
           rows.forEach((job) => {
             if (job.current_visible_version_id) versionIds.push(job.current_visible_version_id);
@@ -2021,7 +2314,21 @@
             });
           }
 
-          const normalized = rows.map((job) => normalizeJob(job, versionsById));
+          const normalized = rows
+            .map((job) => normalizeJob(job, versionsById, applicantMetaByJobId))
+            .sort((a, b) => {
+              if (a.hasNewApplication !== b.hasNewApplication) {
+                return a.hasNewApplication ? -1 : 1;
+              }
+
+              if (a.hasApplicants !== b.hasApplicants) {
+                return a.hasApplicants ? -1 : 1;
+              }
+
+              const aTime = a.updatedAt ? new Date(a.updatedAt).getTime() : 0;
+              const bTime = b.updatedAt ? new Date(b.updatedAt).getTime() : 0;
+              return bTime - aTime;
+            });
           jobSummary = {
             total: normalized.length,
             live: normalized.filter((job) => job.group === "live").length,
@@ -2047,7 +2354,7 @@
         }
       }
 
-      function normalizeJob(job, versionsById) {
+      function normalizeJob(job, versionsById, applicantMetaByJobId) {
         const visibleVersion = job.current_visible_version_id
           ? versionsById[job.current_visible_version_id] || null
           : null;
@@ -2062,6 +2369,7 @@
         const careType = (displayVersion && displayVersion.care_type) || job.care_type || "";
         const location = (displayVersion && displayVersion.location) || job.location || "";
         const schedule = (displayVersion && displayVersion.schedule) || job.schedule || "";
+        const description = (displayVersion && displayVersion.description) || job.description || "";
         const payRange = (displayVersion && displayVersion.pay_range) || job.pay_range || "";
         const statusMeta = deriveJobStatus(job, visibleVersion, pendingVersion);
 
@@ -2071,9 +2379,12 @@
           careType,
           location,
           schedule,
+          description,
           payRange,
           updatedAt: job.updated_at,
           isActive: job.is_active === true,
+          hasApplicants: applicantMetaByJobId?.[job.id]?.hasApplicants === true,
+          hasNewApplication: applicantMetaByJobId?.[job.id]?.hasNewApplication === true,
           statusKey: statusMeta.key,
           statusLabel: statusMeta.label,
           statusReason: statusMeta.reason,
@@ -2183,9 +2494,11 @@
           const wrapper = document.createElement("div");
           wrapper.className = "my-jobs-group";
 
-          const heading = document.createElement("h3");
-          heading.textContent = section.title;
-          wrapper.appendChild(heading);
+          if (section.key !== "live") {
+            const heading = document.createElement("h3");
+            heading.textContent = section.title;
+            wrapper.appendChild(heading);
+          }
 
           const grid = document.createElement("div");
           grid.className = "my-jobs-grid";
@@ -2212,6 +2525,14 @@
         let actionsHtml =
           '<a class="job-action-button job-action-edit" href="./findcare.html?job_post_id=' + encodeURIComponent(job.id) + '">Edit</a>';
 
+        if (job.hasApplicants) {
+          actionsHtml +=
+            '<a class="job-action-button job-action-applicants" href="./applicants.html?job_id=' + encodeURIComponent(job.id) + '">View Applications</a>';
+        } else {
+          actionsHtml +=
+            '<span class="job-action-button job-action-applicants-disabled" aria-disabled="true">No Applicants Yet</span>';
+        }
+
         if (job.isActive) {
           actionsHtml +=
             '<button class="job-action-button job-action-deactivate" type="button" data-job-action="deactivate" data-job-id="' + escapeHtml(job.id) + '">Deactivate</button>';
@@ -2229,14 +2550,16 @@
                 (job.location ? '<span>' + (job.careType ? ' • ' : '') + escapeHtml(job.location) + '</span>' : '') +
               '</div>' +
             '</div>' +
-            '<span class="status-badge status-' + escapeHtml(job.statusKey) + '">' + escapeHtml(job.statusLabel) + '</span>' +
           '</div>' +
           '<div class="job-details">' +
             (job.schedule ? '<p><strong>Schedule:</strong> ' + escapeHtml(job.schedule) + '</p>' : '') +
             (job.payRange ? '<p><strong>Pay:</strong> ' + escapeHtml(job.payRange) + '</p>' : '') +
-            (job.statusReason ? '<p><strong>Status:</strong> ' + escapeHtml(job.statusReason) + '</p>' : '') +
+            (job.description ? '<p><strong>Details:</strong> ' + escapeHtml(job.description) + '</p>' : '') +
             '<p><strong>Updated:</strong> ' + escapeHtml(updatedText) + '</p>' +
           '</div>' +
+          (job.hasNewApplication
+            ? '<div class="job-notice-row"><span class="job-application-badge">New application</span></div>'
+            : '') +
           '<div class="job-actions">' + actionsHtml + '</div>';
 
         return card;

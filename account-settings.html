@@ -9,30 +9,35 @@
   <style>
     body {
       margin: 0;
-      font-family: Calibri, Candara, "Segoe UI", Arial, sans-serif;
+      font-family: system-ui, -apple-system, Arial, sans-serif;
       background: #f5f7fa;
       color: #1f2937;
     }
 
+    body.button-theme-caregiver {
+      background: var(--caregiver-light);
+    }
+
+    body.button-theme-family {
+      background: var(--family-light);
+    }
+
     .page {
       max-width: 900px;
-      margin: 40px auto;
+      margin: 0 auto 40px;
       padding: 0 20px 40px;
     }
 
-    .page-heading {
+    .settings-hero {
       margin-bottom: 24px;
     }
 
-    .page-heading h1 {
-      margin: 0 0 6px;
-      font-size: 32px;
+    body.button-theme-caregiver .settings-hero {
+      background: #dcefe9;
     }
 
-    .page-heading p {
-      margin: 0;
-      color: #6b7280;
-      line-height: 1.5;
+    body.button-theme-family .settings-hero {
+      background: #ddeaf6;
     }
 
     .settings-card,
@@ -47,6 +52,24 @@
     .account-overview {
       background: linear-gradient(135deg, #f7fbfa 0%, #ffffff 58%, #eef7f4 100%);
       border: 1px solid #dbe7e3;
+    }
+
+    body.button-theme-caregiver .settings-card,
+    body.button-theme-caregiver .account-overview {
+      border-color: #d6ebe7;
+    }
+
+    body.button-theme-caregiver .account-overview {
+      background: linear-gradient(135deg, #eef8f6 0%, #ffffff 58%, #e3f3ef 100%);
+    }
+
+    body.button-theme-family .settings-card,
+    body.button-theme-family .account-overview {
+      border-color: #d9e6f1;
+    }
+
+    body.button-theme-family .account-overview {
+      background: linear-gradient(135deg, #eef5fb 0%, #ffffff 58%, #e4eef8 100%);
     }
 
     .account-overview h2,
@@ -159,15 +182,16 @@
 <body>
   <div id="header-placeholder"></div>
 
-  <main class="page">
-    <div id="errorBox" class="error-box"></div>
-
-    <section class="page-heading">
+  <main>
+    <div class="hero settings-hero">
       <h1>Account Settings</h1>
-      <p>
+      <div class="subtitle">
         Signed in as <strong id="accountEmail" class="loading">Loading...</strong>
-      </p>
-    </section>
+      </div>
+    </div>
+
+    <div class="page">
+    <div id="errorBox" class="error-box"></div>
 
     <section class="account-overview">
       <h2>Account details live here</h2>
@@ -215,6 +239,7 @@
 
       <div id="accountContactMessage" class="contact-message"></div>
     </section>
+    </div>
   </main>
 
   <div id="footer-placeholder"></div>
