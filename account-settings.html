@@ -198,9 +198,6 @@
       <p>
         Your name, email address, and phone number belong to your Grove account, not to an individual family or caregiver profile.
       </p>
-      <div class="settings-actions">
-        <a class="button button-secondary" href="./account.html">Back to Dashboard</a>
-      </div>
     </section>
 
     <section class="settings-card">
@@ -233,7 +230,7 @@
         </div>
 
         <div class="contact-actions">
-          <button class="button button-secondary" type="submit" id="saveAccountContactBtn">Save Contact Info</button>
+          <button class="button button-secondary button-disabled" type="submit" id="saveAccountContactBtn" disabled>Save Contact Info</button>
         </div>
       </form>
 
@@ -258,8 +255,50 @@
       const accountPhoneInput = document.getElementById("accountPhoneInput");
       const accountContactMessage = document.getElementById("accountContactMessage");
       const saveAccountContactBtn = document.getElementById("saveAccountContactBtn");
+      const contactFields = [
+        accountFirstNameInput,
+        accountLastNameInput,
+        accountEmailInput,
+        accountPhoneInput
+      ].filter(Boolean);
 
       let currentUser = null;
+      let initialContactState = null;
+
+      function getContactState() {
+        return {
+          firstName: accountFirstNameInput.value.trim(),
+          lastName: accountLastNameInput.value.trim(),
+          email: accountEmailInput.value.trim(),
+          phone: window.GroveProfiles.formatPhoneNumber(accountPhoneInput.value.trim())
+        };
+      }
+
+      function contactStateEquals(a, b) {
+        return !!a && !!b
+          && a.firstName === b.firstName
+          && a.lastName === b.lastName
+          && a.email === b.email
+          && a.phone === b.phone;
+      }
+
+      function setSaveButtonEnabled(enabled) {
+        if (!saveAccountContactBtn) return;
+        saveAccountContactBtn.disabled = !enabled;
+        saveAccountContactBtn.classList.toggle("button-disabled", !enabled);
+      }
+
+      function refreshDirtyState() {
+        if (!initialContactState) {
+          setSaveButtonEnabled(false);
+          return false;
+        }
+
+        const currentState = getContactState();
+        const isDirty = !contactStateEquals(initialContactState, currentState);
+        setSaveButtonEnabled(isDirty);
+        return isDirty;
+      }
 
       function showError(message) {
         errorBox.style.display = "block";
@@ -291,6 +330,8 @@
         accountLastNameInput.value = window.GroveProfiles.getAccountLastName(user);
         accountEmailInput.value = window.GroveProfiles.getAccountEmail(user);
         accountPhoneInput.value = window.GroveProfiles.getAccountPhone(user);
+        initialContactState = getContactState();
+        refreshDirtyState();
       }
 
       async function requireSession() {
@@ -326,12 +367,19 @@
         const currentLastName = window.GroveProfiles.getAccountLastName(currentUser);
         const currentEmail = window.GroveProfiles.getAccountEmail(currentUser);
         const currentPhone = window.GroveProfiles.getAccountPhone(currentUser);
+        const wasDirty = refreshDirtyState();
 
         setAccountContactMessage("");
         accountPhoneInput.value = nextPhone;
 
+        if (!wasDirty) {
+          setSaveButtonEnabled(false);
+          return;
+        }
+
         if (saveAccountContactBtn) {
           saveAccountContactBtn.disabled = true;
+          saveAccountContactBtn.classList.remove("button-disabled");
           saveAccountContactBtn.textContent = "Saving...";
         }
 
@@ -351,6 +399,8 @@
           }
 
           fillAccountContactFields(currentUser);
+          initialContactState = getContactState();
+          refreshDirtyState();
 
           const emailChanged = !!nextEmail && nextEmail !== currentEmail;
           setAccountContactMessage(
@@ -364,8 +414,8 @@
           setAccountContactMessage(error.message || "Unable to save contact info.", "error");
         } finally {
           if (saveAccountContactBtn) {
-            saveAccountContactBtn.disabled = false;
             saveAccountContactBtn.textContent = "Save Contact Info";
+            refreshDirtyState();
           }
         }
       }
@@ -379,6 +429,11 @@
         fillAccountContactFields(currentUser);
         accountPhoneInput?.addEventListener("input", (event) => {
           event.target.value = window.GroveProfiles.formatPhoneNumber(event.target.value);
+          refreshDirtyState();
+        });
+        contactFields.forEach((field) => {
+          field.addEventListener("input", refreshDirtyState);
+          field.addEventListener("change", refreshDirtyState);
         });
         accountContactForm?.addEventListener("submit", saveAccountContact);
         window.updateHeaderAuth?.();

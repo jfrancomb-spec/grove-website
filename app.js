@@ -44,11 +44,16 @@ async function updateHeaderAuth() {
   const loginLink = document.getElementById("navLoginLink");
   const browseLink = document.getElementById("navBrowseLink");
   const browseOpportunitiesLink = document.getElementById("navBrowseOpportunitiesLink");
+  const signedInDivider = document.getElementById("navSignedInDivider");
+  const myPostingsLink = document.getElementById("navMyPostingsLink");
+  const applicantsTopLink = document.getElementById("navApplicantsTopLink");
+  const applicantsCount = document.getElementById("navApplicantsCount");
   const messagesLink = document.getElementById("navMessagesLink");
+  const messagesCount = document.getElementById("navMessagesCount");
+  const dashboardLink = document.getElementById("navDashboardLink");
   const adminLink = document.getElementById("navAdminLink");
   const accountMenu = document.getElementById("navAccountMenu");
   const roleSwitchLink = document.getElementById("navRoleSwitchLink");
-  const accountLink = document.getElementById("navAccountLink");
   const profileLink = document.getElementById("navProfileLink");
   const settingsLink = document.getElementById("navSettingsLink");
   const signOutBtn = document.getElementById("navSignOutBtn");
@@ -69,10 +74,19 @@ async function updateHeaderAuth() {
     if (user && typeof window.getAvailableActingRoles === "function") {
       availableRoles = await window.getAvailableActingRoles(user.id);
       actingRole = window.resolveActingRole(availableRoles);
-      const activeProfile = availableRoles.find((role) => role.type === actingRole);
-      if (activeProfile) {
-        actingRoleMessageHref = `./messages.html?profileType=${encodeURIComponent(activeProfile.type)}&profileId=${encodeURIComponent(activeProfile.id)}`;
+      const currentProfile = availableRoles.find((role) => role.type === actingRole);
+      if (currentProfile) {
+        actingRoleMessageHref = `./messages.html?profileType=${encodeURIComponent(currentProfile.type)}&profileId=${encodeURIComponent(currentProfile.id)}`;
       }
+    }
+    const activeProfile = availableRoles.find((role) => role.type === actingRole) || null;
+    let headerCounts = { unreadMessages: 0, newApplicants: 0 };
+    if (user && activeProfile) {
+      headerCounts = await getHeaderConversationCounts({
+        userId: user.id,
+        actingRole,
+        activeProfileId: activeProfile.id
+      });
     }
     setButtonTheme(pageUsesGlobalButtonTheme() ? (isSignedIn ? actingRole : getPublicButtonTheme()) : null);
     if (loginLink) {
@@ -94,10 +108,36 @@ async function updateHeaderAuth() {
       browseOpportunitiesLink.href = "./jobs.html";
       browseOpportunitiesLink.textContent = "Browse Opportunities";
     }
+    if (signedInDivider) {
+      signedInDivider.style.display = isSignedIn ? "" : "none";
+    }
+    if (myPostingsLink) {
+      myPostingsLink.style.display = isSignedIn && (actingRole === "family" || actingRole === "caregiver") ? "" : "none";
+      myPostingsLink.href = actingRole === "caregiver" ? "./my-applications.html" : "./my-postings.html";
+      myPostingsLink.textContent = actingRole === "caregiver" ? "My Applications" : "My Jobs";
+    }
+    if (applicantsTopLink) {
+      applicantsTopLink.style.display = "none";
+      applicantsTopLink.href = "./applicants.html";
+    }
+    if (applicantsCount) {
+      const count = Number(headerCounts.newApplicants || 0);
+      applicantsCount.textContent = String(count);
+      applicantsCount.style.display = isSignedIn && actingRole === "family" && count > 0 ? "inline-flex" : "none";
+    }
     if (messagesLink) {
       messagesLink.style.display = isSignedIn ? "" : "none";
       messagesLink.href = actingRoleMessageHref;
-      messagesLink.textContent = "Messages";
+    }
+    if (messagesCount) {
+      const count = Number(headerCounts.unreadMessages || 0);
+      messagesCount.textContent = String(count);
+      messagesCount.style.display = isSignedIn && count > 0 ? "inline-flex" : "none";
+    }
+    if (dashboardLink) {
+      dashboardLink.style.display = "none";
+      dashboardLink.href = "./account.html";
+      dashboardLink.textContent = "Dashboard";
     }
     if (accountMenu) {
       accountMenu.style.display = isSignedIn ? "" : "none";
@@ -130,17 +170,16 @@ async function updateHeaderAuth() {
     if (adminLink) {
       adminLink.style.display = isSignedIn && isAdmin ? "" : "none";
     }
-    if (accountLink) {
-      accountLink.style.display = isSignedIn ? "" : "none";
-      accountLink.textContent = "Dashboard";
-      accountLink.href = "./account.html";
-    }
     if (profileLink) {
       let profileHref = "./account.html";
       let showProfileLink = false;
 
       if (actingRole === "family") {
-        profileHref = "./family.html";
+        if (activeProfile?.id) {
+          profileHref = `./family-profile.html?id=${encodeURIComponent(activeProfile.id)}`;
+        } else {
+          profileHref = "./family-profile.html";
+        }
         showProfileLink = true;
       } else if (actingRole === "caregiver") {
         profileHref = "./caregiver.html";
@@ -153,7 +192,7 @@ async function updateHeaderAuth() {
     }
     if (settingsLink) {
       settingsLink.style.display = isSignedIn ? "" : "none";
-      settingsLink.textContent = "My Account";
+      settingsLink.textContent = "Account Details";
       settingsLink.href = "./account-settings.html";
     }
     if (signOutBtn) {
@@ -383,8 +422,8 @@ function resolveActingRole(availableRoles = []) {
 }
 
 function getRoleHomeHref(role) {
-  if (role === "family") return "./account.html";
-  if (role === "caregiver") return "./account.html";
+  if (role === "family") return "./my-postings.html";
+  if (role === "caregiver") return "./my-applications.html";
   return "./account.html";
 }
 
@@ -392,10 +431,170 @@ function getChooserHref() {
   return "./chooser.html";
 }
 
+function getBackLabelForFileName(fileName) {
+  switch ((fileName || "").toLowerCase()) {
+    case "":
+    case "index.html":
+      return "Back to Home";
+    case "login.html":
+      return "Back to Login";
+    case "chooser.html":
+      return "Back to Choose Profile";
+    case "account.html":
+      return "Back to Dashboard";
+    case "account-settings.html":
+      return "Back to Account Details";
+    case "my-postings.html":
+      return "Back to My Jobs";
+    case "my-applications.html":
+      return "Back to My Applications";
+    case "messages.html":
+      return "Back to Messages";
+    case "applicants.html":
+      return "Back to Applicants";
+    case "jobs.html":
+      return "Back to Jobs";
+    case "caregivers.html":
+      return "Back to Caregivers";
+    case "families.html":
+      return "Back to Families";
+    case "family-profile.html":
+      return "Back to Family Profile";
+    case "caregiver.html":
+    case "caregiver-profile.html":
+      return "Back to Caregiver Profile";
+    case "findcare.html":
+      return "Back to Post a Job";
+    case "apply.html":
+      return "Back to Application";
+    case "edit-family.html":
+      return "Back to Edit Family Profile";
+    case "edit-caregiver.html":
+      return "Back to Edit Caregiver Profile";
+    case "privacy.html":
+      return "Back to Privacy";
+    case "reset-password.html":
+    case "forgot-password.html":
+      return "Back to Login";
+    default:
+      return "Back";
+  }
+}
+
+function normalizeReturnConfig(config, defaultHref, defaultLabel) {
+  const href = config?.href || defaultHref;
+  const label = config?.label || defaultLabel;
+  return {
+    href,
+    label,
+    inlineLabel: config?.inlineLabel || `\u2190 ${label}`
+  };
+}
+
+function getDefaultReturnConfigForToken(token, params) {
+  switch ((token || "").toLowerCase()) {
+    case "home":
+      return { href: "./index.html", label: "Back to Home" };
+    case "login":
+      return { href: "./login.html", label: "Back to Login" };
+    case "dashboard":
+    case "account":
+      return { href: "./account.html", label: "Back to Dashboard" };
+    case "my-jobs":
+    case "my-postings":
+      return { href: "./my-postings.html", label: "Back to My Jobs" };
+    case "my-applications":
+      return { href: "./my-applications.html", label: "Back to My Applications" };
+    case "messages":
+      return { href: "./messages.html", label: "Back to Messages" };
+    case "applicants": {
+      const jobId = params?.get("job_id") || params?.get("sourceJobId");
+      return {
+        href: jobId
+          ? `./applicants.html?job_id=${encodeURIComponent(jobId)}`
+          : "./applicants.html",
+        label: "Back to Applicants"
+      };
+    }
+    case "jobs":
+      return { href: "./jobs.html", label: "Back to Jobs" };
+    case "apply": {
+      const jobId = params?.get("job_id");
+      return {
+        href: jobId ? `./apply.html?job_id=${encodeURIComponent(jobId)}` : "./apply.html",
+        label: "Back to Application"
+      };
+    }
+    case "caregivers":
+      return { href: "./caregivers.html", label: "Back to Caregivers" };
+    case "families":
+      return { href: "./families.html", label: "Back to Families" };
+    case "edit-caregiver":
+      return { href: "./edit-caregiver.html", label: "Back to Edit Caregiver Profile" };
+    case "edit-family":
+      return { href: "./edit-family.html", label: "Back to Edit Family Profile" };
+    default:
+      return null;
+  }
+}
+
+function getReferrerReturnConfig() {
+  if (!document.referrer) return null;
+
+  try {
+    const refUrl = new URL(document.referrer, window.location.href);
+    const currentUrl = new URL(window.location.href);
+    if (refUrl.origin !== currentUrl.origin) return null;
+
+    const refTarget = `${refUrl.pathname}${refUrl.search}${refUrl.hash}`;
+    const currentTarget = `${currentUrl.pathname}${currentUrl.search}${currentUrl.hash}`;
+    if (refTarget === currentTarget) return null;
+
+    const fileName = refUrl.pathname.split("/").pop() || "index.html";
+    return {
+      href: `.${refTarget}`,
+      label: getBackLabelForFileName(fileName)
+    };
+  } catch (error) {
+    console.warn("Could not resolve referrer return config", error);
+    return null;
+  }
+}
+
+function getReturnNavigationConfig({
+  defaultHref = "./account.html",
+  defaultLabel = "Back",
+  returnMap = {}
+} = {}) {
+  const params = new URLSearchParams(window.location.search);
+  const token = (params.get("returnTo") || "").toLowerCase();
+
+  if (token) {
+    const customConfig = typeof returnMap[token] === "function"
+      ? returnMap[token](params)
+      : returnMap[token];
+    if (customConfig) {
+      return normalizeReturnConfig(customConfig, defaultHref, defaultLabel);
+    }
+
+    const defaultTokenConfig = getDefaultReturnConfigForToken(token, params);
+    if (defaultTokenConfig) {
+      return normalizeReturnConfig(defaultTokenConfig, defaultHref, defaultLabel);
+    }
+  }
+
+  const referrerConfig = getReferrerReturnConfig();
+  if (referrerConfig) {
+    return normalizeReturnConfig(referrerConfig, defaultHref, defaultLabel);
+  }
+
+  return normalizeReturnConfig(null, defaultHref, defaultLabel);
+}
+
 async function getPostLoginDestination(userId, { forceChoiceOnMultiple = false } = {}) {
   const availableRoles = await getAvailableActingRoles(userId);
 
-  if (forceChoiceOnMultiple && availableRoles.length > 1) {
+  if (availableRoles.length > 1 && forceChoiceOnMultiple !== false) {
     return getChooserHref();
   }
 
@@ -587,17 +786,12 @@ function highlightCurrentNav() {
     a.classList.toggle("active", href === file);
   });
 
-  const accountLink = document.getElementById("navAccountLink");
   const profileLink = document.getElementById("navProfileLink");
   const settingsLink = document.getElementById("navSettingsLink");
   const roleSwitchLink = document.getElementById("navRoleSwitchLink");
 
-  if (accountLink) {
-    accountLink.classList.toggle("active", file === "account.html");
-  }
-
   if (profileLink) {
-    profileLink.classList.toggle("active", file === "family.html" || file === "caregiver.html");
+    profileLink.classList.toggle("active", file === "family-profile.html" || file === "caregiver.html");
   }
 
   if (settingsLink) {
@@ -627,7 +821,7 @@ function ensureGlobalActingRoleNotice() {
     notice.style.display = "none";
     notice.innerHTML =
       '<div class="role-notice-copy">' +
-        '<div class="role-notice-label">Viewing as</div>' +
+        '<div class="role-notice-label">You are viewing Grove as a</div>' +
         '<div class="role-notice-value" id="globalActingRoleValue">Loading...</div>' +
       '</div>' +
       '<div class="role-toggle" id="globalActingRoleToggle"></div>';
@@ -638,18 +832,20 @@ function ensureGlobalActingRoleNotice() {
 }
 
 function getRoleSwitchDestination(targetRole, availableRoles = []) {
-  const currentFile = getCurrentFileName();
-  const currentUrl = new URL(window.location.href);
+  const targetProfile = availableRoles.find((role) => role.type === targetRole);
 
-  if (currentFile === "messages.html") {
-    const targetProfile = availableRoles.find((role) => role.type === targetRole);
-    if (targetProfile) {
-      return `./messages.html?profileType=${encodeURIComponent(targetProfile.type)}&profileId=${encodeURIComponent(targetProfile.id)}`;
+  if (targetRole === "family") {
+    if (targetProfile?.id) {
+      return `./family-profile.html?id=${encodeURIComponent(targetProfile.id)}`;
     }
+    return "./family-profile.html";
   }
 
-  const path = currentUrl.pathname.split("/").pop() || currentFile;
-  return `./${path}${currentUrl.search}${currentUrl.hash}`;
+  if (targetRole === "caregiver") {
+    return "./caregiver.html";
+  }
+
+  return "./account.html";
 }
 
 function renderGlobalActingRoleNotice({ isSignedIn, actingRole, availableRoles = [] }) {
@@ -701,6 +897,65 @@ function wireRoleAwareBrowseLinks(root = document) {
       window.setStoredActingRole?.(targetRole);
     });
   });
+}
+
+async function getHeaderConversationCounts({ userId, actingRole, activeProfileId } = {}) {
+  const emptyCounts = {
+    unreadMessages: 0,
+    newApplicants: 0
+  };
+
+  if (!userId || !actingRole || !activeProfileId) {
+    return emptyCounts;
+  }
+
+  const { data: participantRows, error: participantError } = await window.db
+    .from("conversation_participants")
+    .select("conversation_id, has_unread_visible_messages")
+    .eq("user_id", userId)
+    .eq("is_archived", false)
+    .eq("has_unread_visible_messages", true);
+
+  if (participantError) {
+    throw participantError;
+  }
+
+  const unreadConversationIds = Array.from(
+    new Set((participantRows || []).map((row) => row?.conversation_id).filter(Boolean))
+  );
+
+  if (!unreadConversationIds.length) {
+    return emptyCounts;
+  }
+
+  const { data: conversations, error: conversationsError } = await window.db
+    .from("conversations")
+    .select("id, family_profile_id, caregiver_profile_id, job_post_id, status")
+    .in("id", unreadConversationIds)
+    .eq("status", "active");
+
+  if (conversationsError) {
+    throw conversationsError;
+  }
+
+  const relevantConversations = (conversations || []).filter((conversation) => {
+    if (actingRole === "family") {
+      return conversation.family_profile_id === activeProfileId;
+    }
+
+    if (actingRole === "caregiver") {
+      return conversation.caregiver_profile_id === activeProfileId;
+    }
+
+    return false;
+  });
+
+  return {
+    unreadMessages: relevantConversations.length,
+    newApplicants: actingRole === "family"
+      ? relevantConversations.filter((conversation) => !!conversation.job_post_id).length
+      : 0
+  };
 }
 
 // ======================================================
@@ -1117,6 +1372,7 @@ window.getAvailableActingRoles = getAvailableActingRoles;
 window.resolveActingRole = resolveActingRole;
 window.getRoleHomeHref = getRoleHomeHref;
 window.getChooserHref = getChooserHref;
+window.getReturnNavigationConfig = getReturnNavigationConfig;
 window.getPostLoginDestination = getPostLoginDestination;
 window.applyButtonTheme = applyButtonTheme;
 window.resolveQueueItem = resolveQueueItem;

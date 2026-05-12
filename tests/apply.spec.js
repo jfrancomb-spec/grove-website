@@ -167,6 +167,6 @@ test("apply page blocks users from applying to their own family job", async ({ p
   await page.goto("/apply.html?job_id=job-1");
 
   await expect(page.getByText("You cannot apply to your own job post.")).toBeVisible();
-  await expect(page.getByRole("link", { name: "Back to Dashboard" })).toHaveAttribute("href", "./account.html");
+  await expect(page.locator("#applyBlockedMessage").getByRole("link", { name: "Back to Jobs" })).toHaveAttribute("href", "./jobs.html");
   await expect(page.locator("#applyForm")).toBeHidden();
 });

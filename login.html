@@ -168,7 +168,7 @@
 
           if (data?.session?.user) {
             const destination = await window.getPostLoginDestination(data.session.user.id, {
-              forceChoiceOnMultiple: false
+              forceChoiceOnMultiple: true
             });
             window.location.href = destination;
           }
@@ -209,7 +209,7 @@
 
           const user = await window.getCurrentSessionUser();
           const destination = await window.getPostLoginDestination(user?.id, {
-            forceChoiceOnMultiple: false
+            forceChoiceOnMultiple: true
           });
 
           successMessage.textContent = "Login successful. Redirecting...";

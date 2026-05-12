@@ -186,7 +186,11 @@
       const photoUrls = [];
 
       for (const file of uploadFiles) {
-        const safeName = file.name.replace(/\s+/g, "_");
+        const safeName = String(file.name || "photo")
+          .replace(/\s+/g, "_")
+          .replace(/[^A-Za-z0-9._-]/g, "_")
+          .replace(/_+/g, "_")
+          .replace(/^[_\.]+|[_\.]+$/g, "") || "photo";
         const filePath = `${folder}/${userId}/${Date.now()}_${Math.random().toString(36).slice(2)}_${safeName}`;
 
         const { error: uploadError } = await window.db

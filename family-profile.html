@@ -8,54 +8,327 @@
   <link rel="stylesheet" href="./styles.css" />
   <link rel="icon" type="image/png" href="./MainIcon.png" />
   <style>
-    .family-profile-page section {
-      margin: 16px auto;
+    .family-profile-page .profile-view-shell {
+      max-width: 1100px;
+      margin: 0 auto 48px;
+      padding: 0 20px;
     }
 
-    .family-profile-page .form-card {
-      padding: 18px;
+    .family-profile-page .profile-view-shell section {
+      max-width: none;
+      padding: 0;
     }
 
-    .family-profile-page .profile-detail {
-      max-width: 760px;
+    .family-profile-page .profile-view-grid {
+      display: grid;
+      gap: 24px;
     }
 
-    .family-profile-page .profile-detail > h2 {
-      margin-bottom: 6px;
+    .family-profile-page .profile-view-card,
+    .family-profile-page .profile-view-empty {
+      background: #fff;
+      border: 1px solid var(--card-border);
+      border-radius: 20px;
+      box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
     }
 
-    .family-profile-page .profile-detail > p {
-      margin-bottom: 6px;
-      line-height: 1.45;
+    .family-profile-page .profile-view-card {
+      overflow: hidden;
     }
 
-    .family-profile-page .profile-detail .mt-22 {
-      margin-top: 14px;
+    .family-profile-page .profile-view-empty {
+      padding: 28px;
     }
 
-    .family-profile-page .profile-detail .mb-6 {
-      margin-bottom: 4px;
+    .family-profile-page .profile-hero-card {
+      padding: 28px;
+      background: linear-gradient(135deg, #f8fbff 0%, #ffffff 55%, #eef5fc 100%);
     }
 
-    .family-profile-page .cards {
-      gap: 14px;
+    .family-profile-page .profile-hero-grid {
+      display: grid;
+      grid-template-columns: 280px 1fr;
+      gap: 24px;
+      align-items: start;
     }
 
-    .family-profile-page .card {
-      padding: 16px;
+    .family-profile-page .profile-avatar {
+      width: 190px;
+      height: 190px;
+      border-radius: 24px;
+      overflow: hidden;
+      border: 1px solid var(--card-border);
+      background: #eef5fc;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #52606d;
+      font-weight: 700;
+      text-align: center;
+      padding: 14px;
+      cursor: pointer;
     }
 
-    .family-profile-page .review-list {
+    .family-profile-page .profile-avatar img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      object-position: center;
+      display: block;
+      background: #eef5fc;
+    }
+
+    .family-profile-page .profile-photo-stack {
+      display: grid;
+      gap: 12px;
+      align-content: start;
+      width: 280px;
+    }
+
+    .family-profile-page .profile-photo-stack .profile-photo-gallery {
+      display: grid;
+      grid-template-columns: repeat(4, 56px);
+      gap: 10px;
+      align-items: center;
+    }
+
+    .family-profile-page .profile-photo-stack .profile-thumb-button {
+      width: 56px;
+      height: 56px;
+      border-radius: 14px;
+      overflow: hidden;
+      border: 1px solid var(--card-border);
+      background: #eef5fc;
+      padding: 0;
+      cursor: pointer;
+    }
+
+    .family-profile-page .profile-photo-stack .profile-thumb-button img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .family-profile-page .profile-thumb-button.active {
+      outline: 2px solid var(--family);
+      outline-offset: 2px;
+    }
+
+    .family-profile-page .profile-eyebrow {
+      margin: 0 0 8px;
+      color: var(--family);
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .family-profile-page .profile-name {
+      margin: 0;
+      font-size: 34px;
+      line-height: 1.08;
+      color: #102a43;
+    }
+
+    .family-profile-page .profile-subtitle,
+    .family-profile-page .profile-body-copy {
+      margin: 10px 0 0;
+      color: #52606d;
+      line-height: 1.6;
+    }
+
+    .family-profile-page .profile-chip-row,
+    .family-profile-page .profile-badge-row,
+    .family-profile-page .profile-action-row {
+      display: flex;
+      flex-wrap: wrap;
       gap: 10px;
     }
 
-    .family-profile-page .review-card p:last-child,
-    .family-profile-page .card p:last-child {
-      margin-bottom: 0;
+    .family-profile-page .profile-chip,
+    .family-profile-page .profile-signal {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: #fff;
+      border: 1px solid #dbe4f2;
+      color: #234;
+      font-size: 14px;
+      font-weight: 700;
     }
 
-    .family-profile-page .profile-actions {
-      margin-top: 14px;
+    .family-profile-page .profile-chip-muted,
+    .family-profile-page .profile-signal-muted {
+      color: #667788;
+      background: #f8fbff;
+      font-weight: 600;
+    }
+
+    .family-profile-page .profile-stats-grid,
+    .family-profile-page .profile-sections-grid {
+      display: grid;
+      gap: 16px;
+    }
+
+    .family-profile-page .profile-stats-grid {
+      grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+      padding: 24px 28px 0;
+    }
+
+    .family-profile-page .profile-stat,
+    .family-profile-page .profile-section {
+      background: #fff;
+      border: 1px solid var(--card-border);
+      border-radius: 18px;
+      padding: 18px;
+    }
+
+    .family-profile-page .profile-stat-label {
+      margin-bottom: 8px;
+      color: #6b7280;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+
+    .family-profile-page .profile-stat-value {
+      color: #102a43;
+      font-size: 17px;
+      font-weight: 700;
+      line-height: 1.35;
+    }
+
+    .family-profile-page .profile-sections-grid {
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      padding: 0 28px 28px;
+    }
+
+    .family-profile-page .profile-section h3 {
+      margin: 0 0 12px;
+      color: #102a43;
+      font-size: 20px;
+    }
+
+    .family-profile-page .profile-jobs-shell,
+    .family-profile-page .profile-reviews-shell,
+    .family-profile-page .profile-actions-shell {
+      padding: 0 28px 28px;
+    }
+
+    .family-profile-page .posted-jobs-grid {
+      display: grid;
+      gap: 10px;
+    }
+
+    .family-profile-page .posted-job-card {
+      background: #fff;
+      border: 1px solid var(--card-border);
+      border-radius: 18px;
+      padding: 14px 16px;
+    }
+
+    .family-profile-page .posted-job-card-top {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 12px;
+      align-items: start;
+      margin-bottom: 4px;
+    }
+
+    .family-profile-page .posted-job-card-copy {
+      min-width: 0;
+    }
+
+    .family-profile-page .posted-job-card h4 {
+      margin: 0 0 4px;
+      color: #102a43;
+    }
+
+    .family-profile-page .posted-job-photo {
+      width: 72px;
+      height: 72px;
+      border-radius: 14px;
+      object-fit: cover;
+      object-position: center;
+      display: block;
+      border: 1px solid var(--card-border);
+      background: #eef2f7;
+    }
+
+    .family-profile-page .posted-job-card p {
+      margin: 4px 0 0;
+      line-height: 1.45;
+    }
+
+    .family-profile-page .review-rating {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 700;
+      color: #102a43;
+    }
+
+    .family-profile-page .review-stars {
+      color: #d4a017;
+      letter-spacing: 0.08em;
+      font-size: 15px;
+      line-height: 1;
+    }
+
+    .family-profile-page .review-list {
+      gap: 8px;
+    }
+
+    .family-profile-page .review-card {
+      padding: 12px 14px;
+    }
+
+    .family-profile-page .review-card p {
+      margin: 4px 0 0;
+    }
+
+    .family-profile-page .review-card p:first-child {
+      margin-top: 0;
+    }
+
+    .family-profile-page .posted-job-card .button-row {
+      gap: 8px;
+    }
+
+    .family-profile-page .posted-job-card .button {
+      padding: 9px 12px;
+    }
+
+    @media (max-width: 800px) {
+      .family-profile-page .profile-hero-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .family-profile-page .profile-avatar {
+        width: 150px;
+        height: 150px;
+      }
+
+      .family-profile-page .profile-photo-stack {
+        width: 100%;
+      }
+
+      .family-profile-page .profile-name {
+        font-size: 28px;
+      }
+
+      .family-profile-page .profile-stats-grid,
+      .family-profile-page .profile-sections-grid,
+      .family-profile-page .profile-jobs-shell,
+      .family-profile-page .profile-reviews-shell,
+      .family-profile-page .profile-actions-shell {
+        padding-left: 20px;
+        padding-right: 20px;
+      }
     }
   </style>
 </head>
@@ -69,23 +342,27 @@
       <div class="subtitle" id="profileSubtitle">Loading family profile...</div>
     </div>
 
-    <section>
-      <div class="form-card" id="profileCard" style="display: none;">
-        <div id="profileContent"></div>
+    <div class="profile-view-shell">
+      <section class="profile-view-grid">
+        <div class="profile-view-card" id="profileCard" style="display: none;">
+          <div id="profileContent"></div>
 
-        <div class="profile-actions mt-22" id="profileActions">
-          <a class="button button-family" id="contactBtn" href="#">Message Family</a>
-          <a class="button button-secondary" id="backLinkBtn" href="./families.html">Back to Families</a>
+          <div class="profile-actions-shell" id="profileActions">
+            <div class="profile-action-row">
+              <a class="button button-family" id="contactBtn" href="#">Message Family</a>
+              <a class="button button-secondary" id="backLinkBtn" href="./families.html">Back to Families</a>
+            </div>
+          </div>
         </div>
-      </div>
 
-      <div id="profileError" style="display: none;">
-        <p>Unable to load this family profile.</p>
-        <p class="mt-16">
-          <a id="backLinkInline" href="./families.html">← Back to Families</a>
-        </p>
-      </div>
-    </section>
+        <div class="profile-view-empty" id="profileError" style="display: none;">
+          <p>Unable to load this family profile.</p>
+          <p class="mt-16">
+            <a id="backLinkInline" href="./families.html">← Back to Families</a>
+          </p>
+        </div>
+      </section>
+    </div>
   </main>
 
   <div id="footer-placeholder"></div>
@@ -108,6 +385,19 @@
       let conversationMetaByJobId = {};
 
       function getBackConfig() {
+        if (typeof window.getReturnNavigationConfig === "function") {
+          return window.getReturnNavigationConfig({
+            defaultHref: "./families.html",
+            defaultLabel: "Back to Families",
+            returnMap: {
+              jobs: {
+                href: "./jobs.html",
+                label: "Back to Jobs"
+              }
+            }
+          });
+        }
+
         const params = new URLSearchParams(window.location.search);
         const returnTo = (params.get("returnTo") || "").toLowerCase();
 
@@ -158,32 +448,31 @@
         return getProfilePhotoArray(profile);
       }
 
-      function buildStarsLabel(avgRating) {
-        const numeric = Number(avgRating);
+      function buildStarText(value) {
+        const numeric = Number(value);
         if (Number.isNaN(numeric) || numeric <= 0) return "";
-        return `⭐ ${numeric.toFixed(1)}`;
+        const filledCount = Math.max(0, Math.min(5, Math.round(numeric)));
+        return `${"★".repeat(filledCount)}${"☆".repeat(5 - filledCount)}`;
       }
 
-      function buildFamilyBadges(profile) {
-        const badges = [];
+      function buildStarsLabel(value) {
+        const numeric = Number(value);
+        if (Number.isNaN(numeric) || numeric <= 0) return "";
+        return `${numeric.toFixed(1)} stars`;
+      }
 
-        if (profile.has_cats) badges.push("Has Cats");
-        if (profile.has_dogs) badges.push("Has Dogs");
-        if (profile.smoking_in_home) badges.push("Smoking in Home");
-        if (profile.driving_needed) badges.push("Driving Needed");
-
-        if (!badges.length) return "";
-
-        return `
-          <div class="profile-badges">
-            ${badges.map((badge) => `<span class="profile-badge">${badge}</span>`).join("")}
-          </div>
-        `;
+      function buildSignals(profile) {
+        const signals = [];
+        if (profile.has_cats) signals.push("Has Cats");
+        if (profile.has_dogs) signals.push("Has Dogs");
+        if (profile.smoking_in_home) signals.push("Smoking in Home");
+        if (profile.driving_needed) signals.push("Driving Needed");
+        return signals;
       }
 
       function buildReviewSummary(reviews) {
         if (!Array.isArray(reviews) || !reviews.length) {
-          return `<p><strong>Rating:</strong> No reviews yet</p>`;
+          return `<p class="profile-body-copy mt-0">No reviews yet.</p>`;
         }
 
         const ratings = reviews
@@ -191,15 +480,17 @@
           .filter((rating) => !Number.isNaN(rating));
 
         if (!ratings.length) {
-          return `<p><strong>Rating:</strong> ${reviews.length} review${reviews.length === 1 ? "" : "s"}</p>`;
+          return `<p class="profile-body-copy mt-0">${reviews.length} review${reviews.length === 1 ? "" : "s"}</p>`;
         }
 
         const average = ratings.reduce((sum, rating) => sum + rating, 0) / ratings.length;
 
         return `
-          <p>
-            <strong>Rating:</strong>
-            ${buildStarsLabel(average)}
+          <p class="profile-body-copy mt-0">
+            <span class="review-rating">
+              <span class="review-stars" aria-hidden="true">${buildStarText(average)}</span>
+              <span>${buildStarsLabel(average)}</span>
+            </span>
             (${reviews.length} review${reviews.length === 1 ? "" : "s"})
           </p>
         `;
@@ -207,7 +498,7 @@
 
       function buildReviews(reviews) {
         if (!Array.isArray(reviews) || !reviews.length) {
-          return "<p>No reviews yet.</p>";
+          return "";
         }
 
         const isMockOnly = reviews.every((review) => review.is_mock);
@@ -219,7 +510,7 @@
               <div class="review-card">
                 <p>
                   <strong>${review.reviewer_name || "Anonymous"}</strong>
-                  ${review.rating ? `• ${buildStarsLabel(review.rating)}` : ""}
+                  ${review.rating ? ` - <span class="review-rating"><span class="review-stars" aria-hidden="true">${buildStarText(review.rating)}</span><span>${buildStarsLabel(review.rating)}</span></span>` : ""}
                 </p>
                 ${review.review_text ? `<p>${review.review_text}</p>` : ""}
               </div>
@@ -258,48 +549,35 @@
         }
 
         return `
-          <div class="mt-22">
-            <h3 class="mb-6">Posted Jobs</h3>
-            <div class="cards">
+          <div class="profile-section">
+            <h3>Posted Jobs</h3>
+            <div class="posted-jobs-grid">
               ${jobs.map((job) => {
                 const title = job.title || "Care Opportunity";
                 const careType = job.care_type || "Not specified";
                 const location = job.location || "Location not listed";
                 const schedule = job.schedule || "Schedule not listed";
                 const payRange = job.pay_range || "";
-                const existingApplication = applicationByJobId[job.id] || null;
-                const conversationMeta = conversationMetaByJobId[job.id] || null;
-                const isOwnJob = !!(currentUser?.id && currentFamilyParent?.user_id && currentUser.id === currentFamilyParent.user_id);
-                const applyHref = !isSignedIn
-                  ? "./login.html"
-                  : isOwnJob
-                    ? `./job-details.html?job_id=${encodeURIComponent(job.id)}`
-                    : existingApplication
-                      ? window.buildJobApplicationMessagesHref({
-                          jobId: job.id,
-                          targetUserId: currentFamilyParent?.user_id || null,
-                          familyProfileId: currentFamilyParent?.id || null,
-                          caregiverProfileId,
-                          conversationId: conversationMeta?.conversationId || null
-                        })
-                      : `./apply.html?job_id=${encodeURIComponent(job.id)}`;
-                const applyLabel = !isSignedIn
-                  ? "Login to Apply"
-                  : isOwnJob
-                    ? "Your Job Post"
-                    : existingApplication
-                      ? "View Application"
-                      : "Apply for this job";
+                const description = job.description || "";
+                const jobPhotos = getProfilePhotoArray(job);
+                const jobPhotoHtml = jobPhotos[0]
+                  ? `<img class="posted-job-photo" src="${jobPhotos[0]}" alt="${title}">`
+                  : "";
 
                 return `
-                  <div class="card">
-                    <h4>${title}</h4>
-                    <p>${location} • ${careType}</p>
+                  <div class="posted-job-card">
+                    <div class="posted-job-card-top">
+                      <div class="posted-job-card-copy">
+                        <h4>${title}</h4>
+                        <p class="profile-body-copy mt-0">${location} • ${careType}</p>
+                      </div>
+                      ${jobPhotoHtml}
+                    </div>
                     <p><strong>Schedule:</strong> ${schedule}</p>
                     ${payRange ? `<p><strong>Pay:</strong> ${payRange}</p>` : ""}
+                    ${description ? `<p><strong>Details:</strong> ${description}</p>` : ""}
                     <div class="button-row mt-16">
                       <a class="button button-secondary" href="./job-details.html?job_id=${encodeURIComponent(job.id)}">View Details</a>
-                      <a class="button button-family" href="${applyHref}">${applyLabel}</a>
                     </div>
                   </div>
                 `;
@@ -311,30 +589,38 @@
 
       function buildProfileGallery(profile) {
         const photos = getProfilePhotos(profile);
+        const displayName = formatDisplayName(profile);
 
-        if (!photos.length) return "";
+        if (!photos.length) {
+          return `
+            <div class="profile-photo-stack">
+              <div class="profile-avatar">
+                <span>Add a photo in Edit Profile</span>
+              </div>
+            </div>
+          `;
+        }
 
         const safeIndex = Math.min(currentPhotoIndex, photos.length - 1);
         const mainPhoto = photos[safeIndex];
-        const displayName = formatDisplayName(profile);
 
         return `
-          <div class="profile-photo-gallery profile-detail-gallery">
-            <img
-              class="profile-detail-main-photo"
-              id="mainProfilePhoto"
-              src="${mainPhoto}"
-              alt="${displayName}"
-            >
+          <div class="profile-photo-stack">
+            <div class="profile-avatar" id="mainProfilePhotoShell">
+              <img
+                id="mainProfilePhoto"
+                src="${mainPhoto}"
+                alt="${displayName}"
+              >
+            </div>
 
             ${photos.length > 1 ? `
-              <div class="profile-gallery" id="profileGalleryThumbs">
+              <div class="profile-photo-gallery" id="profileGalleryThumbs">
                 ${photos.map((photo, index) => `
                   <button
                     type="button"
                     class="profile-thumb-button${index === safeIndex ? " active" : ""}"
                     data-index="${index}"
-                    data-photo="${photo}"
                     aria-label="View family photo ${index + 1}"
                   >
                     <img src="${photo}" alt="${displayName} photo ${index + 1}">
@@ -349,25 +635,39 @@
       function wireProfileGallery() {
         const gallery = document.getElementById("profileGalleryThumbs");
         const mainPhoto = document.getElementById("mainProfilePhoto");
+        const photos = getProfilePhotos(currentFamilyVersion);
 
-        if (!gallery || !mainPhoto) return;
+        if (!mainPhoto || !Array.isArray(photos) || !photos.length) return;
 
-        const buttons = gallery.querySelectorAll(".profile-thumb-button");
+        function applyGallerySelection(nextIndex) {
+          if (Number.isNaN(nextIndex) || nextIndex < 0 || nextIndex >= photos.length) return;
 
-        buttons.forEach((button) => {
-          button.addEventListener("click", () => {
-            const newPhoto = button.dataset.photo;
-            const index = Number(button.dataset.index);
+          currentPhotoIndex = nextIndex;
+          mainPhoto.src = photos[currentPhotoIndex];
 
-            if (!newPhoto || Number.isNaN(index)) return;
-
-            currentPhotoIndex = index;
-            mainPhoto.src = newPhoto;
-
-            buttons.forEach((btn) => btn.classList.remove("active"));
-            button.classList.add("active");
+          const buttons = gallery ? gallery.querySelectorAll(".profile-thumb-button") : [];
+          buttons.forEach((btn) => {
+            const buttonIndex = Number(btn.dataset.index);
+            btn.classList.toggle("active", buttonIndex === currentPhotoIndex);
           });
-        });
+        }
+
+        if (gallery) {
+          const buttons = gallery.querySelectorAll(".profile-thumb-button");
+          buttons.forEach((button) => {
+            button.addEventListener("click", () => {
+              const index = Number(button.dataset.index);
+              applyGallerySelection(index);
+            });
+          });
+        }
+
+        const advance = () => {
+          if (photos.length <= 1) return;
+          applyGallerySelection((currentPhotoIndex + 1) % photos.length);
+        };
+
+        mainPhoto.addEventListener("click", advance);
       }
 
       function renderProfile() {
@@ -375,24 +675,31 @@
 
         const parent = currentFamilyParent;
         const profile = currentFamilyVersion;
-
+        const isOwnProfile = !!(currentUser?.id && parent.user_id && currentUser.id === parent.user_id);
         const displayName = formatDisplayName(profile);
         const careTypesNeeded = getCareTypesNeededText(profile);
-
+        const signals = buildSignals(profile);
         const responseTime = parent.average_response_minutes != null
           ? formatResponseTime(parent.average_response_minutes)
-          : "";
+          : "Building response history";
+        const encounters = parent.confirmed_encounters != null ? String(parent.confirmed_encounters) : "0";
 
-        const encounters = parent.confirmed_encounters != null
-          ? `${parent.confirmed_encounters} confirmed encounter${Number(parent.confirmed_encounters) === 1 ? "" : "s"}`
-          : "";
-
-        document.getElementById("profileSubtitle").textContent =
-          `${displayName}${profile.location ? ` • ${profile.location}` : ""}`;
+        document.getElementById("profileSubtitle").textContent = isOwnProfile
+          ? "Preview how your family profile looks to caregivers."
+          : "Learn about this family and their care needs.";
 
         const contactBtn = document.getElementById("contactBtn");
+        const backLinkBtn = document.getElementById("backLinkBtn");
 
-        if (parent.user_id) {
+        if (isOwnProfile) {
+          contactBtn.style.display = "";
+          contactBtn.textContent = "Edit Profile";
+          contactBtn.href = "./edit-family.html";
+          contactBtn.onclick = null;
+          if (backLinkBtn) {
+            backLinkBtn.style.display = "none";
+          }
+        } else if (parent.user_id) {
           contactBtn.style.display = "";
           contactBtn.textContent = isSignedIn ? "Message Family" : "Login to Message";
           contactBtn.href = isSignedIn ? "#" : "./login.html";
@@ -404,56 +711,95 @@
               familyProfileId: parent.id
             });
           };
+          if (backLinkBtn) {
+            backLinkBtn.style.display = "";
+          }
         } else {
           contactBtn.style.display = "none";
+          if (backLinkBtn) {
+            backLinkBtn.style.display = "";
+          }
         }
 
         document.getElementById("profileContent").innerHTML = `
-          <div class="profile-detail">
-            ${buildProfileGallery(profile)}
+          <div class="profile-hero-card">
+            <div class="profile-hero-grid">
+              ${buildProfileGallery(profile)}
 
-            <h2 class="text-center">${displayName}</h2>
+              <div>
+                <h2 class="profile-name">${displayName}</h2>
+                <p class="profile-subtitle">
+                  ${profile.location || "Add your location in Edit Profile"}
+                </p>
 
-            ${profile.location ? `<p class="text-center"><strong>Location:</strong> ${profile.location}</p>` : ""}
-            ${careTypesNeeded ? `<p class="text-center"><strong>Care Needed:</strong> ${careTypesNeeded}</p>` : ""}
-            ${responseTime ? `<p class="text-center"><strong>Response Time:</strong> ${responseTime}</p>` : ""}
-            ${encounters ? `<p class="text-center"><strong>Confirmed Encounters:</strong> ${encounters}</p>` : ""}
+                <div class="profile-chip-row mt-16">
+                  ${careTypesNeeded
+                    ? `<span class="profile-chip">${careTypesNeeded}</span>`
+                    : '<span class="profile-chip profile-chip-muted">Add care needs in Edit Profile</span>'}
+                  <span class="profile-chip">${responseTime}</span>
+                </div>
 
-            ${buildReviewSummary(currentReviews)}
-            ${buildFamilyBadges(profile)}
-
-            ${profile.household_description ? `
-              <div class="mt-22">
-                <h3 class="mb-6">Household</h3>
-                <p>${profile.household_description}</p>
+                <div class="profile-badge-row mt-16">
+                  ${signals.length
+                    ? signals.map((signal) => `<span class="profile-signal">${signal}</span>`).join("")
+                    : '<span class="profile-signal profile-signal-muted">Add household signals in Edit Profile</span>'}
+                </div>
               </div>
-            ` : ""}
+            </div>
+          </div>
 
+          <div class="profile-stats-grid">
+            <div class="profile-stat">
+              <div class="profile-stat-label">Location</div>
+              <div class="profile-stat-value">${profile.location || "Add location"}</div>
+            </div>
+            <div class="profile-stat">
+              <div class="profile-stat-label">Care Needed</div>
+              <div class="profile-stat-value">${careTypesNeeded || "Add care needs"}</div>
+            </div>
+            <div class="profile-stat">
+              <div class="profile-stat-label">Response Time</div>
+              <div class="profile-stat-value">${responseTime}</div>
+            </div>
+            <div class="profile-stat">
+              <div class="profile-stat-label">Confirmed Encounters</div>
+              <div class="profile-stat-value">${encounters}</div>
+            </div>
+          </div>
+
+          <div class="profile-sections-grid">
             ${profile.children_description ? `
-              <div class="mt-22">
-                <h3 class="mb-6">Children</h3>
-                <p>${profile.children_description}</p>
+              <div class="profile-section">
+                <h3>Children</h3>
+                <p class="profile-body-copy mt-0">${profile.children_description}</p>
               </div>
             ` : ""}
 
             ${profile.pets_description ? `
-              <div class="mt-22">
-                <h3 class="mb-6">Pets</h3>
-                <p>${profile.pets_description}</p>
+              <div class="profile-section">
+                <h3>Pets</h3>
+                <p class="profile-body-copy mt-0">${profile.pets_description}</p>
               </div>
             ` : ""}
 
-            ${profile.bio ? `
-              <div class="mt-22">
-                <h3 class="mb-6">About</h3>
-                <p>${profile.bio}</p>
+            ${(profile.bio || profile.household_description) ? `
+              <div class="profile-section">
+                <h3>About This Family</h3>
+                <p class="profile-body-copy mt-0">${profile.bio || profile.household_description}</p>
               </div>
             ` : ""}
+          </div>
 
-            ${buildJobsSection(currentJobs)}
+          ${currentJobs.length ? `
+            <div class="profile-jobs-shell">
+              ${buildJobsSection(currentJobs)}
+            </div>
+          ` : ""}
 
-            <div class="mt-22">
-              <h3 class="mb-6">Reviews</h3>
+          <div class="profile-reviews-shell">
+            <div class="profile-section">
+              <h3>Reviews</h3>
+              ${buildReviewSummary(currentReviews)}
               ${buildReviews(currentReviews)}
             </div>
           </div>

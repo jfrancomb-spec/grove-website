@@ -320,7 +320,7 @@
         </div>
 
         <p class="apply-back-link">
-          <a href="./jobs.html">Back to Jobs</a>
+          <a id="applyBackLink" href="./jobs.html">Back to Jobs</a>
         </p>
       </section>
 
@@ -375,6 +375,7 @@
       const successBox = document.getElementById("applySuccess");
       const previewProfileBtn = document.getElementById("previewProfileBtn");
       const messageInput = document.getElementById("app_message");
+      const backLink = document.getElementById("applyBackLink");
 
       let currentUser = null;
       let job = null;
@@ -382,6 +383,27 @@
       let familyProfile = null;
       let existingApplication = null;
       let draftStorageKey = null;
+      const returnConfig = typeof window.getReturnNavigationConfig === "function"
+        ? window.getReturnNavigationConfig({
+            defaultHref: "./jobs.html",
+            defaultLabel: "Back to Jobs",
+            returnMap: {
+              account: {
+                href: "./account.html",
+                label: "Back to Dashboard"
+              }
+            }
+          })
+        : {
+            href: "./jobs.html",
+            label: "Back to Jobs",
+            inlineLabel: "← Back to Jobs"
+          };
+
+      if (backLink) {
+        backLink.href = returnConfig.href;
+        backLink.textContent = returnConfig.label;
+      }
 
       function formatJobSubtitle(jobRow) {
         return jobRow.title || "Job";
@@ -404,6 +426,10 @@
             : "");
         blockedMessage.style.display = "block";
         form.style.display = "none";
+      }
+
+      function showReturnBlocked(message) {
+        showBlocked(message, returnConfig.href, returnConfig.label);
       }
 
       function renderProfileSummary(profile) {
@@ -684,6 +710,29 @@
         }
       }
 
+      function moderationPublishesMessage(result) {
+        return ["posted", "published", "approved"].includes(result?.content_status || "");
+      }
+
+      async function makeMessageVisibleToRecipient(messageId, moderationResult) {
+        if (!messageId || !moderationPublishesMessage(moderationResult)) return;
+
+        const now = new Date().toISOString();
+        const { error } = await window.db
+          .from("messages")
+          .update({
+            content_status: moderationResult.content_status,
+            visible_to_recipient: true,
+            sent_at: now,
+            received_at: now
+          })
+          .eq("id", messageId);
+
+        if (error) {
+          throw error;
+        }
+      }
+
       async function ensureApplicationConversationMessage() {
         const messageText = messageInput.value.trim();
         if (!messageText) {
@@ -734,6 +783,8 @@
           throw new Error("Application message moderation failed.");
         }
 
+        await makeMessageVisibleToRecipient(insertedMessage.id, moderationResult);
+
         const statusMessage = getApplicationMessageSubmissionText(moderationResult);
         if (statusMessage) {
           alert(statusMessage);
@@ -764,7 +815,7 @@
 
         if (!jobId) {
           subtitle.textContent = "Missing job id.";
-          showBlocked("This application link is missing the job information.", "./jobs.html", "Browse Jobs");
+          showBlocked("This application link is missing the job information.", returnConfig.href, returnConfig.label);
           return;
         }
 
@@ -779,20 +830,12 @@
           familyProfile = await loadFamilyProfileForJob(job.user_id);
 
           if (!familyProfile) {
-            showBlocked(
-              "This job is missing an active family profile, so applications are temporarily unavailable.",
-              "./jobs.html",
-              "Back to Jobs"
-            );
+            showReturnBlocked("This job is missing an active family profile, so applications are temporarily unavailable.");
             return;
           }
 
           if (currentUser.id && job.user_id && currentUser.id === job.user_id) {
-            showBlocked(
-              "You cannot apply to your own job post.",
-              "./account.html",
-              "Back to Dashboard"
-            );
+            showReturnBlocked("You cannot apply to your own job post.");
             return;
           }
 
@@ -838,7 +881,7 @@
         } catch (error) {
           console.error(error);
           subtitle.textContent = "Unable to load this application page.";
-          showBlocked(error.message || "Please try again in a moment.", "./jobs.html", "Back to Jobs");
+          showReturnBlocked(error.message || "Please try again in a moment.");
         }
       }
 

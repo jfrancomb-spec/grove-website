@@ -142,8 +142,39 @@ header,
   font-weight: 500;
 }
 
+.nav > a {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.nav-link-label {
+  display: inline-block;
+}
+
+.nav-count-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: var(--primary);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+}
+
 .nav a:hover {
   color: var(--primary);
+}
+
+.nav-divider {
+  color: #9ca3af;
+  font-weight: 400;
+  user-select: none;
 }
 
 .nav > a.active {
@@ -249,32 +280,36 @@ header,
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 16px;
-  padding: 0 0 8px;
-  margin-bottom: 14px;
+  gap: 12px;
+  padding: 0 0 6px;
+  margin-bottom: 10px;
   border-bottom: 1px solid #d1d5db;
   color: #6b7280;
   background: transparent;
 }
 
 .role-notice-copy {
-  display: grid;
-  gap: 2px;
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  min-width: 0;
 }
 
 .role-notice-label {
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: 0;
+  text-transform: none;
   color: #6b7280;
+  white-space: nowrap;
 }
 
 .role-notice-value {
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 700;
   color: #4b5563;
   line-height: 1.2;
+  white-space: nowrap;
 }
 
 .role-toggle {
@@ -286,6 +321,10 @@ header,
 .role-toggle .button {
   width: auto;
   flex: 0 0 auto;
+  padding: 8px 14px;
+  font-size: 14px;
+  line-height: 1.15;
+  border-radius: 9px;
 }
 
 .global-role-notice {
@@ -500,6 +539,15 @@ button.button {
   background: #32756e;
 }
 
+.button-view-application {
+  background: #4f7ea8;
+  color: #fff;
+}
+
+.button-view-application:hover {
+  background: #3f6d93;
+}
+
 .button-disabled,
 .button-disabled:hover {
   background: #d7dce2 !important;
@@ -568,34 +616,45 @@ body.button-theme-caregiver .button-disabled:hover {
   color: #fff;
 }
 
-body.button-theme-family .button:not(.button-admin):not(.button-disabled),
-body.button-theme-family .button-family,
+body.button-theme-family .button:not(.button-admin):not(.button-disabled):not(.button-view-application),
+body.button-theme-family .button-family:not(.button-disabled),
 body.button-theme-family .button-caregiver:not(.button-disabled),
-body.button-theme-family .button-secondary:not(.button-disabled) {
+body.button-theme-family .button-secondary:not(.button-disabled):not(.button-view-application) {
   background: var(--family) !important;
   color: #fff !important;
 }
 
-body.button-theme-family .button:not(.button-admin):not(.button-disabled):hover,
-body.button-theme-family .button-family:hover,
+body.button-theme-family .button:not(.button-admin):not(.button-disabled):not(.button-view-application):hover,
+body.button-theme-family .button-family:not(.button-disabled):hover,
 body.button-theme-family .button-caregiver:not(.button-disabled):hover,
-body.button-theme-family .button-secondary:not(.button-disabled):hover {
+body.button-theme-family .button-secondary:not(.button-disabled):not(.button-view-application):hover {
   background: #3f6d93 !important;
 }
 
-body.button-theme-caregiver .button:not(.button-admin):not(.button-disabled),
-body.button-theme-caregiver .button-family,
+body.button-theme-caregiver .button:not(.button-admin):not(.button-disabled):not(.button-view-application),
+body.button-theme-caregiver .button-family:not(.button-disabled),
 body.button-theme-caregiver .button-caregiver:not(.button-disabled),
-body.button-theme-caregiver .button-secondary:not(.button-disabled) {
+body.button-theme-caregiver .button-secondary:not(.button-disabled):not(.button-view-application) {
   background: var(--caregiver) !important;
   color: #fff !important;
 }
 
-body.button-theme-caregiver .button:not(.button-admin):not(.button-disabled):hover,
-body.button-theme-caregiver .button-family:hover,
+body.button-theme-caregiver .button:not(.button-admin):not(.button-disabled):not(.button-view-application):hover,
+body.button-theme-caregiver .button-family:not(.button-disabled):hover,
 body.button-theme-caregiver .button-caregiver:not(.button-disabled):hover,
-body.button-theme-caregiver .button-secondary:not(.button-disabled):hover {
+body.button-theme-caregiver .button-secondary:not(.button-disabled):not(.button-view-application):hover {
   background: #32756e !important;
+}
+
+body.button-theme-family .button-view-application:not(.button-disabled),
+body.button-theme-caregiver .button-view-application:not(.button-disabled) {
+  background: #4f7ea8 !important;
+  color: #fff !important;
+}
+
+body.button-theme-family .button-view-application:not(.button-disabled):hover,
+body.button-theme-caregiver .button-view-application:not(.button-disabled):hover {
+  background: #3f6d93 !important;
 }
 
 /* =====================================================
@@ -762,6 +821,29 @@ textarea:focus {
   margin-bottom: 6px;
 }
 
+.job-card-top {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 110px;
+  gap: 14px;
+  align-items: start;
+}
+
+.job-card-main {
+  min-width: 0;
+}
+
+.job-card-photo {
+  width: 110px;
+  height: 110px;
+  object-fit: cover;
+  display: block;
+  border-radius: 18px;
+  margin: 0;
+  background: #eef2f7;
+  border: 1px solid var(--card-border);
+  justify-self: end;
+}
+
 .job-card-title {
   margin: 0;
   line-height: 1.25;
@@ -814,6 +896,10 @@ textarea:focus {
   font-size: 0.92rem;
 }
 
+.job-card-detail {
+  font-size: 0.95rem;
+}
+
 .browse-card-actions {
   display: flex;
   flex-wrap: wrap;
@@ -824,6 +910,18 @@ textarea:focus {
 .browse-card-actions .button {
   margin: 0;
   padding: 10px 14px;
+}
+
+@media (max-width: 720px) {
+  .job-card-top {
+    grid-template-columns: 1fr;
+  }
+
+  .job-card-photo {
+    justify-self: start;
+    width: 96px;
+    height: 96px;
+  }
 }
 
 .empty-state {
@@ -1027,7 +1125,8 @@ textarea:focus {
   margin: 0;
   border: 1px solid var(--card-border);
   border-radius: 12px;
-  object-fit: cover;
+  object-fit: contain;
+  object-position: center;
   background: #f5f5f5;
 }
 
@@ -1098,7 +1197,9 @@ textarea:focus {
   height: 220px;
   margin: 0 auto 12px;
   border-radius: 12px;
-  object-fit: cover;
+  object-fit: contain;
+  object-position: center;
+  background: #f5f5f5;
 }
 
 .profile-detail-gallery {
@@ -1125,7 +1226,8 @@ textarea:focus {
   border: 1px solid var(--card-border);
   border-radius: 14px;
   background: #f5f5f5;
-  object-fit: cover;
+  object-fit: contain;
+  object-position: center;
 }
 
 .family-thumbnails {
@@ -1758,6 +1860,10 @@ body.caregiver-browse-page .profile-actions .button {
     padding: 6px 0;
   }
 
+  .nav-divider {
+    display: none !important;
+  }
+
   .nav-account-menu {
     width: 100%;
   }
@@ -1781,12 +1887,11 @@ body.caregiver-browse-page .profile-actions .button {
   }
 
   .role-notice {
-    flex-direction: column;
-    align-items: flex-start;
+    gap: 10px;
   }
 
   .role-toggle {
-    justify-content: flex-start;
+    justify-content: flex-end;
   }
 
   .hero {
@@ -1838,4 +1943,15 @@ body.caregiver-browse-page .profile-actions .button {
     min-height: 180px;
     max-height: 180px;
   }
+}
+.job-card-photo {
+  display: block;
+  width: 86px;
+  height: 86px;
+  border-radius: 16px;
+  object-fit: cover;
+  object-position: center;
+  margin: 0 0 14px;
+  border: 1px solid var(--card-border);
+  background: #eef2f7;
 }

@@ -10,24 +10,57 @@
 
   <style>
     .messages-page .hero {
-      max-width: 1100px;
-      margin: 0 auto 12px;
-      padding: 4px 20px 10px;
-      text-align: left;
-      background: transparent;
-      border-bottom: 1px solid #e5e7eb;
+      margin-bottom: 4px;
     }
 
-    .messages-page .hero h1 {
-      margin: 0 0 4px;
-      font-size: 26px;
-      line-height: 1.1;
+    .thread-summary-card {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      padding: 7px 12px;
+      margin-bottom: 12px;
+      border: 1px solid #d9e6e3;
+      border-radius: 14px;
+      background: #f7fbfa;
     }
 
-    .messages-page .hero .subtitle {
+    .thread-summary-copy {
+      min-width: 0;
+      flex: 1 1 auto;
+    }
+
+    .thread-summary-label {
+      margin-bottom: 1px;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: #6b7280;
+    }
+
+    .thread-summary-title {
       margin: 0;
       font-size: 16px;
-      line-height: 1.35;
+      font-weight: 700;
+      color: #102a43;
+      line-height: 1.25;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    #threadActions {
+      flex-wrap: nowrap;
+      justify-content: flex-end;
+      gap: 10px;
+      margin: 0;
+      flex: 0 0 auto;
+    }
+
+    #messageText {
+      background: #f8fafc;
+      border-color: #c9d8d4;
     }
 
     .messages-shell {
@@ -38,16 +71,22 @@
 
     @media (max-width: 640px) {
       .messages-page .hero {
-        padding: 4px 16px 8px;
-        margin-bottom: 10px;
+        margin-bottom: 4px;
       }
 
-      .messages-page .hero h1 {
-        font-size: 22px;
+      .thread-summary-card {
+        flex-direction: column;
+        align-items: stretch;
+        padding: 8px 10px;
       }
 
-      .messages-page .hero .subtitle {
-        font-size: 15px;
+      .thread-summary-title {
+        white-space: normal;
+      }
+
+      #threadActions {
+        flex-wrap: wrap;
+        justify-content: flex-start;
       }
 
       .messages-shell {
@@ -64,22 +103,21 @@
     <div class="hero">
       <h1>Applicants</h1>
       <div class="subtitle" id="applicantsSubtitle">
-        Loading applicants for this job.
+        Loading applicants.
       </div>
     </div>
 
     <section class="messages-shell">
       <div class="messages-layout">
         <div class="form-card">
-          <h2 class="mt-0">Inbox</h2>
           <div id="conversationList"></div>
         </div>
 
         <div class="form-card">
-          <div class="flex-between">
-            <div>
-              <h2 class="mt-0">Conversation</h2>
-              <div id="threadHeader" class="mb-16 text-muted">Loading...</div>
+          <div class="thread-summary-card">
+            <div class="thread-summary-copy">
+              <div class="thread-summary-label" id="threadSummaryLabel">Conversation</div>
+              <div id="threadHeader" class="thread-summary-title">Loading...</div>
             </div>
             <div id="threadActions" class="button-row" style="display:none;"></div>
           </div>
@@ -135,6 +173,19 @@
       function setSubtitle(text) {
         const subtitle = document.getElementById("applicantsSubtitle");
         if (subtitle) subtitle.textContent = text;
+      }
+
+      function setThreadSummary(label, title) {
+        const summaryLabel = document.getElementById("threadSummaryLabel");
+        const threadHeader = document.getElementById("threadHeader");
+
+        if (summaryLabel) {
+          summaryLabel.textContent = label;
+        }
+
+        if (threadHeader) {
+          threadHeader.textContent = title;
+        }
       }
 
       function renderProfileScopeCard() {
@@ -207,7 +258,8 @@
         activeJobId = params.get("job_id");
 
         if (!activeJobId) {
-          throw new Error("No job was selected.");
+          setSubtitle("Review caregivers who have applied to your job posts.");
+          return;
         }
 
         const { data: job, error: jobError } = await window.db
@@ -248,6 +300,53 @@
         setSubtitle("Conversations for " + title + ".");
       }
 
+      async function loadJobTitles(jobIds) {
+        const uniqueJobIds = Array.from(new Set((jobIds || []).filter(Boolean)));
+        if (!uniqueJobIds.length) return;
+
+        const { data: jobs, error: jobsError } = await window.db
+          .from("job_posts")
+          .select("id, user_id, title, current_visible_version_id, current_pending_version_id")
+          .in("id", uniqueJobIds)
+          .eq("user_id", currentUser.id);
+
+        if (jobsError) {
+          throw new Error(jobsError.message);
+        }
+
+        const versionIds = [];
+        (jobs || []).forEach((job) => {
+          if (job.current_pending_version_id) versionIds.push(job.current_pending_version_id);
+          if (job.current_visible_version_id) versionIds.push(job.current_visible_version_id);
+        });
+
+        const versionMap = {};
+        const uniqueVersionIds = Array.from(new Set(versionIds.filter(Boolean)));
+
+        if (uniqueVersionIds.length) {
+          const { data: versions, error: versionsError } = await window.db
+            .from("job_post_versions")
+            .select("id, title")
+            .in("id", uniqueVersionIds);
+
+          if (versionsError) {
+            throw new Error(versionsError.message);
+          }
+
+          (versions || []).forEach((version) => {
+            versionMap[version.id] = version;
+          });
+        }
+
+        (jobs || []).forEach((job) => {
+          const version = versionMap[job.current_pending_version_id] || versionMap[job.current_visible_version_id] || null;
+          jobsById[job.id] = {
+            id: job.id,
+            title: version?.title || job.title || "Job"
+          };
+        });
+      }
+
       function getOtherParticipant(conversationId) {
         const participants = participantMap[conversationId] || [];
         return participants.find((participant) => participant.user_id !== currentUser.id) || null;
@@ -280,6 +379,14 @@
       function getSelectedConversation() {
         if (!selectedConversationId) return null;
         return conversations.find((conversation) => conversation.id === selectedConversationId) || null;
+      }
+
+      function getThreadProfileHref(conversation) {
+        if (!conversation) return "";
+        if (conversation.caregiver_profile_id) {
+          return `./caregiver-profile.html?id=${encodeURIComponent(conversation.caregiver_profile_id)}`;
+        }
+        return "";
       }
 
       function isConversationUnread(conversationId) {
@@ -418,16 +525,34 @@
         const actions = document.getElementById("threadActions");
         if (!actions) return;
 
-        if (!activeJobId) {
+        const conversation = getSelectedConversation();
+        if (!conversation) {
           actions.innerHTML = "";
           actions.style.display = "none";
           return;
         }
 
-        const linkedJob = jobsById[activeJobId] || null;
-        const label = linkedJob?.title ? `View Job: ${linkedJob.title}` : "View Job";
+        const threadProfileHref = getThreadProfileHref(conversation);
+        let jobActionHtml = "";
+
+        const jobId = activeJobId || conversation.job_post_id || "";
+
+        if (jobId) {
+          jobActionHtml =
+            `<a class="button button-secondary" href="./job-details.html?job_id=${encodeURIComponent(jobId)}&returnTo=applicants${activeJobId ? `&sourceJobId=${encodeURIComponent(activeJobId)}` : ""}">View Job</a>`;
+        }
+
         actions.innerHTML =
-          `<a class="button button-secondary" href="./job-details.html?job_id=${encodeURIComponent(activeJobId)}&returnTo=account">${escapeHtml(label)}</a>`;
+          jobActionHtml +
+          (threadProfileHref
+            ? `<a class="button button-secondary" href="${threadProfileHref}">View Caregiver</a>`
+            : "");
+
+        if (!actions.innerHTML) {
+          actions.style.display = "none";
+          return;
+        }
+
         actions.style.display = "";
       }
 
@@ -471,7 +596,7 @@
           const previewTime = lastMessage
             ? (lastMessage.received_at || lastMessage.sent_at || lastMessage.created_at)
             : conversation.last_visible_message_at;
-          const previewText = lastMessage?.message_text || conversation.last_visible_message_preview || "No messages yet";
+          const previewText = jobsById[conversation.job_post_id]?.title || lastMessage?.message_text || conversation.last_visible_message_preview || "No messages yet";
           const unread = isConversationUnread(conversation.id);
 
           const button = document.createElement("button");
@@ -508,22 +633,24 @@
       }
 
       function renderSelectedThread() {
-        const threadHeader = document.getElementById("threadHeader");
         const threadEl = document.getElementById("messageThread");
         const composer = document.getElementById("messageComposer");
 
         threadEl.innerHTML = "";
 
         if (!selectedConversationId) {
-          threadHeader.textContent = conversations.length
-            ? "Select an applicant to view messages."
-            : "No applicants have started a conversation yet.";
+          setThreadSummary(
+            "Conversation",
+            conversations.length
+              ? "Select an applicant to view messages."
+              : "No applicants have started a conversation yet."
+          );
           composer.style.display = "none";
           renderThreadActions();
           return;
         }
 
-        threadHeader.textContent = `Conversation with ${getDisplayNameForConversation(selectedConversationId)}`;
+        setThreadSummary("Conversation with", getDisplayNameForConversation(selectedConversationId));
         composer.style.display = "block";
         renderThreadActions();
 
@@ -583,7 +710,7 @@
       }
 
       async function loadConversations() {
-        if (!familyProfileId || !activeJobId) {
+        if (!familyProfileId) {
           conversations = [];
           participantMap = {};
           messagesByConversationId = {};
@@ -619,7 +746,6 @@
           .select("*")
           .in("id", conversationIds)
           .eq("family_profile_id", familyProfileId)
-          .eq("job_post_id", activeJobId)
           .eq("status", "active")
           .order("last_visible_message_at", { ascending: false, nullsFirst: false });
 
@@ -629,8 +755,13 @@
           return;
         }
 
-        conversations = conversationData || [];
+        conversations = (conversationData || []).filter((conversation) => {
+          if (!conversation.job_post_id) return false;
+          if (activeJobId) return conversation.job_post_id === activeJobId;
+          return true;
+        });
         const filteredConversationIds = conversations.map((conversation) => conversation.id);
+        await loadJobTitles(conversations.map((conversation) => conversation.job_post_id));
 
         if (!filteredConversationIds.length) {
           participantMap = {};
@@ -709,6 +840,29 @@
         }
       }
 
+      function moderationPublishesMessage(result) {
+        return ["posted", "published", "approved"].includes(result?.content_status || "");
+      }
+
+      async function makeMessageVisibleToRecipient(messageId, moderationResult) {
+        if (!messageId || !moderationPublishesMessage(moderationResult)) return;
+
+        const now = new Date().toISOString();
+        const { error } = await window.db
+          .from("messages")
+          .update({
+            content_status: moderationResult.content_status,
+            visible_to_recipient: true,
+            sent_at: now,
+            received_at: now
+          })
+          .eq("id", messageId);
+
+        if (error) {
+          throw error;
+        }
+      }
+
       async function sendMessage() {
         const textEl = document.getElementById("messageText");
         const text = textEl.value.trim();
@@ -762,6 +916,8 @@
             throw new Error("Moderation failed.");
           }
 
+          await makeMessageVisibleToRecipient(inserted.id, modResult);
+
           const statusMessage = getMessageSubmissionText(modResult);
           if (statusMessage) {
             alert(statusMessage);
@@ -813,11 +969,10 @@
           console.error(error);
           setSubtitle(error?.message || "Unable to load applicants for this job.");
           const list = document.getElementById("conversationList");
-          const threadHeader = document.getElementById("threadHeader");
           const thread = document.getElementById("messageThread");
           const composer = document.getElementById("messageComposer");
           if (list) list.innerHTML = `<p>${escapeHtml(error?.message || "Unable to load applicants.")}</p>`;
-          if (threadHeader) threadHeader.textContent = "Applicants unavailable.";
+          setThreadSummary("Conversation", "Applicants unavailable.");
           if (thread) thread.innerHTML = "";
           if (composer) composer.style.display = "none";
           renderThreadActions();

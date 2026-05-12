@@ -7,6 +7,87 @@
 
   <link rel="stylesheet" href="./styles.css" />
   <link rel="icon" type="image/png" href="./MainIcon.png" />
+  <style>
+    .job-photo-stack {
+      display: grid;
+      gap: 14px;
+    }
+
+    .job-photo-grid,
+    .job-photo-option-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(110px, 110px));
+      gap: 12px;
+    }
+
+    .job-photo-tile,
+    .job-photo-option {
+      position: relative;
+      border-radius: 16px;
+      overflow: hidden;
+      border: 1px solid #d9e6e3;
+      background: #f8fafc;
+    }
+
+    .job-photo-tile img,
+    .job-photo-option img {
+      width: 100%;
+      height: 110px;
+      object-fit: cover;
+      display: block;
+    }
+
+    .job-photo-remove {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      width: 28px;
+      height: 28px;
+      border: 0;
+      border-radius: 999px;
+      background: rgba(15, 23, 42, 0.72);
+      color: #fff;
+      font-size: 16px;
+      line-height: 1;
+      cursor: pointer;
+    }
+
+    .job-photo-caption {
+      padding: 8px 10px;
+      font-size: 13px;
+      color: #52606d;
+      background: #fff;
+    }
+
+    .job-photo-option {
+      padding: 0;
+      cursor: pointer;
+    }
+
+    .job-photo-option.selected {
+      border-color: #2f6f67;
+      box-shadow: 0 0 0 2px rgba(47, 111, 103, 0.18);
+    }
+
+    .job-photo-option-status {
+      padding: 8px 10px;
+      font-size: 13px;
+      font-weight: 700;
+      color: #2f6f67;
+      background: #fff;
+    }
+
+    .job-photo-empty {
+      margin: 0;
+      color: #6b7280;
+    }
+
+    .job-photo-section-note {
+      margin: 0;
+      color: #52606d;
+      line-height: 1.5;
+    }
+  </style>
 </head>
 
 <body>
@@ -71,6 +152,31 @@
             <textarea id="details" placeholder="Tell caregivers about the position, responsibilities, ages, pets, routines, expectations, and anything else they should know." required></textarea>
           </div>
 
+          <div class="row">
+            <label for="job_photo_upload">Job Photos</label>
+            <div class="guide-card guide-card-soft">
+              <h3>Photos caregivers can connect with</h3>
+              <p>Use up to 5 photos. You can pull from your family profile photos, upload new ones for this job, or mix both.</p>
+            </div>
+
+            <div class="job-photo-stack">
+              <p class="job-photo-section-note">Selected photos for this job</p>
+              <div id="jobSelectedPhotos"></div>
+
+              <div id="jobFamilyPhotoSection" style="display:none;">
+                <p class="job-photo-section-note">Use photos from your family profile</p>
+                <div class="job-photo-option-grid" id="jobFamilyPhotoOptions"></div>
+              </div>
+
+              <div>
+                <p class="job-photo-section-note">Upload new job photos</p>
+                <input id="job_photo_upload" type="file" accept="image/*" multiple />
+              </div>
+
+              <div id="jobPhotoError" class="error" style="display:none;"></div>
+            </div>
+          </div>
+
           <button class="button button-family" id="submitButton" type="submit">Submit Job</button>
         </form>
 
@@ -83,9 +189,9 @@
           </p>
         </div>
 
-        <p style="margin-top: 16px;">
-          <a href="./account.html">← Back to Dashboard</a>
-        </p>
+          <p style="margin-top: 16px;">
+            <a href="./my-postings.html">← Back to My Jobs</a>
+          </p>
       </div>
     </section>
   </main>
@@ -94,6 +200,7 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
   <script src="./app.js"></script>
+  <script src="./grove-profiles.js"></script>
 
   <script>
     (function () {
@@ -111,11 +218,44 @@
       const scheduleEl = document.getElementById("schedule");
       const payRangeEl = document.getElementById("pay_range");
       const detailsEl = document.getElementById("details");
+      const backLinkEl = document.querySelector('.form-card p a[href="./my-postings.html"]');
+      const selectedPhotosEl = document.getElementById("jobSelectedPhotos");
+      const familyPhotoSectionEl = document.getElementById("jobFamilyPhotoSection");
+      const familyPhotoOptionsEl = document.getElementById("jobFamilyPhotoOptions");
+      const jobPhotoUploadEl = document.getElementById("job_photo_upload");
+      const jobPhotoErrorEl = document.getElementById("jobPhotoError");
 
       const params = new URLSearchParams(window.location.search);
       const existingJobId = params.get("job_post_id");
 
       let redirectTimer = null;
+      let familyProfilePhotoUrls = [];
+      let selectedJobPhotoUrls = [];
+      const returnConfig = typeof window.getReturnNavigationConfig === "function"
+        ? window.getReturnNavigationConfig({
+            defaultHref: "./my-postings.html",
+            defaultLabel: "Back to My Jobs"
+          })
+        : {
+            href: "./my-postings.html",
+            label: "Back to My Jobs",
+            inlineLabel: "← Back to My Jobs"
+          };
+      const returnDestinationLabel = returnConfig.label.replace(/^Back to\s+/i, "");
+
+      if (backLinkEl) {
+        backLinkEl.href = returnConfig.href;
+        backLinkEl.textContent = returnConfig.inlineLabel;
+      }
+
+      function escapeHtml(value) {
+        return String(value || "")
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;")
+          .replace(/'/g, "&#39;");
+      }
 
       function showError(message) {
         if (!errorEl) return;
@@ -129,6 +269,18 @@
         errorEl.style.display = "none";
       }
 
+      function showJobPhotoError(message) {
+        if (!jobPhotoErrorEl) return;
+        jobPhotoErrorEl.textContent = message;
+        jobPhotoErrorEl.style.display = "block";
+      }
+
+      function clearJobPhotoError() {
+        if (!jobPhotoErrorEl) return;
+        jobPhotoErrorEl.textContent = "";
+        jobPhotoErrorEl.style.display = "none";
+      }
+
       function showSuccess(message) {
         if (!successEl) return;
         successEl.textContent = message;
@@ -139,6 +291,135 @@
         if (!successEl) return;
         successEl.textContent = "";
         successEl.style.display = "none";
+      }
+
+      function getSelectedPhotoCapacity() {
+        return Math.max(0, 5 - selectedJobPhotoUrls.length);
+      }
+
+      function renderSelectedPhotos() {
+        if (!selectedPhotosEl) return;
+
+        if (!selectedJobPhotoUrls.length) {
+          selectedPhotosEl.innerHTML = `<p class="job-photo-empty">No photos selected yet.</p>`;
+          return;
+        }
+
+        selectedPhotosEl.innerHTML = `
+          <div class="job-photo-grid">
+            ${selectedJobPhotoUrls.map((photoUrl, index) => `
+              <div class="job-photo-tile">
+                <img src="${escapeHtml(photoUrl)}" alt="Selected job photo ${index + 1}">
+                <button
+                  type="button"
+                  class="job-photo-remove"
+                  data-remove-job-photo="${index}"
+                  aria-label="Remove selected photo ${index + 1}"
+                >
+                  ×
+                </button>
+                <div class="job-photo-caption">${index === 0 ? "Primary photo" : `Photo ${index + 1}`}</div>
+              </div>
+            `).join("")}
+          </div>
+        `;
+
+        selectedPhotosEl.querySelectorAll("[data-remove-job-photo]").forEach((button) => {
+          button.addEventListener("click", () => {
+            const index = Number(button.getAttribute("data-remove-job-photo"));
+            if (Number.isNaN(index)) return;
+            selectedJobPhotoUrls.splice(index, 1);
+            clearJobPhotoError();
+            renderSelectedPhotos();
+            renderFamilyPhotoOptions();
+          });
+        });
+      }
+
+      function renderFamilyPhotoOptions() {
+        if (!familyPhotoSectionEl || !familyPhotoOptionsEl) return;
+
+        if (!familyProfilePhotoUrls.length) {
+          familyPhotoSectionEl.style.display = "none";
+          familyPhotoOptionsEl.innerHTML = "";
+          return;
+        }
+
+        familyPhotoSectionEl.style.display = "";
+        familyPhotoOptionsEl.innerHTML = familyProfilePhotoUrls.map((photoUrl, index) => {
+          const selected = selectedJobPhotoUrls.includes(photoUrl);
+          return `
+            <button
+              type="button"
+              class="job-photo-option${selected ? " selected" : ""}"
+              data-family-photo-url="${escapeHtml(photoUrl)}"
+              aria-pressed="${selected ? "true" : "false"}"
+            >
+              <img src="${escapeHtml(photoUrl)}" alt="Family profile photo ${index + 1}">
+              <div class="job-photo-option-status">${selected ? "Selected" : "Use this photo"}</div>
+            </button>
+          `;
+        }).join("");
+
+        familyPhotoOptionsEl.querySelectorAll("[data-family-photo-url]").forEach((button) => {
+          button.addEventListener("click", () => {
+            const photoUrl = button.getAttribute("data-family-photo-url") || "";
+            if (!photoUrl) return;
+
+            if (selectedJobPhotoUrls.includes(photoUrl)) {
+              selectedJobPhotoUrls = selectedJobPhotoUrls.filter((value) => value !== photoUrl);
+              clearJobPhotoError();
+            } else {
+              if (selectedJobPhotoUrls.length >= 5) {
+                showJobPhotoError("You can only use up to 5 photos on a job listing.");
+                return;
+              }
+
+              selectedJobPhotoUrls.push(photoUrl);
+              clearJobPhotoError();
+            }
+
+            renderSelectedPhotos();
+            renderFamilyPhotoOptions();
+          });
+        });
+      }
+
+      function validatePhotoSelection() {
+        const uploadCount = Array.from(jobPhotoUploadEl?.files || []).length;
+        if (selectedJobPhotoUrls.length + uploadCount > 5) {
+          throw new Error("You can only use up to 5 photos on a job listing.");
+        }
+      }
+
+      async function resolveJobPhotoUrls(userId) {
+        validatePhotoSelection();
+
+        const remainingSlots = getSelectedPhotoCapacity();
+        const uploadFiles = Array.from(jobPhotoUploadEl?.files || []).slice(0, remainingSlots);
+
+        if (!uploadFiles.length) {
+          return selectedJobPhotoUrls.slice(0, 5);
+        }
+
+        const uploadedUrls = await window.GroveProfiles.uploadPhotos({
+          folder: "jobs",
+          userId,
+          files: uploadFiles
+        });
+
+        return selectedJobPhotoUrls.concat(uploadedUrls).slice(0, 5);
+      }
+
+      async function loadFamilyPhotoOptions(userId) {
+        const bundle = await window.GroveProfiles.loadProfileBundle({
+          parentTable: "family_profiles",
+          versionTable: "family_profile_versions",
+          userId
+        });
+
+        familyProfilePhotoUrls = window.GroveProfiles.getExistingPhotoUrls(bundle.workingVersion || bundle.visibleVersion || {});
+        renderFamilyPhotoOptions();
       }
 
       function setSubmitting(isSubmitting) {
@@ -217,7 +498,7 @@
 
         const { data: version, error: versionError } = await window.db
           .from("job_post_versions")
-          .select("title, care_type, schedule, pay_range, description")
+          .select("title, care_type, schedule, pay_range, description, photo_urls")
           .eq("id", versionId)
           .maybeSingle();
 
@@ -229,6 +510,9 @@
         if (scheduleEl) scheduleEl.value = version.schedule || "";
         if (payRangeEl) payRangeEl.value = version.pay_range || "";
         if (detailsEl) detailsEl.value = version.description || "";
+        selectedJobPhotoUrls = window.GroveProfiles.getExistingPhotoUrls(version);
+        renderSelectedPhotos();
+        renderFamilyPhotoOptions();
       }
 
       function buildPayload() {
@@ -237,7 +521,8 @@
           care_type: careTypeEl ? careTypeEl.value.trim() : "",
           schedule: scheduleEl ? scheduleEl.value.trim() : "",
           pay_range: payRangeEl ? payRangeEl.value.trim() : "",
-          description: detailsEl ? detailsEl.value.trim() : ""
+          description: detailsEl ? detailsEl.value.trim() : "",
+          photo_urls: []
         };
 
         if (existingJobId) {
@@ -297,11 +582,11 @@
         return parsed;
       }
 
-      function scheduleRedirectToAccount() {
+      function scheduleRedirectToSource() {
         if (redirectTimer) clearTimeout(redirectTimer);
 
         redirectTimer = window.setTimeout(function () {
-          window.location.href = "./account.html";
+          window.location.href = returnConfig.href;
         }, 1800);
       }
 
@@ -316,27 +601,29 @@
 
           const payload = buildPayload();
           validatePayload(payload);
+          payload.photo_urls = await resolveJobPhotoUrls(auth.user.id);
+          clearJobPhotoError();
 
           setSubmitting(true);
 
           const result = await submitJob(payload, auth.accessToken);
           const status = result?.version?.content_status || "";
 
-          if (existingJobId) {
-            showSuccess(
-              status === "queued"
-                ? "Changes saved and placed in queue. Redirecting to your dashboard..."
-                : "Changes saved successfully. Redirecting to your dashboard..."
-            );
-          } else {
-            showSuccess(
-              status === "queued"
-                ? "Job submitted and placed in queue. Redirecting to your dashboard..."
-                : "Job submitted successfully. Redirecting to your dashboard..."
-            );
-          }
+            if (existingJobId) {
+              showSuccess(
+                status === "queued"
+                  ? `Changes saved and placed in queue. Redirecting to ${returnDestinationLabel}...`
+                  : `Changes saved successfully. Redirecting to ${returnDestinationLabel}...`
+              );
+            } else {
+              showSuccess(
+                status === "queued"
+                  ? `Job submitted and placed in queue. Redirecting to ${returnDestinationLabel}...`
+                  : `Job submitted successfully. Redirecting to ${returnDestinationLabel}...`
+              );
+            }
 
-          scheduleRedirectToAccount();
+          scheduleRedirectToSource();
         } catch (error) {
           console.error(error);
           hideSuccess();
@@ -353,6 +640,9 @@
 
           const auth = await requireFreshSession();
           if (!auth) return;
+
+          await loadFamilyPhotoOptions(auth.user.id);
+          renderSelectedPhotos();
 
           if (existingJobId) {
             await loadExistingJob(auth.user.id);

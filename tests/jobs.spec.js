@@ -36,7 +36,8 @@ test("jobs page hides hero buttons and renders published opportunities", async (
       location: "Austin",
       schedule: "Weekdays 3pm-6pm",
       pay_range: "$20-$25/hr",
-      description: "Need dependable care after school."
+      description: "Need dependable care after school.",
+      photo_urls: ["https://example.com/job-photo.jpg"]
     }]
   });
 
@@ -47,6 +48,7 @@ test("jobs page hides hero buttons and renders published opportunities", async (
   await expect(page.getByRole("heading", { name: "After-school childcare" })).toBeVisible();
   await expect(page.getByText("Family: Casey H.")).toBeVisible();
   await expect(page.getByText("Austin")).toBeVisible();
+  await expect(page.locator(".job-card-photo")).toHaveAttribute("src", "https://example.com/job-photo.jpg");
   await expect(page.locator(".job-family-avatar")).toHaveAttribute("src", "https://example.com/family-photo.jpg");
   await expect(page.getByRole("link", { name: "View Details" })).toBeVisible();
   await expect(page.getByRole("link", { name: "View Family" })).toHaveAttribute("href", "./family-profile.html?id=family-1&returnTo=jobs");

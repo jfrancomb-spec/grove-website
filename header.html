@@ -23,7 +23,21 @@
 
       <a href="./login.html" id="navLoginLink">Login</a>
 
-      <a href="./messages.html" id="navMessagesLink" style="display:none;">Messages</a>
+      <span id="navSignedInDivider" class="nav-divider" aria-hidden="true" style="display:none;">|</span>
+
+      <a href="./account.html" id="navDashboardLink" style="display:none;">Dashboard</a>
+
+      <a href="./my-postings.html" id="navMyPostingsLink" style="display:none;">My Jobs</a>
+
+      <a href="./account.html#jobsCard" id="navApplicantsTopLink" style="display:none;">
+        <span class="nav-link-label">Applicants</span>
+        <span id="navApplicantsCount" class="nav-count-badge" style="display:none;">0</span>
+      </a>
+
+      <a href="./messages.html" id="navMessagesLink" style="display:none;">
+        <span class="nav-link-label">Messages</span>
+        <span id="navMessagesCount" class="nav-count-badge" style="display:none;">0</span>
+      </a>
 
       <a href="./admin.html" id="navAdminLink" style="display:none;">Admin</a>
 
@@ -35,18 +49,10 @@
           aria-expanded="false"
           aria-haspopup="true"
         >
-          My Dashboard
+          My Account
         </button>
 
         <div id="navAccountDropdown" class="nav-account-dropdown">
-          <a
-            href="./account.html"
-            id="navAccountLink"
-            class="nav-account-dropdown-link"
-          >
-            Dashboard
-          </a>
-
           <a
             href="./account.html"
             id="navProfileLink"
@@ -70,7 +76,7 @@
             id="navSettingsLink"
             class="nav-account-dropdown-link"
           >
-            My Account
+            Account Details
           </a>
 
           <button

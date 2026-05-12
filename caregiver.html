@@ -455,20 +455,31 @@
       }
 
       function getBackLinkConfig() {
-        const params = new URLSearchParams(window.location.search);
-        const returnTo = (params.get("returnTo") || "").toLowerCase();
-        const jobId = params.get("job_id");
-
-        if (returnTo === "apply" && jobId) {
-          return {
-            href: `./apply.html?job_id=${encodeURIComponent(jobId)}`,
-            label: "Back to Application"
-          };
+        if (typeof window.getReturnNavigationConfig === "function") {
+          return window.getReturnNavigationConfig({
+            defaultHref: "./account.html",
+            defaultLabel: "Back to Dashboard",
+            returnMap: {
+              apply: (params) => {
+                const jobId = params.get("job_id");
+                return {
+                  href: jobId
+                    ? `./apply.html?job_id=${encodeURIComponent(jobId)}`
+                    : "./apply.html",
+                  label: "Back to Application"
+                };
+              },
+              "edit-caregiver": {
+                href: "./edit-caregiver.html",
+                label: "Back to Edit Caregiver Profile"
+              }
+            }
+          });
         }
 
         return {
           href: "./account.html",
-          label: "Back to Account"
+          label: "Back to Dashboard"
         };
       }
 

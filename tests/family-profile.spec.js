@@ -51,7 +51,7 @@ test("family profile page shows visible jobs posted by that family", async ({ pa
   await expect(page.getByRole("heading", { name: "Posted Jobs" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "After-school childcare" })).toBeVisible();
   await expect(page.getByRole("link", { name: "View Details" })).toBeVisible();
-  await expect(page.getByRole("link", { name: "Login to Apply" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Login to Apply" })).toHaveCount(0);
 });
 
 test("family profile page shows view application for caregivers who already applied", async ({ page }) => {
@@ -121,7 +121,8 @@ test("family profile page shows view application for caregivers who already appl
 
   await page.goto("/family-profile.html?id=family-1");
 
-  await expect(page.getByRole("link", { name: "View Application" })).toHaveAttribute("href", "./messages.html?conversation=conv-1");
+  await expect(page.getByRole("link", { name: "View Details" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "View Application" })).toHaveCount(0);
   await expect(page.getByRole("link", { name: "Apply for this job" })).toHaveCount(0);
 });
 
@@ -177,6 +178,39 @@ test("family profile page does not allow applying to your own family job", async
 
   await page.goto("/family-profile.html?id=family-1");
 
-  await expect(page.getByRole("link", { name: "Your Job Post" })).toHaveAttribute("href", "./job-details.html?job_id=job-1");
+  await expect(page.getByRole("link", { name: "View Details" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Your Job Post" })).toHaveCount(0);
   await expect(page.getByRole("link", { name: "Apply for this job" })).toHaveCount(0);
+});
+
+test("family profile page lets viewers click through multiple family photos", async ({ page }) => {
+  await stubExternalDeps(page, {
+    familyProfile: {
+      id: "family-1",
+      user_id: "family-user-1",
+      current_visible_version_id: "fam-v1",
+      current_pending_version_id: null,
+      is_active: true
+    },
+    familyProfileVersions: [{
+      id: "fam-v1",
+      is_live: true,
+      content_status: "published",
+      name_display: "Casey H.",
+      location: "Austin",
+      photo_urls: [
+        "https://example.com/family-photo-1.jpg",
+        "https://example.com/family-photo-2.jpg",
+        "https://example.com/family-photo-3.jpg"
+      ]
+    }]
+  });
+
+  await page.goto("/family-profile.html?id=family-1");
+
+  await expect(page.locator("#mainProfilePhoto")).toHaveAttribute("src", "https://example.com/family-photo-1.jpg");
+  await page.locator("#mainProfilePhoto").click();
+  await expect(page.locator("#mainProfilePhoto")).toHaveAttribute("src", "https://example.com/family-photo-2.jpg");
+  await page.getByRole("button", { name: "View family photo 3" }).click();
+  await expect(page.locator("#mainProfilePhoto")).toHaveAttribute("src", "https://example.com/family-photo-3.jpg");
 });

@@ -210,6 +210,128 @@ test("messages inbox shows job title instead of latest message text for job-link
   await expect(page.locator(".conversation-item").filter({ hasText: "General question" })).toBeVisible();
 });
 
+test("messages page filters conversations by associated job and caregiver", async ({ page }) => {
+  await stubExternalDeps(page, {
+    sessionUser: { id: "family-user-1", email: "family@example.com" },
+    familyProfile: { id: "family-1", current_visible_version_id: "fam-v1", current_pending_version_id: null },
+    caregiverProfiles: [
+      { id: "caregiver-1", user_id: "caregiver-user-1", current_visible_version_id: "cg-v1", is_active: true },
+      { id: "caregiver-2", user_id: "caregiver-user-2", current_visible_version_id: "cg-v2", is_active: true }
+    ],
+    caregiverProfileVersions: [
+      { id: "cg-v1", name_display: "Jenni F.", photo_url: "" },
+      { id: "cg-v2", name_display: "Alex P.", photo_url: "" }
+    ],
+    familyProfileVersions: [
+      { id: "fam-v1", name_display: "Casey H.", photo_url: "" }
+    ],
+    jobPosts: [
+      { id: "job-1", title: "After-school nanny" },
+      { id: "job-2", title: "Weekend pet care" }
+    ],
+    conversations: [
+      {
+        id: "conv-job-1",
+        family_profile_id: "family-1",
+        caregiver_profile_id: "caregiver-1",
+        job_post_id: "job-1",
+        status: "active",
+        last_visible_message_at: "2026-04-28T12:00:00.000Z",
+        last_visible_message_preview: "Checking in"
+      },
+      {
+        id: "conv-job-2",
+        family_profile_id: "family-1",
+        caregiver_profile_id: "caregiver-2",
+        job_post_id: "job-2",
+        status: "active",
+        last_visible_message_at: "2026-04-28T13:00:00.000Z",
+        last_visible_message_preview: "Following up"
+      }
+    ],
+    conversationParticipants: [
+      { id: "cp-1", conversation_id: "conv-job-1", user_id: "family-user-1", profile_id: "family-1", is_archived: false, has_unread_visible_messages: false },
+      { id: "cp-2", conversation_id: "conv-job-1", user_id: "caregiver-user-1", profile_id: "caregiver-1", is_archived: false, has_unread_visible_messages: false },
+      { id: "cp-3", conversation_id: "conv-job-2", user_id: "family-user-1", profile_id: "family-1", is_archived: false, has_unread_visible_messages: false },
+      { id: "cp-4", conversation_id: "conv-job-2", user_id: "caregiver-user-2", profile_id: "caregiver-2", is_archived: false, has_unread_visible_messages: false }
+    ],
+    messages: [
+      { id: "m-1", conversation_id: "conv-job-1", sender_user_id: "caregiver-user-1", message_text: "Checking in", visible_to_sender: true, visible_to_recipient: true, created_at: "2026-04-28T12:00:00.000Z" },
+      { id: "m-2", conversation_id: "conv-job-2", sender_user_id: "caregiver-user-2", message_text: "Following up", visible_to_sender: true, visible_to_recipient: true, created_at: "2026-04-28T13:00:00.000Z" }
+    ]
+  });
+
+  await page.goto("/messages.html?profileType=family&profileId=family-1");
+
+  await expect(page.locator("#conversationPersonFilterLabel")).toHaveText("Caregiver");
+  await page.locator("#conversationJobFilter").selectOption("job-1");
+  await expect(page.locator(".conversation-item").filter({ hasText: "Jenni F." })).toBeVisible();
+  await expect(page.locator(".conversation-item").filter({ hasText: "Alex P." })).toHaveCount(0);
+
+  await page.locator("#conversationJobFilter").selectOption("");
+  await page.locator("#conversationPersonFilter").selectOption("caregiver-user-2");
+  await expect(page.locator(".conversation-item").filter({ hasText: "Alex P." })).toBeVisible();
+  await expect(page.locator(".conversation-item").filter({ hasText: "Jenni F." })).toHaveCount(0);
+});
+
+test("messages page applies the job filter from the URL for family job links", async ({ page }) => {
+  await stubExternalDeps(page, {
+    sessionUser: { id: "family-user-1", email: "family@example.com" },
+    familyProfile: { id: "family-1", current_visible_version_id: "fam-v1", current_pending_version_id: null },
+    caregiverProfiles: [
+      { id: "caregiver-1", user_id: "caregiver-user-1", current_visible_version_id: "cg-v1", is_active: true },
+      { id: "caregiver-2", user_id: "caregiver-user-2", current_visible_version_id: "cg-v2", is_active: true }
+    ],
+    caregiverProfileVersions: [
+      { id: "cg-v1", name_display: "Jenni F.", photo_url: "" },
+      { id: "cg-v2", name_display: "Alex P.", photo_url: "" }
+    ],
+    familyProfileVersions: [
+      { id: "fam-v1", name_display: "Casey H.", photo_url: "" }
+    ],
+    jobPosts: [
+      { id: "job-1", title: "After-school nanny" },
+      { id: "job-2", title: "Weekend pet care" }
+    ],
+    conversations: [
+      {
+        id: "conv-job-1",
+        family_profile_id: "family-1",
+        caregiver_profile_id: "caregiver-1",
+        job_post_id: "job-1",
+        status: "active",
+        last_visible_message_at: "2026-04-28T12:00:00.000Z",
+        last_visible_message_preview: "Checking in"
+      },
+      {
+        id: "conv-job-2",
+        family_profile_id: "family-1",
+        caregiver_profile_id: "caregiver-2",
+        job_post_id: "job-2",
+        status: "active",
+        last_visible_message_at: "2026-04-28T13:00:00.000Z",
+        last_visible_message_preview: "Following up"
+      }
+    ],
+    conversationParticipants: [
+      { id: "cp-1", conversation_id: "conv-job-1", user_id: "family-user-1", profile_id: "family-1", is_archived: false, has_unread_visible_messages: false },
+      { id: "cp-2", conversation_id: "conv-job-1", user_id: "caregiver-user-1", profile_id: "caregiver-1", is_archived: false, has_unread_visible_messages: false },
+      { id: "cp-3", conversation_id: "conv-job-2", user_id: "family-user-1", profile_id: "family-1", is_archived: false, has_unread_visible_messages: false },
+      { id: "cp-4", conversation_id: "conv-job-2", user_id: "caregiver-user-2", profile_id: "caregiver-2", is_archived: false, has_unread_visible_messages: false }
+    ],
+    messages: [
+      { id: "m-1", conversation_id: "conv-job-1", sender_user_id: "caregiver-user-1", message_text: "Checking in", visible_to_sender: true, visible_to_recipient: true, created_at: "2026-04-28T12:00:00.000Z" },
+      { id: "m-2", conversation_id: "conv-job-2", sender_user_id: "caregiver-user-2", message_text: "Following up", visible_to_sender: true, visible_to_recipient: true, created_at: "2026-04-28T13:00:00.000Z" }
+    ]
+  });
+
+  await page.goto("/messages.html?profileType=family&profileId=family-1&jobFilter=job-1");
+
+  await expect(page.locator("#conversationJobFilter")).toHaveValue("job-1");
+  await expect(page.locator(".conversation-item").filter({ hasText: "Jenni F." })).toBeVisible();
+  await expect(page.locator(".conversation-item").filter({ hasText: "Alex P." })).toHaveCount(0);
+});
+
 test("messages page still loads legacy conversations when participant profile ids are missing", async ({ page }) => {
   await stubExternalDeps(page, {
     sessionUser: { id: "user-1", email: "jenni@example.com" },

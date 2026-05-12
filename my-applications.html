@@ -1,0 +1,690 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Grove | My Applications</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <link rel="stylesheet" href="./styles.css" />
+  <link rel="icon" type="image/png" href="./MainIcon.png" />
+
+  <style>
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, Arial, sans-serif;
+      background: #f5f7fa;
+      color: #1f2937;
+    }
+
+    body.button-theme-caregiver {
+      background: var(--caregiver-light);
+    }
+
+    body.button-theme-family {
+      background: var(--family-light);
+    }
+
+    .page {
+      max-width: 1160px;
+      margin: 0 auto 40px;
+      padding: 0 20px 40px;
+    }
+
+    .applications-hero {
+      margin-bottom: 24px;
+    }
+
+    body.button-theme-caregiver .applications-hero {
+      background: #dcefe9;
+    }
+
+    body.button-theme-family .applications-hero {
+      background: #ddeaf6;
+    }
+
+    .applications-card {
+      background: white;
+      border-radius: 16px;
+      padding: 24px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
+      margin-bottom: 24px;
+      border: 1px solid transparent;
+    }
+
+    body.button-theme-family .applications-card {
+      border-color: #d9e6f1;
+    }
+
+    body.button-theme-caregiver .applications-card {
+      border-color: #d6ebe7;
+    }
+
+    .applications-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 16px;
+      flex-wrap: wrap;
+      margin-bottom: 16px;
+    }
+
+    .applications-card-subtext {
+      margin: 0;
+      color: #6b7280;
+      line-height: 1.5;
+    }
+
+    .button {
+      appearance: none;
+      border: none;
+      border-radius: 10px;
+      padding: 12px 18px;
+      font-family: Calibri, Candara, "Segoe UI", Arial, sans-serif;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-block;
+    }
+
+    .button-caregiver {
+      background: #409088;
+      color: white;
+    }
+
+    .button-caregiver:hover {
+      background: #347872;
+    }
+
+    .button-secondary {
+      background: #e5e7eb;
+      color: #111827;
+    }
+
+    .button-secondary:hover {
+      background: #d1d5db;
+    }
+
+    .my-jobs-loading,
+    .my-jobs-message,
+    .my-jobs-empty {
+      background: #f8fafc;
+      border: 1px solid #e5e7eb;
+      border-radius: 12px;
+      padding: 16px;
+      color: #4b5563;
+    }
+
+    .my-jobs-message.error {
+      background: #fef2f2;
+      border-color: #fecaca;
+      color: #991b1b;
+    }
+
+    .application-list {
+      display: grid;
+      gap: 14px;
+    }
+
+    .application-card {
+      border: 1px solid #e5e7eb;
+      border-radius: 14px;
+      padding: 18px;
+      background: #fff;
+    }
+
+    .application-card-top {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 110px;
+      gap: 16px;
+      align-items: flex-start;
+      margin-bottom: 12px;
+    }
+
+    .application-card-side {
+      display: grid;
+      justify-items: end;
+      gap: 8px;
+    }
+
+    .application-card-header {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      min-width: 0;
+    }
+
+    .application-card-header-copy {
+      min-width: 0;
+    }
+
+    .application-card h4 {
+      margin: 0 0 6px;
+      font-size: 18px;
+      color: #111827;
+    }
+
+    .application-card-family {
+      margin: 0 0 4px;
+      color: #4b5563;
+      font-size: 14px;
+      font-weight: 700;
+      line-height: 1.35;
+    }
+
+    .application-card-avatar {
+      width: 56px;
+      height: 56px;
+      border-radius: 999px;
+      object-fit: cover;
+      display: block;
+      flex: 0 0 56px;
+      border: 2px solid #e5e7eb;
+      background: #eef6f4;
+    }
+
+    .application-card-avatar-fallback {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #4b5563;
+      font-size: 20px;
+      font-weight: 700;
+    }
+
+    .application-meta-line {
+      color: #6b7280;
+      font-size: 14px;
+      line-height: 1.4;
+    }
+
+    .application-card-photo {
+      width: 110px;
+      height: 110px;
+      border-radius: 18px;
+      object-fit: cover;
+      object-position: center;
+      display: block;
+      justify-self: end;
+      border: 1px solid #e5e7eb;
+      background: #eef2f7;
+    }
+
+    .application-details p {
+      margin: 0 0 8px;
+      font-size: 14px;
+      line-height: 1.5;
+      color: #374151;
+    }
+
+    .application-actions {
+      margin-top: 14px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .job-application-badge {
+      display: inline-flex;
+      align-items: center;
+      border-radius: 999px;
+      padding: 6px 10px;
+      font-size: 12px;
+      font-weight: 700;
+      background: #fff7ed;
+      color: #9a3412;
+    }
+
+    .error-box {
+      background: #fef2f2;
+      color: #991b1b;
+      border: 1px solid #fecaca;
+      padding: 12px 14px;
+      border-radius: 10px;
+      margin-bottom: 18px;
+      display: none;
+    }
+
+    @media (max-width: 640px) {
+      .page {
+        margin-top: 24px;
+      }
+
+      .applications-card {
+        padding: 18px;
+      }
+
+      .application-card-top,
+      .applications-card-header {
+        grid-template-columns: 1fr;
+      }
+
+      .application-card-side {
+        justify-items: start;
+      }
+
+      .application-card-photo {
+        justify-self: start;
+        width: 96px;
+        height: 96px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="header-placeholder"></div>
+
+  <main>
+    <div class="hero applications-hero">
+      <h1>My Applications</h1>
+      <div class="subtitle">
+        Review the jobs you have applied to and jump back into the right family conversation.
+      </div>
+    </div>
+
+    <div class="page">
+      <div id="errorBox" class="error-box"></div>
+
+      <section class="applications-card">
+        <div class="applications-card-header">
+          <div>
+            <h2>Jobs I Applied To</h2>
+            <p class="applications-card-subtext">
+              Keep track of your applications, review the role details, and pick up the conversation quickly.
+            </p>
+          </div>
+
+          <a class="button button-caregiver" href="./jobs.html">Browse Opportunities</a>
+        </div>
+
+        <div id="appliedJobsLoading" class="my-jobs-loading" style="display:none;">
+          Loading your applications...
+        </div>
+
+        <div id="appliedJobsMessage" class="my-jobs-message" style="display:none;"></div>
+
+        <div id="appliedJobsList" class="application-list"></div>
+      </section>
+    </div>
+  </main>
+
+  <div id="footer-placeholder"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script src="./app.js"></script>
+  <script src="./grove-profiles.js"></script>
+
+  <script>
+    (function () {
+      const errorBox = document.getElementById("errorBox");
+      const appliedJobsLoading = document.getElementById("appliedJobsLoading");
+      const appliedJobsMessage = document.getElementById("appliedJobsMessage");
+      const appliedJobsList = document.getElementById("appliedJobsList");
+
+      let currentUser = null;
+      let caregiverProfileId = null;
+
+      function showError(message) {
+        errorBox.style.display = "block";
+        errorBox.textContent = message;
+      }
+
+      function hideError() {
+        errorBox.style.display = "none";
+        errorBox.textContent = "";
+      }
+
+      async function requireSession() {
+        const user = await window.getCurrentSessionUser().catch(() => null);
+        if (!user) {
+          window.location.href = "./login.html";
+          return null;
+        }
+        return { user };
+      }
+
+      function setAppliedJobsLoading(isLoading) {
+        appliedJobsLoading.style.display = isLoading ? "block" : "none";
+      }
+
+      function showAppliedJobsMessage(message, isError = false) {
+        if (!message) {
+          appliedJobsMessage.textContent = "";
+          appliedJobsMessage.className = "my-jobs-message";
+          appliedJobsMessage.style.display = "none";
+          return;
+        }
+
+        appliedJobsMessage.textContent = message;
+        appliedJobsMessage.className = isError ? "my-jobs-message error" : "my-jobs-message";
+        appliedJobsMessage.style.display = "block";
+      }
+
+      function escapeHtml(value) {
+        return String(value || "")
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;")
+          .replace(/'/g, "&#39;");
+      }
+
+      function formatDate(value) {
+        if (!value) return "Unknown";
+        const date = new Date(value);
+        if (Number.isNaN(date.getTime())) return "Unknown";
+        return date.toLocaleDateString([], {
+          year: "numeric",
+          month: "short",
+          day: "numeric"
+        });
+      }
+
+      function getConversationHrefForApplication(application) {
+        if (application.conversationId) {
+          return `./messages.html?conversation=${encodeURIComponent(application.conversationId)}`;
+        }
+
+        const params = new URLSearchParams();
+        if (application.targetUserId) {
+          params.set("targetUser", application.targetUserId);
+        }
+        if (application.familyProfileId) {
+          params.set("familyProfileId", application.familyProfileId);
+        }
+        if (caregiverProfileId) {
+          params.set("caregiverProfileId", caregiverProfileId);
+        }
+        if (application.jobId) {
+          params.set("jobId", application.jobId);
+        }
+
+        return `./messages.html?${params.toString()}`;
+      }
+
+      function getJobDetailsHref(jobId, returnTo = "my-applications") {
+        const params = new URLSearchParams({
+          job_id: jobId,
+          returnTo
+        });
+        return `./job-details.html?${params.toString()}`;
+      }
+
+      function getFamilyProfileHref(familyProfileId) {
+        if (!familyProfileId) return "./families.html";
+        const params = new URLSearchParams({
+          id: familyProfileId,
+          returnTo: "my-applications"
+        });
+        return `./family-profile.html?${params.toString()}`;
+      }
+
+      function renderAppliedJobs(applications) {
+        if (!applications.length) {
+          appliedJobsList.innerHTML =
+            '<div class="my-jobs-empty">' +
+              '<p>You have not applied to any jobs yet.</p>' +
+              '<a class="button button-caregiver" href="./jobs.html">Browse Opportunities</a>' +
+            '</div>';
+          return;
+        }
+
+        appliedJobsList.innerHTML = applications.map((application) => {
+          const unreadMarkup = application.hasUnreadMessage
+            ? '<span class="job-application-badge">New message</span>'
+            : '';
+          const familyDisplayName = application.familyDisplayName || "Family";
+          const avatarPhoto = application.photoUrl || "";
+          const jobPhoto = application.jobPhotoUrl || "";
+          const avatarInitial = familyDisplayName ? familyDisplayName.charAt(0).toUpperCase() : "F";
+          const avatarMarkup = avatarPhoto
+            ? '<img class="application-card-avatar" src="' + escapeHtml(avatarPhoto) + '" alt="' + escapeHtml(familyDisplayName) + '">'
+            : '<div class="application-card-avatar application-card-avatar-fallback" aria-hidden="true">' + escapeHtml(avatarInitial) + '</div>';
+
+          return (
+            '<article class="application-card">' +
+              '<div class="application-card-top">' +
+                '<div class="application-card-header">' +
+                  avatarMarkup +
+                  '<div class="application-card-header-copy">' +
+                    '<h4>' + escapeHtml(application.title) + '</h4>' +
+                    '<p class="application-card-family">' + escapeHtml(familyDisplayName) + '</p>' +
+                    '<div class="application-meta-line">' +
+                      escapeHtml(application.careType || "Care opportunity") +
+                      (application.location ? ' • ' + escapeHtml(application.location) : '') +
+                    '</div>' +
+                  '</div>' +
+                '</div>' +
+                '<div class="application-card-side">' +
+                  unreadMarkup +
+                  (jobPhoto
+                    ? '<img class="application-card-photo" src="' + escapeHtml(jobPhoto) + '" alt="' + escapeHtml(application.title || "Job photo") + '">'
+                    : '') +
+                '</div>' +
+              '</div>' +
+              '<div class="application-details">' +
+                '<p><strong>Applied:</strong> ' + escapeHtml(application.appliedOn) + '</p>' +
+                (application.schedule ? '<p><strong>Schedule:</strong> ' + escapeHtml(application.schedule) + '</p>' : '') +
+                (application.payRange ? '<p><strong>Pay:</strong> ' + escapeHtml(application.payRange) + '</p>' : '') +
+                (application.description ? '<p><strong>Details:</strong> ' + escapeHtml(application.description) + '</p>' : '') +
+              '</div>' +
+              '<div class="application-actions">' +
+                '<a class="button button-secondary" href="' + getFamilyProfileHref(application.familyProfileId) + '">View Family</a>' +
+                '<a class="button button-secondary" href="' + getJobDetailsHref(application.jobId) + '">View Job</a>' +
+                '<a class="button button-caregiver" href="' + getConversationHrefForApplication(application) + '">View Messages</a>' +
+              '</div>' +
+            '</article>'
+          );
+        }).join("");
+      }
+
+      async function loadCaregiverApplications() {
+        if (!currentUser?.email) {
+          renderAppliedJobs([]);
+          return;
+        }
+
+        setAppliedJobsLoading(true);
+        showAppliedJobsMessage("");
+        appliedJobsList.innerHTML = "";
+
+        try {
+          const { data: applications, error: applicationError } = await window.db
+            .from("job_applications")
+            .select("id, job_id, applicant_email, created_at")
+            .eq("applicant_email", currentUser.email)
+            .order("created_at", { ascending: false });
+
+          if (applicationError) {
+            throw applicationError;
+          }
+
+          const applicationRows = applications || [];
+          if (!applicationRows.length) {
+            renderAppliedJobs([]);
+            return;
+          }
+
+          const jobIds = Array.from(new Set(applicationRows.map((row) => row.job_id).filter(Boolean)));
+          const { data: jobs, error: jobsError } = await window.db
+            .from("job_posts")
+            .select("id, title, care_type, location, schedule, description, pay_range, user_id, current_visible_version_id")
+            .in("id", jobIds);
+
+          if (jobsError) {
+            throw jobsError;
+          }
+
+          const jobsById = {};
+          (jobs || []).forEach((job) => {
+            jobsById[job.id] = job;
+          });
+
+          const versionIds = Array.from(new Set((jobs || []).map((job) => job.current_visible_version_id).filter(Boolean)));
+          const versionMap = {};
+          if (versionIds.length) {
+            const { data: versions, error: versionsError } = await window.db
+              .from("job_post_versions")
+              .select("id, title, care_type, location, schedule, description, pay_range, photo_urls")
+              .in("id", versionIds);
+
+            if (versionsError) {
+              throw versionsError;
+            }
+
+            (versions || []).forEach((version) => {
+              versionMap[version.id] = version;
+            });
+          }
+
+          const familyUserIds = Array.from(new Set((jobs || []).map((job) => job.user_id).filter(Boolean)));
+          const familyProfilesByUserId = {};
+          const familyProfileVersionsById = {};
+
+          if (familyUserIds.length) {
+            const { data: familyProfiles, error: familyProfilesError } = await window.db
+              .from("family_profiles")
+              .select("id, user_id, current_visible_version_id")
+              .in("user_id", familyUserIds);
+
+            if (familyProfilesError) {
+              throw familyProfilesError;
+            }
+
+            (familyProfiles || []).forEach((profile) => {
+              familyProfilesByUserId[profile.user_id] = profile;
+            });
+
+            const familyVersionIds = Array.from(
+              new Set((familyProfiles || []).map((profile) => profile.current_visible_version_id).filter(Boolean))
+            );
+
+            if (familyVersionIds.length) {
+              const { data: familyVersions, error: familyVersionsError } = await window.db
+                .from("family_profile_versions")
+                .select("id, name_display, photo_url, photo_urls")
+                .in("id", familyVersionIds);
+
+              if (familyVersionsError) {
+                throw familyVersionsError;
+              }
+
+              (familyVersions || []).forEach((version) => {
+                familyProfileVersionsById[version.id] = version;
+              });
+            }
+          }
+
+          const conversationMetaByJobId = {};
+          if (caregiverProfileId && jobIds.length) {
+            const { data: conversations, error: conversationsError } = await window.db
+              .from("conversations")
+              .select("id, family_profile_id, caregiver_profile_id, job_post_id, status")
+              .eq("caregiver_profile_id", caregiverProfileId)
+              .eq("status", "active")
+              .in("job_post_id", jobIds);
+
+            if (conversationsError) {
+              throw conversationsError;
+            }
+
+            const relevantConversations = conversations || [];
+            const conversationIds = relevantConversations.map((conversation) => conversation.id);
+            let myParticipantsByConversationId = {};
+
+            if (conversationIds.length) {
+              const { data: myParticipants, error: participantsError } = await window.db
+                .from("conversation_participants")
+                .select("conversation_id, has_unread_visible_messages")
+                .eq("user_id", currentUser.id)
+                .in("conversation_id", conversationIds);
+
+              if (participantsError) {
+                throw participantsError;
+              }
+
+              (myParticipants || []).forEach((participant) => {
+                myParticipantsByConversationId[participant.conversation_id] = participant;
+              });
+            }
+
+            relevantConversations.forEach((conversation) => {
+              if (!conversation.job_post_id || conversationMetaByJobId[conversation.job_post_id]) return;
+              const participantMeta = myParticipantsByConversationId[conversation.id] || {};
+              conversationMetaByJobId[conversation.job_post_id] = {
+                conversationId: conversation.id,
+                hasUnreadMessage: participantMeta.has_unread_visible_messages === true
+              };
+            });
+          }
+
+          const normalized = applicationRows.map((application) => {
+            const job = jobsById[application.job_id];
+            if (!job) return null;
+
+            const version = versionMap[job.current_visible_version_id] || {};
+            const mergedJob = {
+              ...job,
+              ...version
+            };
+            const jobPhotoUrls = window.GroveProfiles?.getExistingPhotoUrls(mergedJob) || [];
+            const familyProfile = familyProfilesByUserId[job.user_id] || null;
+            const familyVersion = familyProfile
+              ? familyProfileVersionsById[familyProfile.current_visible_version_id] || {}
+              : {};
+            const photoUrls = window.GroveProfiles?.getExistingPhotoUrls(familyVersion) || [];
+            const conversationMeta = conversationMetaByJobId[application.job_id] || {};
+
+            return {
+              jobId: job.id,
+              title: mergedJob.title || "Care opportunity",
+              familyDisplayName: familyVersion.name_display || "Family",
+              familyProfileId: familyProfile?.id || null,
+              targetUserId: job.user_id || null,
+              careType: mergedJob.care_type || "",
+              location: mergedJob.location || "",
+              schedule: mergedJob.schedule || "",
+              description: mergedJob.description || "",
+              payRange: mergedJob.pay_range || "",
+              appliedOn: formatDate(application.created_at),
+              photoUrl: photoUrls[0] || familyVersion.photo_url || "",
+              jobPhotoUrl: jobPhotoUrls[0] || "",
+              conversationId: conversationMeta.conversationId || null,
+              hasUnreadMessage: conversationMeta.hasUnreadMessage === true
+            };
+          }).filter(Boolean);
+
+          renderAppliedJobs(normalized);
+        } catch (error) {
+          console.error("Failed loading caregiver applications:", error);
+          showAppliedJobsMessage(error.message || "Unable to load your applications right now.", true);
+          renderAppliedJobs([]);
+        } finally {
+          setAppliedJobsLoading(false);
+        }
+      }
+
+      async function initPage() {
+        hideError();
+
+        const session = await requireSession();
+        if (!session) return;
+
+        currentUser = session.user;
+        caregiverProfileId = await window.getCaregiverProfileParentIdForUser(currentUser.id).catch(() => null);
+
+        const availableRoles = await window.getAvailableActingRoles(currentUser.id);
+        const actingRole = window.resolveActingRole(availableRoles);
+        if (actingRole) {
+          window.setStoredActingRole(actingRole);
+        }
+
+        await loadCaregiverApplications();
+        window.updateHeaderAuth?.();
+      }
+
+      window.addEventListener("DOMContentLoaded", initPage);
+    })();
+  </script>
+</body>
+</html>

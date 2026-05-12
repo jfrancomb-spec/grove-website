@@ -148,3 +148,44 @@ test("job details page returns to dashboard when opened from account", async ({ 
 
   await expect(page.getByRole("link", { name: "Back to Dashboard" })).toHaveAttribute("href", "./account.html");
 });
+
+test("job details page shows job photos and lets viewers switch them", async ({ page }) => {
+  await stubExternalDeps(page, {
+    familyProfiles: [{
+      id: "family-1",
+      user_id: "family-user-1",
+      current_visible_version_id: "fam-v1",
+      is_active: true
+    }],
+    jobPosts: [{
+      id: "job-1",
+      user_id: "family-user-1",
+      current_visible_version_id: "job-v1",
+      title: "After-school childcare",
+      care_type: "childcare",
+      location: "Austin",
+      schedule: "Weekdays 3pm-6pm",
+      content_status: "published",
+      created_at: "2026-04-01T12:00:00Z"
+    }],
+    jobPostVersions: [{
+      id: "job-v1",
+      is_live: true,
+      content_status: "published",
+      title: "After-school childcare",
+      care_type: "childcare",
+      location: "Austin",
+      schedule: "Weekdays 3pm-6pm",
+      photo_urls: [
+        "https://example.com/job-photo-1.jpg",
+        "https://example.com/job-photo-2.jpg"
+      ]
+    }]
+  });
+
+  await page.goto("/job-details.html?job_id=job-1");
+
+  await expect(page.locator("#jobMainPhoto")).toHaveAttribute("src", "https://example.com/job-photo-1.jpg");
+  await page.getByRole("button", { name: "View job photo 2" }).click();
+  await expect(page.locator("#jobMainPhoto")).toHaveAttribute("src", "https://example.com/job-photo-2.jpg");
+});

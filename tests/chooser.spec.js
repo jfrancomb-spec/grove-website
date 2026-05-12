@@ -11,6 +11,6 @@ test("chooser shows family and caregiver role options for dual-profile users", a
   await page.goto("/chooser.html");
 
   await expect(page.getByRole("heading", { name: "What do you want to do today?" })).toBeVisible();
-  await expect(page.getByRole("link", { name: /Find a Caregiver.*Switch to Family/i })).toBeVisible();
-  await expect(page.getByRole("link", { name: /Find a Job.*Switch to Caregiver/i })).toBeVisible();
+  await expect(page.getByRole("link", { name: /Find a Caregiver.*Use Family Profile/i })).toBeVisible();
+  await expect(page.getByRole("link", { name: /Find a Job.*Use Caregiver Profile/i })).toBeVisible();
 });

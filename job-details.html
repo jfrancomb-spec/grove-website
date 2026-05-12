@@ -7,6 +7,103 @@
 
   <link rel="stylesheet" href="./styles.css" />
   <link rel="icon" type="image/png" href="./MainIcon.png" />
+  <style>
+    .job-family-banner {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+
+    .job-family-avatar {
+      width: 56px;
+      height: 56px;
+      border-radius: 999px;
+      object-fit: cover;
+      display: block;
+      flex: 0 0 56px;
+      border: 2px solid #e5e7eb;
+      background: #eef6f4;
+    }
+
+    .job-family-avatar-fallback {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #4b5563;
+      font-size: 20px;
+      font-weight: 700;
+    }
+
+    .job-family-copy {
+      min-width: 0;
+    }
+
+    .job-family-label {
+      margin: 0 0 4px;
+      color: #6b7280;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    .job-family-name {
+      margin: 0;
+      color: #102a43;
+      font-size: 18px;
+      font-weight: 700;
+      line-height: 1.3;
+    }
+
+    .job-photo-stack {
+      display: grid;
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+
+    .job-detail-main-photo {
+      width: 100%;
+      max-width: 520px;
+      border-radius: 20px;
+      display: block;
+      object-fit: contain;
+      object-position: center;
+      aspect-ratio: 16 / 11;
+      background: #eef2f7;
+      border: 1px solid #d9e6e3;
+      cursor: pointer;
+    }
+
+    .job-detail-gallery {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .job-detail-thumb {
+      width: 78px;
+      height: 78px;
+      padding: 0;
+      border: 1px solid #d9e6e3;
+      border-radius: 16px;
+      overflow: hidden;
+      background: #fff;
+      cursor: pointer;
+    }
+
+    .job-detail-thumb.active {
+      border-color: #2f6f67;
+      box-shadow: 0 0 0 2px rgba(47, 111, 103, 0.18);
+    }
+
+    .job-detail-thumb img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+  </style>
 </head>
 
 <body>
@@ -42,11 +139,14 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
   <script src="./app.js"></script>
+  <script src="./grove-profiles.js"></script>
 
   <script>
     (function () {
       let currentUser = null;
       let caregiverProfileId = null;
+      let currentJobPhotos = [];
+      let currentJobPhotoIndex = 0;
 
       function escapeHtml(value) {
         if (value === null || value === undefined) return "";
@@ -73,7 +173,120 @@
         return ["published", "approved", "visible"].includes(status);
       }
 
+      function getJobPhotoUrls(job) {
+        return window.GroveProfiles?.getExistingPhotoUrls(job) || [];
+      }
+
+      function buildJobPhotoGallery(job) {
+        const photos = getJobPhotoUrls(job);
+        currentJobPhotos = photos;
+        currentJobPhotoIndex = 0;
+
+        if (!photos.length) return "";
+
+        return `
+          <div class="job-photo-stack">
+            <img
+              id="jobMainPhoto"
+              class="job-detail-main-photo"
+              src="${photos[0]}"
+              alt="${escapeHtml(job.title || "Job photo")}"
+            >
+            ${photos.length > 1 ? `
+              <div class="job-detail-gallery" id="jobPhotoGallery">
+                ${photos.map((photoUrl, index) => `
+                  <button
+                    type="button"
+                    class="job-detail-thumb${index === 0 ? " active" : ""}"
+                    data-job-photo-index="${index}"
+                    aria-label="View job photo ${index + 1}"
+                  >
+                    <img src="${photoUrl}" alt="${escapeHtml((job.title || "Job") + " photo " + (index + 1))}">
+                  </button>
+                `).join("")}
+              </div>
+            ` : ""}
+          </div>
+        `;
+      }
+
+      function wireJobPhotoGallery() {
+        const mainPhoto = document.getElementById("jobMainPhoto");
+        const gallery = document.getElementById("jobPhotoGallery");
+
+        if (!mainPhoto || !currentJobPhotos.length) return;
+
+        function applyPhoto(index) {
+          if (Number.isNaN(index) || index < 0 || index >= currentJobPhotos.length) return;
+          currentJobPhotoIndex = index;
+          mainPhoto.src = currentJobPhotos[index];
+          gallery?.querySelectorAll("[data-job-photo-index]").forEach((button) => {
+            button.classList.toggle("active", Number(button.getAttribute("data-job-photo-index")) === index);
+          });
+        }
+
+        gallery?.querySelectorAll("[data-job-photo-index]").forEach((button) => {
+          button.addEventListener("click", () => {
+            applyPhoto(Number(button.getAttribute("data-job-photo-index")));
+          });
+        });
+
+        mainPhoto.addEventListener("click", () => {
+          if (currentJobPhotos.length <= 1) return;
+          applyPhoto((currentJobPhotoIndex + 1) % currentJobPhotos.length);
+        });
+      }
+
       function getBackConfig() {
+        if (typeof window.getReturnNavigationConfig === "function") {
+          return window.getReturnNavigationConfig({
+            defaultHref: "./jobs.html",
+            defaultLabel: "Back to Jobs",
+            returnMap: {
+              messages: (params) => {
+                const messageParams = new URLSearchParams();
+                const profileType = params.get("profileType");
+                const profileId = params.get("profileId");
+                const conversationId = params.get("conversation");
+
+                if (profileType) messageParams.set("profileType", profileType);
+                if (profileId) messageParams.set("profileId", profileId);
+                if (conversationId) messageParams.set("conversation", conversationId);
+
+                return {
+                  href: `./messages.html${messageParams.toString() ? `?${messageParams.toString()}` : ""}`,
+                  label: "Back to Messages"
+                };
+              },
+              account: {
+                href: "./account.html",
+                label: "Back to Dashboard"
+              },
+              "my-jobs": {
+                href: "./my-postings.html",
+                label: "Back to My Jobs"
+              },
+              "my-postings": {
+                href: "./my-postings.html",
+                label: "Back to My Jobs"
+              },
+              "my-applications": {
+                href: "./my-applications.html",
+                label: "Back to My Applications"
+              },
+              applicants: (params) => {
+                const sourceJobId = params.get("sourceJobId");
+                return {
+                  href: sourceJobId
+                    ? `./applicants.html?job_id=${encodeURIComponent(sourceJobId)}`
+                    : "./applicants.html",
+                  label: "Back to Applicants"
+                };
+              }
+            }
+          });
+        }
+
         const params = new URLSearchParams(window.location.search);
         const returnTo = (params.get("returnTo") || "").toLowerCase();
 
@@ -100,13 +313,37 @@
           };
         }
 
+        if (returnTo === "my-jobs" || returnTo === "my-postings") {
+          return {
+            href: "./my-postings.html",
+            label: "Back to My Jobs"
+          };
+        }
+
+        if (returnTo === "my-applications") {
+          return {
+            href: "./my-applications.html",
+            label: "Back to My Applications"
+          };
+        }
+
+        if (returnTo === "applicants") {
+          const sourceJobId = params.get("sourceJobId");
+          return {
+            href: sourceJobId
+              ? `./applicants.html?job_id=${encodeURIComponent(sourceJobId)}`
+              : "./applicants.html",
+            label: "Back to Applicants"
+          };
+        }
+
         return {
           href: "./jobs.html",
           label: "Back to Jobs"
         };
       }
 
-      function renderJob(parentRow, versionRow, familyProfileId, isSignedIn, applicationByJobId, conversationMetaByJobId) {
+      function renderJob(parentRow, versionRow, familyProfile, familyVersion, isSignedIn, applicationByJobId, conversationMetaByJobId) {
         const job = {
           ...parentRow,
           ...versionRow
@@ -121,11 +358,29 @@
         const postedDate = job.submitted_at || job.created_at
           ? new Date(job.submitted_at || job.created_at).toLocaleDateString()
           : "";
+        const familyProfileId = familyProfile?.id || null;
+        const familyDisplayName = familyVersion?.name_display || "Family";
+        const familyPhotoUrls = window.GroveProfiles?.getExistingPhotoUrls(familyVersion) || [];
+        const familyPhoto = familyPhotoUrls[0] || familyVersion?.photo_url || "";
+        const familyInitial = familyDisplayName ? familyDisplayName.charAt(0).toUpperCase() : "F";
+        const familyBanner = familyProfileId ? `
+          <div class="job-family-banner">
+            ${familyPhoto
+              ? `<img class="job-family-avatar" src="${familyPhoto}" alt="${escapeHtml(familyDisplayName)}">`
+              : `<div class="job-family-avatar job-family-avatar-fallback" aria-hidden="true">${escapeHtml(familyInitial)}</div>`}
+            <div class="job-family-copy">
+              <p class="job-family-label">Posted By</p>
+              <p class="job-family-name">${escapeHtml(familyDisplayName)}</p>
+            </div>
+          </div>
+        ` : "";
 
         document.getElementById("jobTitle").textContent = title;
         document.getElementById("jobSubtitle").textContent = `${location} • ${careType}`;
 
         document.getElementById("jobContent").innerHTML = `
+          ${familyBanner}
+          ${buildJobPhotoGallery(job)}
           <p><strong>Location:</strong> ${escapeHtml(location)}</p>
           <p><strong>Care Type:</strong> ${escapeHtml(careType)}</p>
           <p><strong>Schedule:</strong> ${escapeHtml(schedule)}</p>
@@ -133,6 +388,7 @@
           ${postedDate ? `<p><strong>Posted:</strong> ${escapeHtml(postedDate)}</p>` : ""}
           ${description ? `<p><strong>Details:</strong></p><p>${escapeHtml(description)}</p>` : ""}
         `;
+        wireJobPhotoGallery();
 
         const applyBtn = document.getElementById("applyBtn");
         const backConfig = getBackConfig();
@@ -254,7 +510,8 @@
           }
         }
 
-        let familyProfileId = null;
+        let familyProfile = null;
+        let familyVersion = null;
         if (parentRow.user_id) {
           const { data: familyRow, error: familyError } = await window.db
             .from("family_profiles")
@@ -265,7 +522,18 @@
             .maybeSingle();
 
           if (!familyError && familyRow?.id) {
-            familyProfileId = familyRow.id;
+            familyProfile = familyRow;
+            if (familyRow.current_visible_version_id) {
+              const { data: familyVersionRow, error: familyVersionError } = await window.db
+                .from("family_profile_versions")
+                .select("id, name_display, photo_url, photo_urls")
+                .eq("id", familyRow.current_visible_version_id)
+                .maybeSingle();
+
+              if (!familyVersionError && familyVersionRow) {
+                familyVersion = familyVersionRow;
+              }
+            }
           }
         }
 
@@ -286,7 +554,7 @@
           }
         }
 
-        renderJob(parentRow, versionRow, familyProfileId, isSignedIn, applicationByJobId, conversationMetaByJobId);
+        renderJob(parentRow, versionRow, familyProfile, familyVersion, isSignedIn, applicationByJobId, conversationMetaByJobId);
       }
 
       window.addEventListener("DOMContentLoaded", loadJobDetails);

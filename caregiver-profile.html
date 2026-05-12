@@ -52,6 +52,19 @@
       let isSignedIn = false;
 
       function getBackConfig() {
+        if (typeof window.getReturnNavigationConfig === "function") {
+          return window.getReturnNavigationConfig({
+            defaultHref: "./caregivers.html",
+            defaultLabel: "Back to Caregivers",
+            returnMap: {
+              jobs: {
+                href: "./jobs.html",
+                label: "Back to Jobs"
+              }
+            }
+          });
+        }
+
         const params = new URLSearchParams(window.location.search);
         const returnTo = (params.get("returnTo") || "").toLowerCase();
 

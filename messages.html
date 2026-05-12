@@ -69,6 +69,37 @@
       padding: 0 20px 20px;
     }
 
+    .messages-filters {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .messages-filter-field {
+      display: grid;
+      gap: 4px;
+    }
+
+    .messages-filter-field label {
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: #6b7280;
+    }
+
+    .messages-filter-field select {
+      width: 100%;
+      min-width: 0;
+      padding: 10px 12px;
+      border: 1px solid #cfd8e3;
+      border-radius: 10px;
+      background: #fff;
+      font: inherit;
+      color: #102a43;
+    }
+
     @media (max-width: 640px) {
       .messages-page .hero {
         margin-bottom: 4px;
@@ -92,6 +123,10 @@
       .messages-shell {
         padding: 0 16px 18px;
       }
+
+      .messages-filters {
+        grid-template-columns: 1fr;
+      }
     }
   </style>
 </head>
@@ -110,6 +145,20 @@
     <section class="messages-shell">
       <div class="messages-layout">
         <div class="form-card">
+          <div class="messages-filters">
+            <div class="messages-filter-field">
+              <label for="conversationJobFilter">Job</label>
+              <select id="conversationJobFilter">
+                <option value="">All Jobs</option>
+              </select>
+            </div>
+            <div class="messages-filter-field">
+              <label for="conversationPersonFilter" id="conversationPersonFilterLabel">Person</label>
+              <select id="conversationPersonFilter">
+                <option value="">All People</option>
+              </select>
+            </div>
+          </div>
           <div id="conversationList"></div>
         </div>
 
@@ -151,6 +200,8 @@
       let activeProfileId = null;
       let activeProfileType = null;
       let jobsById = {};
+      let selectedConversationJobFilter = "";
+      let selectedConversationPersonFilter = "";
 
       function formatMessageTime(ts) {
         try {
@@ -248,6 +299,24 @@
         } else {
           url.searchParams.delete("profileType");
           url.searchParams.delete("profileId");
+        }
+
+        window.history.replaceState({}, "", url);
+      }
+
+      function updateConversationFilterUrl() {
+        const url = new URL(window.location.href);
+
+        if (selectedConversationJobFilter) {
+          url.searchParams.set("jobFilter", selectedConversationJobFilter);
+        } else {
+          url.searchParams.delete("jobFilter");
+        }
+
+        if (selectedConversationPersonFilter) {
+          url.searchParams.set("personFilter", selectedConversationPersonFilter);
+        } else {
+          url.searchParams.delete("personFilter");
         }
 
         window.history.replaceState({}, "", url);
@@ -404,6 +473,85 @@
         const other = getOtherParticipant(conversationId);
         if (!other) return "";
         return userInfoMap[other.user_id]?.photo_url || "";
+      }
+
+      function getOtherParticipantUserId(conversationId) {
+        const other = getOtherParticipant(conversationId);
+        return other?.user_id || "";
+      }
+
+      function getCounterpartRoleLabel() {
+        if (activeProfileType === "family") return "Caregiver";
+        if (activeProfileType === "caregiver") return "Family";
+        return "Person";
+      }
+
+      function getFilteredConversations() {
+        return conversations.filter((conversation) => {
+          if (selectedConversationJobFilter && conversation.job_post_id !== selectedConversationJobFilter) {
+            return false;
+          }
+
+          if (selectedConversationPersonFilter && getOtherParticipantUserId(conversation.id) !== selectedConversationPersonFilter) {
+            return false;
+          }
+
+          return true;
+        });
+      }
+
+      function renderConversationFilters() {
+        const jobSelect = document.getElementById("conversationJobFilter");
+        const personSelect = document.getElementById("conversationPersonFilter");
+        const personLabel = document.getElementById("conversationPersonFilterLabel");
+        if (!jobSelect || !personSelect || !personLabel) return;
+
+        personLabel.textContent = getCounterpartRoleLabel();
+
+        const previousJobValue = selectedConversationJobFilter;
+        const previousPersonValue = selectedConversationPersonFilter;
+
+        const jobOptions = [];
+        const seenJobIds = new Set();
+        const personOptions = [];
+        const seenPersonIds = new Set();
+
+        conversations.forEach((conversation) => {
+          if (conversation.job_post_id && !seenJobIds.has(conversation.job_post_id)) {
+            seenJobIds.add(conversation.job_post_id);
+            const linkedJob = jobsById[conversation.job_post_id] || null;
+            jobOptions.push({
+              value: conversation.job_post_id,
+              label: linkedJob?.title || "Linked job"
+            });
+          }
+
+          const otherUserId = getOtherParticipantUserId(conversation.id);
+          if (otherUserId && !seenPersonIds.has(otherUserId)) {
+            seenPersonIds.add(otherUserId);
+            personOptions.push({
+              value: otherUserId,
+              label: getDisplayNameForConversation(conversation.id)
+            });
+          }
+        });
+
+        jobOptions.sort((a, b) => a.label.localeCompare(b.label));
+        personOptions.sort((a, b) => a.label.localeCompare(b.label));
+
+        jobSelect.innerHTML = '<option value="">All Jobs</option>' + jobOptions.map((option) =>
+          `<option value="${escapeHtml(option.value)}">${escapeHtml(option.label)}</option>`
+        ).join("");
+
+        personSelect.innerHTML = `<option value="">All ${escapeHtml(getCounterpartRoleLabel())}s</option>` + personOptions.map((option) =>
+          `<option value="${escapeHtml(option.value)}">${escapeHtml(option.label)}</option>`
+        ).join("");
+
+        selectedConversationJobFilter = jobOptions.some((option) => option.value === previousJobValue) ? previousJobValue : "";
+        selectedConversationPersonFilter = personOptions.some((option) => option.value === previousPersonValue) ? previousPersonValue : "";
+
+        jobSelect.value = selectedConversationJobFilter;
+        personSelect.value = selectedConversationPersonFilter;
       }
 
       function getConversationAvatar(conversationId) {
@@ -1044,13 +1192,21 @@
       function renderConversationList() {
         const container = document.getElementById("conversationList");
         container.innerHTML = "";
+        renderConversationFilters();
 
         if (!conversations.length) {
           container.innerHTML = "<p>No conversations yet.</p>";
           return;
         }
 
-        const sortedConversations = [...conversations].sort((a, b) => {
+        const filteredConversations = getFilteredConversations();
+
+        if (!filteredConversations.length) {
+          container.innerHTML = "<p>No conversations match the current filters.</p>";
+          return;
+        }
+
+        const sortedConversations = [...filteredConversations].sort((a, b) => {
           const aUnread = isConversationUnread(a.id) ? 1 : 0;
           const bUnread = isConversationUnread(b.id) ? 1 : 0;
 
@@ -1238,6 +1394,29 @@
         }
       }
 
+      function moderationPublishesMessage(result) {
+        return ["posted", "published", "approved"].includes(result?.content_status || "");
+      }
+
+      async function makeMessageVisibleToRecipient(messageId, moderationResult) {
+        if (!messageId || !moderationPublishesMessage(moderationResult)) return;
+
+        const now = new Date().toISOString();
+        const { error } = await window.db
+          .from("messages")
+          .update({
+            content_status: moderationResult.content_status,
+            visible_to_recipient: true,
+            sent_at: now,
+            received_at: now
+          })
+          .eq("id", messageId);
+
+        if (error) {
+          throw error;
+        }
+      }
+
       async function sendMessage() {
         const textEl = document.getElementById("messageText");
         const text = textEl.value.trim();
@@ -1337,6 +1516,8 @@
             throw new Error("Moderation failed.");
           }
 
+          await makeMessageVisibleToRecipient(inserted.id, modResult);
+
           const statusMessage = getMessageSubmissionText(modResult);
           if (statusMessage) {
             alert(statusMessage);
@@ -1381,6 +1562,8 @@
 
         await loadAvailableProfiles();
         const params = new URLSearchParams(window.location.search);
+        selectedConversationJobFilter = params.get("jobFilter") || "";
+        selectedConversationPersonFilter = params.get("personFilter") || "";
         const resolvedProfile = resolveProfileFromParams(params);
         if (resolvedProfile) {
           setActiveProfile(resolvedProfile.type, resolvedProfile.id, { replaceUrl: true });
@@ -1389,6 +1572,16 @@
 
         document.getElementById("sendMessageBtn")?.addEventListener("click", sendMessage);
         wireComposerShortcuts();
+        document.getElementById("conversationJobFilter")?.addEventListener("change", (event) => {
+          selectedConversationJobFilter = event.target.value || "";
+          updateConversationFilterUrl();
+          renderConversationList();
+        });
+        document.getElementById("conversationPersonFilter")?.addEventListener("change", (event) => {
+          selectedConversationPersonFilter = event.target.value || "";
+          updateConversationFilterUrl();
+          renderConversationList();
+        });
 
         await ensureConversationFromQuery();
         await loadConversations();

@@ -6,6 +6,384 @@
   <title>Grove | Edit Family Profile</title>
   <link rel="stylesheet" href="./styles.css" />
   <link rel="icon" type="image/png" href="./MainIcon.png" />
+  <style>
+    .edit-page-shell {
+      max-width: 1100px;
+      margin: 0 auto 48px;
+      padding: 0 20px;
+    }
+
+    .edit-page-shell section {
+      max-width: none;
+      margin: 8px auto 0;
+      padding: 0;
+    }
+
+    .edit-page-grid,
+    .section-stack {
+      display: grid;
+      gap: 24px;
+    }
+
+    .edit-topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+      margin-bottom: 12px;
+    }
+
+    .edit-intro {
+      margin: 0;
+      max-width: 760px;
+      color: #4b5563;
+    }
+
+    .edit-preview-card,
+    .edit-section-card {
+      background: #fff;
+      border: 1px solid var(--card-border);
+      border-radius: 20px;
+      box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+    }
+
+    #profileCard {
+      padding-top: 14px;
+    }
+
+    .edit-preview-card {
+      padding: 28px;
+      background: linear-gradient(135deg, #f8fbff 0%, #ffffff 55%, #eef5fc 100%);
+    }
+
+    .preview-header {
+      display: grid;
+      grid-template-columns: 140px 1fr;
+      gap: 22px;
+      align-items: start;
+    }
+
+    .preview-avatar {
+      width: 140px;
+      height: 140px;
+      border-radius: 22px;
+      overflow: hidden;
+      border: 1px solid var(--card-border);
+      background: #eef5fc;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #52606d;
+      font-weight: 700;
+      text-align: center;
+      padding: 14px;
+    }
+
+    .preview-avatar img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .preview-meta {
+      display: grid;
+      gap: 12px;
+    }
+
+    .preview-kicker {
+      margin: 0;
+      color: var(--family);
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .preview-name {
+      margin: 0;
+      font-size: 34px;
+      line-height: 1.1;
+      color: #102a43;
+    }
+
+    .preview-subtitle {
+      margin: 0;
+      color: #52606d;
+      font-size: 16px;
+    }
+
+    .preview-chip-row,
+    .preview-signal-list,
+    .photo-upload-meta {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-start;
+      gap: 10px;
+    }
+
+    .save-bar-actions {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 10px;
+    }
+
+    .save-bar-actions .button {
+      width: auto;
+      margin: 0;
+      white-space: nowrap;
+    }
+
+    .preview-chip,
+    .preview-signal {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: #fff;
+      border: 1px solid #dbe4f2;
+      color: #234;
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .preview-chip-muted,
+    .preview-signal-muted {
+      color: #667788;
+      font-weight: 600;
+      background: #f8fbff;
+    }
+
+    .preview-stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 14px;
+      margin-top: 22px;
+    }
+
+    .preview-stat {
+      background: rgba(255, 255, 255, 0.92);
+      border: 1px solid #dbe4f2;
+      border-radius: 16px;
+      padding: 16px;
+    }
+
+    .preview-stat-label {
+      margin-bottom: 6px;
+      color: #6b7280;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+
+    .preview-stat-value {
+      color: #102a43;
+      font-size: 22px;
+      font-weight: 700;
+      line-height: 1.2;
+    }
+
+    .completion-meter {
+      height: 10px;
+      border-radius: 999px;
+      background: #dbe4f2;
+      overflow: hidden;
+      margin-top: 8px;
+    }
+
+    .completion-meter-fill {
+      height: 100%;
+      width: 0;
+      border-radius: inherit;
+      background: linear-gradient(90deg, #6c8fc7 0%, #8ab0e8 100%);
+      transition: width 0.2s ease;
+    }
+
+    .edit-section-card {
+      padding: 24px;
+    }
+
+    .edit-section-header {
+      margin-bottom: 18px;
+    }
+
+    .edit-section-header h3 {
+      margin: 0 0 8px;
+      font-size: 22px;
+      color: #102a43;
+    }
+
+    .edit-section-header p,
+    .section-hint,
+    .inline-helper,
+    .save-bar-copy {
+      color: #52606d;
+      line-height: 1.55;
+    }
+
+    .edit-two-col {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+    }
+
+    .edit-label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 700;
+      color: #243b53;
+    }
+
+    .section-hint,
+    .photo-upload-panel {
+      margin-top: 12px;
+      padding: 12px 14px;
+      border-radius: 14px;
+      background: #f8fbff;
+      border: 1px solid #dbe4f2;
+    }
+
+    .photo-file-list {
+      margin-top: 10px;
+      color: #38506b;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    .photo-library-list {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(112px, 1fr));
+      gap: 12px;
+      margin-top: 14px;
+    }
+
+    .photo-library-item {
+      position: relative;
+      overflow: hidden;
+      aspect-ratio: 1;
+      border: 1px solid #dbe4f2;
+      border-radius: 16px;
+      background: #fff;
+    }
+
+    .photo-library-thumb {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+      background: #eef5fc;
+    }
+
+    .photo-remove-button {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      width: 32px;
+      height: 32px;
+      min-width: 0;
+      padding: 0;
+      border-radius: 999px;
+      background: rgba(16, 42, 67, 0.84);
+      color: #fff;
+      border: 1px solid rgba(255, 255, 255, 0.8);
+      font-size: 18px;
+      line-height: 1;
+      box-shadow: 0 6px 16px rgba(15, 23, 42, 0.24);
+    }
+
+    .photo-primary-button,
+    .photo-primary-badge {
+      position: absolute;
+      left: 8px;
+      bottom: 8px;
+      border-radius: 999px;
+      padding: 6px 10px;
+      font-size: 12px;
+      font-weight: 700;
+      line-height: 1;
+    }
+
+    .photo-primary-button {
+      background: rgba(255, 255, 255, 0.92);
+      color: #102a43;
+      border: 1px solid rgba(16, 42, 67, 0.16);
+    }
+
+    .photo-primary-badge {
+      background: rgba(67, 106, 163, 0.92);
+      color: #fff;
+      border: 1px solid rgba(255, 255, 255, 0.7);
+    }
+
+    .photo-error {
+      display: none;
+      margin-top: 10px;
+      color: #8a1f11;
+      font-weight: 700;
+      line-height: 1.45;
+    }
+
+    .save-bar {
+      position: sticky;
+      bottom: 14px;
+      z-index: 20;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 14px;
+      flex-wrap: wrap;
+      margin-top: 24px;
+      padding: 16px 18px;
+      background: rgba(255, 255, 255, 0.96);
+      border: 1px solid #dbe4f2;
+      border-radius: 18px;
+      box-shadow: 0 12px 28px rgba(15, 23, 42, 0.12);
+      backdrop-filter: blur(10px);
+    }
+
+    .save-toast {
+      position: fixed;
+      right: 20px;
+      bottom: 20px;
+      z-index: 60;
+      min-width: 260px;
+      max-width: 360px;
+      padding: 14px 16px;
+      border-radius: 16px;
+      background: #436aa3;
+      color: #fff;
+      box-shadow: 0 14px 32px rgba(0, 0, 0, 0.2);
+      opacity: 0;
+      transform: translateY(12px);
+      pointer-events: none;
+      transition: opacity 0.2s ease, transform 0.2s ease;
+    }
+
+    .save-toast.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    @media (max-width: 820px) {
+      .preview-header,
+      .edit-two-col {
+        grid-template-columns: 1fr;
+      }
+
+      .preview-avatar {
+        width: 120px;
+        height: 120px;
+      }
+
+      .preview-name {
+        font-size: 28px;
+      }
+    }
+  </style>
 </head>
 
 <body>
@@ -19,105 +397,181 @@
       </div>
     </div>
 
-    <section>
-      <div class="form-card" id="profileCard" style="display:none;">
-        <div class="flex-between">
-          <h2 class="mb-0">Your Family Profile</h2>
-          <div class="button-row-inline">
-            <a class="button button-secondary" href="./account.html">Back to Account</a>
-            <button class="button" type="button" id="signOutBtn">Sign Out</button>
+    <div class="edit-page-shell">
+      <section>
+        <div class="form-card" id="profileCard" style="display:none;">
+          <div class="edit-topbar">
+            <div>
+              <p class="edit-intro">
+                Lead with clarity, warmth, and trust. The strongest family profiles help caregivers quickly understand who needs care, what life looks like in your home, and how ready you are to communicate.
+              </p>
+            </div>
+            <a class="button button-secondary" id="editFamilyBackBtn" href="./account.html">Back to Account</a>
           </div>
+
+          <div class="edit-page-grid">
+            <div class="edit-preview-card">
+              <div class="preview-header">
+                <div class="preview-avatar" id="previewAvatar">Add a photo</div>
+                <div class="preview-meta">
+                  <p class="preview-kicker">First Impression</p>
+                  <h3 class="preview-name" id="previewDisplayName">Your family display name</h3>
+                  <p class="preview-subtitle" id="previewLocation">Add your location so caregivers know where you need care.</p>
+                  <div class="preview-chip-row">
+                    <span class="preview-chip" id="previewCompletionChip">0% complete</span>
+                    <span class="preview-chip preview-chip-muted" id="previewResponseChip">Response readiness builds trust</span>
+                  </div>
+                  <div class="preview-chip-row" id="previewCareTypes">
+                    <span class="preview-chip preview-chip-muted">Choose care needs</span>
+                  </div>
+                  <div class="preview-signal-list" id="previewHouseholdSignals">
+                    <span class="preview-signal preview-signal-muted">Household signals will appear here</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="preview-stats">
+                <div class="preview-stat">
+                  <div class="preview-stat-label">Completion</div>
+                  <div class="preview-stat-value" id="previewCompletionValue">0%</div>
+                  <div class="completion-meter"><div class="completion-meter-fill" id="previewCompletionBar"></div></div>
+                </div>
+                <div class="preview-stat">
+                  <div class="preview-stat-label">Confirmed Encounters</div>
+                  <div class="preview-stat-value" id="dashConfirmedEncounters">0</div>
+                </div>
+                <div class="preview-stat">
+                  <div class="preview-stat-label">Average Response Time</div>
+                  <div class="preview-stat-value" id="dashResponseTime">—</div>
+                </div>
+                <div class="preview-stat">
+                  <div class="preview-stat-label">Messages</div>
+                  <div class="preview-stat-value" id="dashMessages">0</div>
+                </div>
+              </div>
+            </div>
+
+            <form id="familyProfileForm" class="section-stack">
+              <div class="edit-section-card">
+                <div class="edit-section-header">
+                  <h3>Basics</h3>
+                  <p>Your basics help caregivers understand who needs care and where you are. Keep this section clear and easy to trust.</p>
+                  <div class="section-hint"><strong>What caregivers care about most:</strong> A clear family display name and specific location make your profile feel more real right away.</div>
+                </div>
+                <div class="edit-two-col">
+                  <div class="row">
+                    <label class="edit-label" for="fam_display_name">Display Name</label>
+                    <input id="fam_display_name" type="text" placeholder="For example: Casey H." required />
+                    <span class="inline-helper">This is what caregivers will see first.</span>
+                  </div>
+                  <div class="row">
+                    <label class="edit-label" for="fam_location">Location</label>
+                    <input id="fam_location" type="text" placeholder="City or neighborhood" required />
+                    <span class="inline-helper">Be specific enough to help caregivers know whether the job is nearby.</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="edit-section-card">
+                <div class="edit-section-header">
+                  <h3>About Your Family</h3>
+                  <p>Set the tone. This is where caregivers get a feel for your household, values, and what kind of care environment they would be stepping into.</p>
+                  <div class="section-hint"><strong>What caregivers care about most:</strong> A short, warm summary of your family rhythm, expectations, and what helps someone succeed in your home.</div>
+                </div>
+                <div class="row">
+                  <label class="edit-label" for="fam_about_family">About Your Family / Household</label>
+                  <textarea id="fam_about_family" placeholder="Tell caregivers about your family, your home rhythm, the kind of support you need, and what makes someone a good fit." required></textarea>
+                  <span class="inline-helper">Mention routines, communication style, household pace, what matters most to you, and how you hope a caregiver will feel in your home.</span>
+                </div>
+              </div>
+
+              <div class="edit-section-card">
+                <div class="edit-section-header">
+                  <h3>Care Types + Needs</h3>
+                  <p>Help caregivers quickly decide whether their experience lines up with the support your family needs.</p>
+                  <div class="section-hint"><strong>What caregivers care about most:</strong> Clear care types and realistic needs matter more than trying to cover every possibility.</div>
+                </div>
+                <div class="row">
+                  <label class="edit-label"><strong>Types of Care Needed</strong></label>
+                  <div class="checkbox-group">
+                    <label><input type="checkbox" name="fam_care_types_needed" value="Childcare" /> Childcare</label>
+                    <label><input type="checkbox" name="fam_care_types_needed" value="Senior Care" /> Senior Care</label>
+                    <label><input type="checkbox" name="fam_care_types_needed" value="Pet Care" /> Pet Care</label>
+                    <label><input type="checkbox" name="fam_care_types_needed" value="Household Help" /> Household Help</label>
+                    <label><input type="checkbox" name="fam_care_types_needed" value="Other" /> Other</label>
+                  </div>
+                </div>
+              </div>
+
+              <div class="edit-section-card">
+                <div class="edit-section-header">
+                  <h3>Children</h3>
+                  <p>Give caregivers a quick sense of the children they would be supporting.</p>
+                  <div class="section-hint"><strong>What caregivers care about most:</strong> Ages, routines, personalities, and anything that shapes the daily care rhythm.</div>
+                </div>
+                <div class="row">
+                  <label class="edit-label" for="fam_children_description">Children</label>
+                  <textarea id="fam_children_description" placeholder="Share ages, routines, personalities, interests, and anything else that would help a caregiver prepare."></textarea>
+                </div>
+              </div>
+
+              <div class="edit-section-card">
+                <div class="edit-section-header">
+                  <h3>Pets</h3>
+                  <p>Help caregivers understand whether pets are part of the care environment and what that means in real life.</p>
+                  <div class="section-hint"><strong>What caregivers care about most:</strong> Knowing whether pets are in the home and whether they affect the daily routine.</div>
+                </div>
+                <div class="row">
+                  <label class="edit-label" for="fam_pets_description">Pets</label>
+                  <textarea id="fam_pets_description" placeholder="Tell caregivers about your pets, their personalities, and whether they need any attention during the day."></textarea>
+                </div>
+              </div>
+
+              <div class="edit-section-card">
+                <div class="edit-section-header">
+                  <h3>Photos</h3>
+                  <p>Photos help caregivers feel like they understand your home and who they would be caring for.</p>
+                  <div class="section-hint"><strong>What caregivers care about most:</strong> A clear primary photo and a few natural, trustworthy images usually matter more than quantity.</div>
+                </div>
+                <div class="photo-upload-panel">
+                  <label class="edit-label" for="fam_photos">Profile Photos (up to 5)</label>
+                  <input id="fam_photos" type="file" accept="image/*" multiple />
+                  <div class="photo-upload-meta">
+                    <span id="photoCountLabel">No photos selected yet</span>
+                  </div>
+                  <div class="photo-error" id="photoError" role="alert"></div>
+                  <div class="photo-file-list" id="photoFileList"></div>
+                  <div class="photo-library-list" id="photoLibraryList" style="display:none;"></div>
+                </div>
+              </div>
+
+              <div class="edit-section-card">
+                <div class="edit-section-header">
+                  <h3>Household Signals</h3>
+                  <p>These small details help caregivers understand your environment and quickly decide whether the match feels right.</p>
+                  <div class="section-hint"><strong>What caregivers care about most:</strong> Pets, smoking, and transportation expectations can shape whether a caregiver feels comfortable saying yes.</div>
+                </div>
+                <div class="checkbox-group">
+                  <label><input id="fam_has_cats" type="checkbox" /> Cats in Home</label>
+                  <label><input id="fam_has_dogs" type="checkbox" /> Dogs in Home</label>
+                  <label><input id="fam_smoking_in_home" type="checkbox" /> Smoking in Home</label>
+                  <label><input id="fam_driving_needed" type="checkbox" /> Driving Needed</label>
+                </div>
+              </div>
+
+              <div class="save-bar">
+                <div class="save-bar-actions">
+                  <a class="button button-secondary" id="previewProfileBtn" href="./family-profile.html">Preview Profile</a>
+                  <button class="button button-family button-disabled" type="submit" id="saveProfileBtn" disabled>Save Profile</button>
+                </div>
+              </div>
+            </form>
+          </div>
+
+          <div id="saveToast" class="save-toast" aria-live="polite">Profile saved.</div>
         </div>
-
-        <p class="mt-10" id="signedInText"></p>
-
-        <div class="dashboard-stats">
-          <div class="dashboard-stat">
-            <div class="dashboard-label">Profile Status</div>
-            <div class="dashboard-value" id="dashProfileStatus">—</div>
-          </div>
-
-          <div class="dashboard-stat">
-            <div class="dashboard-label">Confirmed Encounters</div>
-            <div class="dashboard-value" id="dashConfirmedEncounters">0</div>
-          </div>
-
-          <div class="dashboard-stat">
-            <div class="dashboard-label">Average Response Time</div>
-            <div class="dashboard-value" id="dashResponseTime">—</div>
-          </div>
-
-          <div class="dashboard-stat">
-            <div class="dashboard-label">Messages</div>
-            <div class="dashboard-value" id="dashMessages">0</div>
-          </div>
-        </div>
-
-        <h3 class="mt-22">Profile Details</h3>
-
-        <form id="familyProfileForm">
-          <div class="row">
-            <input id="fam_display_name" type="text" placeholder="Display Name" required />
-          </div>
-
-          <div class="row">
-            <input id="fam_location" type="text" placeholder="City or Neighborhood" required />
-          </div>
-
-          <div class="row">
-            <label class="mb-6"><strong>Types of Care Needed</strong></label>
-            <div class="checkbox-group">
-              <label><input type="checkbox" name="fam_care_types_needed" value="Childcare" /> Childcare</label>
-              <label><input type="checkbox" name="fam_care_types_needed" value="Senior Care" /> Senior Care</label>
-              <label><input type="checkbox" name="fam_care_types_needed" value="Pet Care" /> Pet Care</label>
-              <label><input type="checkbox" name="fam_care_types_needed" value="Household Help" /> Household Help</label>
-              <label><input type="checkbox" name="fam_care_types_needed" value="Other" /> Other</label>
-            </div>
-          </div>
-
-          <div class="row">
-            <label class="mb-6"><strong>Home Details</strong></label>
-            <div class="checkbox-group">
-              <label><input id="fam_has_cats" type="checkbox" /> Cats in Home</label>
-              <label><input id="fam_has_dogs" type="checkbox" /> Dogs in Home</label>
-              <label><input id="fam_smoking_in_home" type="checkbox" /> Smoking in Home</label>
-              <label><input id="fam_driving_needed" type="checkbox" /> Driving Needed</label>
-            </div>
-          </div>
-
-          <div class="row">
-            <label for="fam_household_description"><strong>Household Description</strong></label>
-            <textarea id="fam_household_description" placeholder="Tell caregivers a little about your household"></textarea>
-          </div>
-
-          <div class="row">
-            <label for="fam_children_description"><strong>Children</strong></label>
-            <textarea id="fam_children_description" placeholder="Ages, routines, interests, anything helpful"></textarea>
-          </div>
-
-          <div class="row">
-            <label for="fam_pets_description"><strong>Pets</strong></label>
-            <textarea id="fam_pets_description" placeholder="Tell caregivers about any pets in the home"></textarea>
-          </div>
-
-          <div class="row">
-            <label for="fam_photos"><strong>Profile Photos (up to 5)</strong></label>
-            <input id="fam_photos" type="file" accept="image/*" multiple />
-          </div>
-
-          <div class="row" id="photoPreviewWrap" style="display:none;">
-            <div class="family-photo-gallery">
-              <img id="family-main-photo" class="family-main-photo" src="" alt="Family photo" />
-              <div id="photoPreviewList" class="family-thumbnails"></div>
-            </div>
-          </div>
-
-          <button class="button" type="submit" id="saveProfileBtn">Save Profile</button>
-        </form>
-
-        <p id="familyProfileSuccess" class="success" style="display:none;">✅ Profile saved successfully.</p>
-      </div>
-    </section>
+      </section>
+    </div>
   </main>
 
   <div id="footer-placeholder"></div>
@@ -135,91 +589,292 @@
         pendingVersion: null,
         workingVersion: null
       };
+      let retainedPhotoUrls = [];
+      let previewPhotoUrls = [];
+      let isDirty = false;
+      let isInitializing = true;
+      let baselineState = "";
+      let saveToastTimeout = null;
 
-      function renderPhotoPreview(urls) {
-        const wrap = document.getElementById("photoPreviewWrap");
-        const list = document.getElementById("photoPreviewList");
-        const mainImage = document.getElementById("family-main-photo");
+      function escapeHtml(value) {
+        return String(value || "")
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;")
+          .replace(/'/g, "&#39;");
+      }
 
-        if (!wrap || !list || !mainImage) return;
+      function getSelectedCareTypes() {
+        return window.GroveProfiles.getCheckedValues('input[name="fam_care_types_needed"]');
+      }
 
-        const photos = Array.isArray(urls) ? urls.filter(Boolean) : [];
+      function getExistingPhotoUrls() {
+        return retainedPhotoUrls.slice();
+      }
 
-        if (!photos.length) {
-          wrap.style.display = "none";
+      function getSelectedPhotoFiles() {
+        return Array.from(document.getElementById("fam_photos")?.files || []);
+      }
+
+      function clearSelectedPhotoPreviews() {
+        previewPhotoUrls.forEach((url) => URL.revokeObjectURL(url));
+        previewPhotoUrls = [];
+      }
+
+      function getPhotoUrlsForPreview() {
+        return getExistingPhotoUrls().concat(previewPhotoUrls).slice(0, 5);
+      }
+
+      function setPhotoError(message = "") {
+        const errorEl = document.getElementById("photoError");
+        if (!errorEl) return;
+
+        errorEl.textContent = message;
+        errorEl.style.display = message ? "block" : "none";
+      }
+
+      function validateSelectedPhotos() {
+        const input = document.getElementById("fam_photos");
+        const selectedFiles = getSelectedPhotoFiles();
+        const existingCount = getExistingPhotoUrls().length;
+
+        clearSelectedPhotoPreviews();
+
+        if (existingCount + selectedFiles.length > 5) {
+          setPhotoError(`You can have up to 5 profile photos. You already have ${existingCount}, so you can add ${Math.max(0, 5 - existingCount)} more.`);
+          if (input) input.value = "";
+          return false;
+        }
+
+        setPhotoError("");
+        previewPhotoUrls = selectedFiles.map((file) => URL.createObjectURL(file));
+        return true;
+      }
+
+      function removeExistingPhoto(index) {
+        if (index < 0 || index >= retainedPhotoUrls.length) return;
+        retainedPhotoUrls = retainedPhotoUrls.filter((_, photoIndex) => photoIndex !== index);
+        setPhotoError("");
+        updatePhotoSelectionMeta();
+        markDirty();
+        updatePreviewSummary();
+      }
+
+      function makeExistingPhotoPrimary(index) {
+        if (index <= 0 || index >= retainedPhotoUrls.length) return;
+
+        const selected = retainedPhotoUrls[index];
+        retainedPhotoUrls = [selected].concat(
+          retainedPhotoUrls.filter((_, photoIndex) => photoIndex !== index)
+        );
+
+        updatePhotoSelectionMeta();
+        markDirty();
+        updatePreviewSummary();
+      }
+
+      function renderExistingPhotoManager() {
+        const list = document.getElementById("photoLibraryList");
+        const existingPhotos = getExistingPhotoUrls();
+        if (!list) return;
+
+        if (!existingPhotos.length) {
           list.innerHTML = "";
-          mainImage.removeAttribute("src");
+          list.style.display = "none";
           return;
         }
 
-        let activeIndex = 0;
+        list.innerHTML = existingPhotos.map((url, index) => `
+          <div class="photo-library-item">
+            <img class="photo-library-thumb" src="${url}" alt="Current profile photo ${index + 1}" />
+            ${index === 0
+              ? '<span class="photo-primary-badge">Primary</span>'
+              : `<button type="button" class="photo-primary-button" data-primary-index="${index}">Make Primary</button>`}
+            <button type="button" class="photo-remove-button" data-photo-index="${index}" aria-label="Remove photo ${index + 1}">X</button>
+          </div>
+        `).join("");
 
-        function drawGallery() {
-          mainImage.src = photos[activeIndex];
-          mainImage.alt = `Family photo ${activeIndex + 1}`;
-
-          list.innerHTML = photos
-            .map((url, index) => {
-              const activeClass = index === activeIndex ? " active" : "";
-              return `
-                <button
-                  type="button"
-                  class="gallery-thumb${activeClass}"
-                  data-index="${index}"
-                  aria-label="View photo ${index + 1}"
-                >
-                  <img src="${url}" alt="Family photo ${index + 1}" />
-                </button>
-              `;
-            })
-            .join("");
-
-          list.querySelectorAll(".gallery-thumb").forEach((button) => {
-            button.addEventListener("click", () => {
-              activeIndex = Number(button.dataset.index);
-              drawGallery();
-            });
+        list.querySelectorAll(".photo-primary-button").forEach((button) => {
+          button.addEventListener("click", () => {
+            makeExistingPhotoPrimary(Number(button.dataset.primaryIndex));
           });
+        });
+
+        list.querySelectorAll(".photo-remove-button").forEach((button) => {
+          button.addEventListener("click", () => {
+            removeExistingPhoto(Number(button.dataset.photoIndex));
+          });
+        });
+
+        list.style.display = "grid";
+      }
+
+      function updatePhotoSelectionMeta() {
+        const selectedFiles = getSelectedPhotoFiles();
+        const existingPhotos = getExistingPhotoUrls();
+        const countLabel = document.getElementById("photoCountLabel");
+        const fileList = document.getElementById("photoFileList");
+
+        if (selectedFiles.length) {
+          countLabel.textContent = `${existingPhotos.length} current, ${selectedFiles.length} new photo${selectedFiles.length === 1 ? "" : "s"} selected`;
+          fileList.textContent = selectedFiles.map((file) => file.name).join(", ");
+          renderExistingPhotoManager();
+          return;
         }
 
-        wrap.style.display = "block";
-        drawGallery();
+        if (existingPhotos.length) {
+          countLabel.textContent = `${existingPhotos.length} current photo${existingPhotos.length === 1 ? "" : "s"} on your profile`;
+          fileList.textContent = "";
+          renderExistingPhotoManager();
+          return;
+        }
+
+        countLabel.textContent = "No photos selected yet";
+        fileList.textContent = "Add at least one clear photo to strengthen first impression and trust.";
+        renderExistingPhotoManager();
+      }
+
+      function getDraftProfileValues() {
+        return {
+          name_display: document.getElementById("fam_display_name").value.trim(),
+          location: document.getElementById("fam_location").value.trim(),
+          about_family: document.getElementById("fam_about_family").value.trim(),
+          children_description: document.getElementById("fam_children_description").value.trim(),
+          pets_description: document.getElementById("fam_pets_description").value.trim(),
+          has_cats: document.getElementById("fam_has_cats").checked,
+          has_dogs: document.getElementById("fam_has_dogs").checked,
+          smoking_in_home: document.getElementById("fam_smoking_in_home").checked,
+          driving_needed: document.getElementById("fam_driving_needed").checked
+        };
+      }
+
+      function getCurrentStateSignature() {
+        return JSON.stringify({
+          profile: getDraftProfileValues(),
+          careTypes: getSelectedCareTypes(),
+          retainedPhotoUrls: getExistingPhotoUrls(),
+          selectedPhotoNames: getSelectedPhotoFiles().map((file) => file.name)
+        });
+      }
+
+      function getProfileCompletion(profile) {
+        const checks = [
+          !!profile.name_display,
+          !!profile.location,
+          !!getSelectedCareTypes().length,
+          !!profile.about_family,
+          !!profile.children_description,
+          !!getPhotoUrlsForPreview().length,
+          !!profile.has_cats || !!profile.has_dogs || !!profile.smoking_in_home || !!profile.driving_needed
+        ];
+        return Math.round((checks.filter(Boolean).length / checks.length) * 100);
+      }
+
+      function updatePreviewSummary() {
+        const profile = getDraftProfileValues();
+        const displayName = profile.name_display || window.GroveProfiles.buildDefaultDisplayName({
+          firstName: window.GroveProfiles.getAccountFirstName(currentUser, ""),
+          lastName: window.GroveProfiles.getAccountLastName(currentUser, "")
+        }) || "Your family display name";
+        const careTypes = getSelectedCareTypes();
+        const completion = getProfileCompletion(profile);
+        const responseMinutes = bundle.parent?.average_response_minutes;
+        const photoUrls = getPhotoUrlsForPreview();
+        const signals = [];
+
+        if (profile.has_cats) signals.push("Has Cats");
+        if (profile.has_dogs) signals.push("Has Dogs");
+        if (profile.smoking_in_home) signals.push("Smoking in Home");
+        if (profile.driving_needed) signals.push("Driving Needed");
+
+        document.getElementById("previewDisplayName").textContent = displayName;
+        document.getElementById("previewLocation").textContent = profile.location || "Add your location so caregivers know where you need care.";
+        document.getElementById("previewCompletionValue").textContent = `${completion}%`;
+        document.getElementById("previewCompletionChip").textContent = `${completion}% complete`;
+        document.getElementById("previewCompletionBar").style.width = `${completion}%`;
+        document.getElementById("previewResponseChip").textContent = responseMinutes != null
+          ? `Responds in about ${responseMinutes} min`
+          : "Response readiness builds trust";
+
+        document.getElementById("previewCareTypes").innerHTML = careTypes.length
+          ? careTypes.map((type) => `<span class="preview-chip">${escapeHtml(type)}</span>`).join("")
+          : '<span class="preview-chip preview-chip-muted">Choose care needs</span>';
+
+        document.getElementById("previewHouseholdSignals").innerHTML = signals.length
+          ? signals.map((signal) => `<span class="preview-signal">${escapeHtml(signal)}</span>`).join("")
+          : '<span class="preview-signal preview-signal-muted">Household signals will appear here</span>';
+
+        document.getElementById("previewAvatar").innerHTML = photoUrls.length
+          ? `<img src="${photoUrls[0]}" alt="Profile preview photo" />`
+          : "Add a photo";
+      }
+
+      function updateSaveBar() {
+        const saveButton = document.getElementById("saveProfileBtn");
+        if (!saveButton) return;
+        saveButton.disabled = !isDirty;
+        saveButton.classList.toggle("button-disabled", !isDirty);
+      }
+
+      function markDirty() {
+        isDirty = true;
+        updateSaveBar();
+      }
+
+      function clearDirty() {
+        isDirty = false;
+        baselineState = getCurrentStateSignature();
+        updateSaveBar();
+      }
+
+      function syncDirtyState() {
+        if (isInitializing) {
+          isDirty = false;
+          updateSaveBar();
+          return;
+        }
+        isDirty = getCurrentStateSignature() !== baselineState;
+        updateSaveBar();
+      }
+
+      function showSaveToast(message) {
+        const toast = document.getElementById("saveToast");
+        toast.textContent = message;
+        toast.classList.add("visible");
+        if (saveToastTimeout) window.clearTimeout(saveToastTimeout);
+        saveToastTimeout = window.setTimeout(() => {
+          toast.classList.remove("visible");
+        }, 2600);
       }
 
       function fillProfileForm() {
         const profile = bundle.workingVersion || {};
-
-        document.getElementById("dashProfileStatus").innerHTML =
-          window.GroveProfiles.getProfileStatusHtml(bundle);
-
-        document.getElementById("dashConfirmedEncounters").textContent =
-          bundle.parent?.confirmed_encounters != null ? bundle.parent.confirmed_encounters : 0;
-
-        document.getElementById("dashResponseTime").textContent =
-          bundle.parent?.average_response_minutes != null
-            ? `${bundle.parent.average_response_minutes} min`
-            : "—";
+        document.getElementById("dashConfirmedEncounters").textContent = bundle.parent?.confirmed_encounters != null ? bundle.parent.confirmed_encounters : 0;
+        document.getElementById("dashResponseTime").textContent = bundle.parent?.average_response_minutes != null ? `${bundle.parent.average_response_minutes} min` : "—";
 
         document.getElementById("fam_display_name").value = profile.name_display || window.GroveProfiles.buildDefaultDisplayName({
-          firstName: window.GroveProfiles.getAccountFirstName(currentUser, profile.first_name || ""),
-          lastName: window.GroveProfiles.getAccountLastName(currentUser, profile.last_name || "")
+          firstName: window.GroveProfiles.getAccountFirstName(currentUser, ""),
+          lastName: window.GroveProfiles.getAccountLastName(currentUser, "")
         });
         document.getElementById("fam_location").value = profile.location || "";
-        document.getElementById("fam_household_description").value = profile.household_description || "";
+        document.getElementById("fam_about_family").value = profile.bio || profile.household_description || "";
         document.getElementById("fam_children_description").value = profile.children_description || "";
         document.getElementById("fam_pets_description").value = profile.pets_description || "";
-
         document.getElementById("fam_has_cats").checked = !!profile.has_cats;
         document.getElementById("fam_has_dogs").checked = !!profile.has_dogs;
         document.getElementById("fam_smoking_in_home").checked = !!profile.smoking_in_home;
         document.getElementById("fam_driving_needed").checked = !!profile.driving_needed;
 
-        window.GroveProfiles.setCheckedValues(
-          'input[name="fam_care_types_needed"]',
-          profile.care_types_needed || []
-        );
+        window.GroveProfiles.setCheckedValues('input[name="fam_care_types_needed"]', profile.care_types_needed || []);
+        retainedPhotoUrls = window.GroveProfiles.getExistingPhotoUrls(profile);
+        clearSelectedPhotoPreviews();
+        setPhotoError("");
+        document.getElementById("fam_photos").value = "";
 
-        renderPhotoPreview(window.GroveProfiles.getExistingPhotoUrls(profile));
+        updatePhotoSelectionMeta();
+        updatePreviewSummary();
+        clearDirty();
       }
 
       async function refreshBundle() {
@@ -230,110 +885,190 @@
         });
 
         fillProfileForm();
-
-        const messageCount = await window.GroveProfiles.loadMessageCount(currentUser.id);
-        document.getElementById("dashMessages").textContent = messageCount;
+        document.getElementById("dashMessages").textContent = await window.GroveProfiles.loadMessageCount(currentUser.id);
+        updatePreviewSummary();
       }
 
-      async function saveProfile(e) {
-        e.preventDefault();
+      function getPreviewHref() {
+        if (bundle.parent?.id) {
+          return `./family-profile.html?id=${encodeURIComponent(bundle.parent.id)}`;
+        }
+        return "./family-profile.html";
+      }
 
+      async function persistProfile({
+        triggerButton = document.getElementById("saveProfileBtn"),
+        savingText = "Saving...",
+        successMessage = "Profile saved.",
+        redirectTo = null
+      } = {}) {
         if (!currentUser) {
           window.location.href = "./login.html";
-          return;
+          return false;
         }
 
-        const saveButton = document.getElementById("saveProfileBtn");
-        const successMessage = document.getElementById("familyProfileSuccess");
+        const saveButton = triggerButton;
         const originalButtonText = saveButton?.textContent || "Save Profile";
 
         try {
-          if (successMessage) {
-            successMessage.style.display = "none";
+          if (getExistingPhotoUrls().length + getSelectedPhotoFiles().length > 5) {
+            setPhotoError("You can have up to 5 profile photos. Remove a photo before adding more.");
+            return false;
           }
 
           if (saveButton) {
             saveButton.disabled = true;
-            saveButton.textContent = "Saving...";
+            saveButton.classList.add("button-disabled");
+            saveButton.textContent = savingText;
           }
 
           const photoUrls = await window.GroveProfiles.resolvePhotoUrls({
             folder: "families",
             userId: currentUser.id,
             files: document.getElementById("fam_photos")?.files,
-            existingVersion: bundle.workingVersion
+            existingVersion: bundle.workingVersion,
+            retainedPhotoUrls
           });
 
           await window.GroveProfiles.submitFamilyProfile({
+            familyProfileId: bundle.parent?.id || null,
             values: {
               name_display: document.getElementById("fam_display_name").value.trim(),
               location: document.getElementById("fam_location").value.trim(),
-              care_types_needed: window.GroveProfiles.getCheckedValues('input[name="fam_care_types_needed"]'),
+              care_types_needed: getSelectedCareTypes(),
               has_cats: document.getElementById("fam_has_cats").checked,
               has_dogs: document.getElementById("fam_has_dogs").checked,
               smoking_in_home: document.getElementById("fam_smoking_in_home").checked,
               driving_needed: document.getElementById("fam_driving_needed").checked,
-              household_description: document.getElementById("fam_household_description").value.trim(),
+              household_description: document.getElementById("fam_about_family").value.trim(),
               children_description: document.getElementById("fam_children_description").value.trim(),
               pets_description: document.getElementById("fam_pets_description").value.trim(),
+              bio: document.getElementById("fam_about_family").value.trim(),
               photo_urls: photoUrls
             }
           });
 
-          if (successMessage) {
-            successMessage.style.display = "block";
-          }
-
+          document.getElementById("fam_photos").value = "";
+          clearSelectedPhotoPreviews();
+          isInitializing = true;
           await refreshBundle();
+          isInitializing = false;
+          clearDirty();
+          if (redirectTo) {
+            window.location.href = redirectTo;
+            return true;
+          }
+          showSaveToast(successMessage);
+          return true;
         } catch (error) {
           console.error(error);
           handleError(error, "Profile save failed");
+          return false;
         } finally {
           if (saveButton) {
-            saveButton.disabled = false;
             saveButton.textContent = originalButtonText;
+            saveButton.disabled = !isDirty;
+            saveButton.classList.toggle("button-disabled", !isDirty);
           }
         }
       }
 
-      async function signOut() {
-        const { error } = await window.db.auth.signOut();
+      async function saveProfile(e) {
+        e.preventDefault();
+        await persistProfile();
+      }
 
-        if (error) {
-          handleError(error, "Sign out failed");
+      async function previewProfile(e) {
+        e.preventDefault();
+        const previewUrl = getPreviewHref();
+        if (!isDirty) {
+          window.location.href = previewUrl;
           return;
         }
 
-        window.location.href = "./login.html";
+        await persistProfile({
+          triggerButton: e.currentTarget,
+          savingText: "Saving...",
+          redirectTo: previewUrl
+        });
       }
 
       async function requireSession() {
         const user = await window.GroveProfiles.getCurrentUser();
-
         if (!user) {
           window.location.href = "./login.html";
           return null;
         }
-
         return user;
+      }
+
+      function wirePreviewListeners() {
+        const form = document.getElementById("familyProfileForm");
+        const photoInput = document.getElementById("fam_photos");
+
+        form.querySelectorAll("input, textarea, select").forEach((field) => {
+          field.addEventListener("input", () => {
+            syncDirtyState();
+            updatePreviewSummary();
+          });
+          field.addEventListener("change", () => {
+            syncDirtyState();
+            updatePreviewSummary();
+          });
+        });
+
+        photoInput?.addEventListener("change", () => {
+          validateSelectedPhotos();
+          updatePhotoSelectionMeta();
+          syncDirtyState();
+          updatePreviewSummary();
+        });
+
+        window.addEventListener("beforeunload", (event) => {
+          if (!isDirty) return;
+          event.preventDefault();
+          event.returnValue = "";
+        });
       }
 
       async function checkSessionAndSetup() {
         currentUser = await requireSession();
         if (!currentUser) return;
-
-        const profileCard = document.getElementById("profileCard");
-        const signedInText = document.getElementById("signedInText");
-        profileCard.style.display = "block";
-        signedInText.textContent = `Signed in as ${currentUser.email}. You can review and update your family profile below.`;
-
+        document.getElementById("profileCard").style.display = "block";
+        document.getElementById("previewProfileBtn").href = getPreviewHref();
+        isInitializing = true;
         await refreshBundle();
+        document.getElementById("previewProfileBtn").href = getPreviewHref();
+        wirePreviewListeners();
+        window.setTimeout(() => {
+          clearDirty();
+        }, 0);
+        window.setTimeout(() => {
+          isInitializing = false;
+          clearDirty();
+        }, 300);
       }
 
       window.addEventListener("DOMContentLoaded", () => {
-        document.getElementById("signOutBtn")?.addEventListener("click", signOut);
+        const backButton = document.getElementById("editFamilyBackBtn");
+        if (backButton && typeof window.getReturnNavigationConfig === "function") {
+          const returnConfig = window.getReturnNavigationConfig({
+            defaultHref: "./account.html",
+            defaultLabel: "Back to Dashboard"
+          });
+          backButton.href = returnConfig.href;
+          backButton.textContent = returnConfig.label;
+        }
         document.getElementById("familyProfileForm")?.addEventListener("submit", saveProfile);
+        document.getElementById("previewProfileBtn")?.addEventListener("click", previewProfile);
         checkSessionAndSetup();
+      });
+
+      window.addEventListener("load", () => {
+        window.setTimeout(() => {
+          isInitializing = false;
+          clearDirty();
+        }, 0);
       });
     })();
   </script>

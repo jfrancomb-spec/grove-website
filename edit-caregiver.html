@@ -15,6 +15,7 @@
 
     .edit-page-shell section {
       max-width: none;
+      margin: 8px auto 0;
       padding: 0;
     }
 
@@ -30,7 +31,7 @@
       align-items: center;
       gap: 16px;
       flex-wrap: wrap;
-      margin-bottom: 20px;
+      margin-bottom: 12px;
     }
 
     .edit-intro {
@@ -45,6 +46,10 @@
       border: 1px solid var(--card-border);
       border-radius: 20px;
       box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+    }
+
+    #profileCard {
+      padding-top: 14px;
     }
 
     .edit-preview-card {
@@ -111,10 +116,17 @@
 
     .preview-chip-row,
     .preview-signal-list,
-    .save-bar-actions,
     .photo-upload-meta {
       display: flex;
       flex-wrap: wrap;
+      justify-content: flex-start;
+      gap: 10px;
+    }
+
+    .save-bar-actions {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
       gap: 10px;
     }
 
@@ -320,7 +332,7 @@
       bottom: 14px;
       z-index: 20;
       display: flex;
-      justify-content: space-between;
+      justify-content: center;
       align-items: center;
       gap: 14px;
       flex-wrap: wrap;
@@ -374,8 +386,8 @@
   </style>
 </head>
 
-<body>
-  <div id="header-placeholder"></div>
+  <body>
+    <div id="header-placeholder"></div>
 
   <main>
     <div class="hero">
@@ -390,12 +402,11 @@
         <div class="form-card" id="profileCard" style="display:none;">
           <div class="edit-topbar">
             <div>
-              <h2 class="mb-0">Caregiver Profile</h2>
               <p class="edit-intro">
                 Lead with warmth, clarity, and trust. The strongest profiles make it easy for a family to quickly understand who you are, what care you provide, and how ready you are to respond.
               </p>
             </div>
-            <a class="button button-secondary" href="./account.html">Back to Account</a>
+            <a class="button button-secondary" id="editCaregiverBackBtn" href="./account.html">Back to Account</a>
           </div>
 
           <div class="edit-page-grid">
@@ -407,7 +418,6 @@
                   <h3 class="preview-name" id="previewDisplayName">Your display name</h3>
                   <p class="preview-subtitle" id="previewLocation">Add your location so families know where you work.</p>
                   <div class="preview-chip-row">
-                    <span class="preview-chip" id="previewStatusChip">Status pending</span>
                     <span class="preview-chip" id="previewCompletionChip">0% complete</span>
                     <span class="preview-chip preview-chip-muted" id="previewResponseChip">Response readiness builds trust</span>
                   </div>
@@ -421,10 +431,6 @@
               </div>
 
               <div class="preview-stats">
-                <div class="preview-stat">
-                  <div class="preview-stat-label">Approval Status</div>
-                  <div class="preview-stat-value" id="dashProfileStatus">—</div>
-                </div>
                 <div class="preview-stat">
                   <div class="preview-stat-label">Completion</div>
                   <div class="preview-stat-value" id="previewCompletionValue">0%</div>
@@ -565,10 +571,9 @@
               </div>
 
               <div class="save-bar">
-                <div class="save-bar-copy" id="saveBarText">Your changes are saved profile-by-profile, so take a moment to make this feel like you.</div>
                 <div class="save-bar-actions">
-                  <a class="button button-secondary" id="previewProfileBtn" href="./caregiver.html">Preview Profile</a>
-                  <button class="button button-caregiver" type="submit" id="saveProfileBtn">Save Profile</button>
+                  <a class="button button-secondary" id="previewProfileBtn" href="./caregiver.html?returnTo=edit-caregiver">Preview Profile</a>
+                  <button class="button button-caregiver button-disabled" type="submit" id="saveProfileBtn" disabled>Save Profile</button>
                 </div>
               </div>
             </form>
@@ -598,6 +603,8 @@
       let retainedPhotoUrls = [];
       let previewPhotoUrls = [];
       let isDirty = false;
+      let isInitializing = true;
+      let baselineState = "";
       let saveToastTimeout = null;
 
       function escapeHtml(value) {
@@ -755,6 +762,15 @@
         };
       }
 
+      function getCurrentStateSignature() {
+        return JSON.stringify({
+          profile: getDraftProfileValues(),
+          careTypes: getSelectedCareTypes(),
+          retainedPhotoUrls: getExistingPhotoUrls(),
+          selectedPhotoNames: getSelectedPhotoFiles().map((file) => file.name)
+        });
+      }
+
       function getProfileCompletion(profile) {
         const checks = [
           !!profile.name_display,
@@ -794,11 +810,6 @@
         document.getElementById("previewCompletionValue").textContent = `${completion}%`;
         document.getElementById("previewCompletionChip").textContent = `${completion}% complete`;
         document.getElementById("previewCompletionBar").style.width = `${completion}%`;
-        document.getElementById("previewStatusChip").textContent = bundle.pendingVersion
-          ? "Pending review"
-          : bundle.visibleVersion
-            ? "Approved"
-            : "Not submitted";
         document.getElementById("previewResponseChip").textContent = responseMinutes != null
           ? `Responds in about ${responseMinutes} min`
           : "Response readiness builds trust";
@@ -817,9 +828,10 @@
       }
 
       function updateSaveBar() {
-        document.getElementById("saveBarText").textContent = isDirty
-          ? "You have unsaved changes. Save when this profile feels clear, trustworthy, and ready for families to view."
-          : "Your profile is up to date. Small improvements to clarity and warmth can still strengthen first impression.";
+        const saveButton = document.getElementById("saveProfileBtn");
+        if (!saveButton) return;
+        saveButton.disabled = !isDirty;
+        saveButton.classList.toggle("button-disabled", !isDirty);
       }
 
       function markDirty() {
@@ -829,6 +841,17 @@
 
       function clearDirty() {
         isDirty = false;
+        baselineState = getCurrentStateSignature();
+        updateSaveBar();
+      }
+
+      function syncDirtyState() {
+        if (isInitializing) {
+          isDirty = false;
+          updateSaveBar();
+          return;
+        }
+        isDirty = getCurrentStateSignature() !== baselineState;
         updateSaveBar();
       }
 
@@ -844,7 +867,6 @@
 
       function fillProfileForm() {
         const profile = bundle.workingVersion || {};
-        document.getElementById("dashProfileStatus").innerHTML = window.GroveProfiles.getProfileStatusHtml(bundle);
         document.getElementById("dashConfirmedEncounters").textContent = bundle.parent?.confirmed_encounters != null ? bundle.parent.confirmed_encounters : 0;
         document.getElementById("dashResponseTime").textContent = bundle.parent?.average_response_minutes != null ? `${bundle.parent.average_response_minutes} min` : "—";
 
@@ -889,7 +911,7 @@
       async function persistProfile({
         triggerButton = document.getElementById("saveProfileBtn"),
         savingText = "Saving...",
-        successMessage = "Profile saved. Families will see your strongest updated details.",
+        successMessage = "Profile saved.",
         redirectTo = null
       } = {}) {
         if (!currentUser) {
@@ -908,6 +930,7 @@
 
           if (saveButton) {
             saveButton.disabled = true;
+            saveButton.classList.add("button-disabled");
             saveButton.textContent = savingText;
           }
 
@@ -940,7 +963,10 @@
 
           document.getElementById("cg_photos").value = "";
           clearSelectedPhotoPreviews();
+          isInitializing = true;
           await refreshBundle();
+          isInitializing = false;
+          clearDirty();
           if (redirectTo) {
             window.location.href = redirectTo;
             return true;
@@ -953,8 +979,9 @@
           return false;
         } finally {
           if (saveButton) {
-            saveButton.disabled = false;
             saveButton.textContent = originalButtonText;
+            saveButton.disabled = !isDirty;
+            saveButton.classList.toggle("button-disabled", !isDirty);
           }
         }
       }
@@ -994,11 +1021,11 @@
 
         form.querySelectorAll("input, textarea, select").forEach((field) => {
           field.addEventListener("input", () => {
-            markDirty();
+            syncDirtyState();
             updatePreviewSummary();
           });
           field.addEventListener("change", () => {
-            markDirty();
+            syncDirtyState();
             updatePreviewSummary();
           });
         });
@@ -1006,7 +1033,7 @@
         photoInput?.addEventListener("change", () => {
           validateSelectedPhotos();
           updatePhotoSelectionMeta();
-          markDirty();
+          syncDirtyState();
           updatePreviewSummary();
         });
 
@@ -1021,14 +1048,38 @@
         currentUser = await requireSession();
         if (!currentUser) return;
         document.getElementById("profileCard").style.display = "block";
+        isInitializing = true;
         await refreshBundle();
         wirePreviewListeners();
+        window.setTimeout(() => {
+          clearDirty();
+        }, 0);
+        window.setTimeout(() => {
+          isInitializing = false;
+          clearDirty();
+        }, 300);
       }
 
       window.addEventListener("DOMContentLoaded", () => {
+        const backButton = document.getElementById("editCaregiverBackBtn");
+        if (backButton && typeof window.getReturnNavigationConfig === "function") {
+          const returnConfig = window.getReturnNavigationConfig({
+            defaultHref: "./account.html",
+            defaultLabel: "Back to Dashboard"
+          });
+          backButton.href = returnConfig.href;
+          backButton.textContent = returnConfig.label;
+        }
         document.getElementById("caregiverProfileForm")?.addEventListener("submit", saveProfile);
         document.getElementById("previewProfileBtn")?.addEventListener("click", previewProfile);
         checkSessionAndSetup();
+      });
+
+      window.addEventListener("load", () => {
+        window.setTimeout(() => {
+          isInitializing = false;
+          clearDirty();
+        }, 0);
       });
     })();
   </script>
